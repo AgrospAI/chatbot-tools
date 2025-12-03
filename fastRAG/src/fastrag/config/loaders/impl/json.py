@@ -6,12 +6,12 @@ from fastrag.config.loaders.loader import ConfigLoader
 
 
 @dataclass(frozen=True)
-class YamlLoader(ConfigLoader):
+class JsonLoader(ConfigLoader):
 
     @classmethod
     def extensions(cls) -> Iterable[str]:
-        return [".yaml", ".yml"]
+        return [".json"]
 
     @override
     def load(self, fp: TextIO) -> Config:
-        print("Running YamlLoader load")
+        print("Running JsonLoader load")

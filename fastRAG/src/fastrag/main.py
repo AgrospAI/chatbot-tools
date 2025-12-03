@@ -3,7 +3,8 @@ from typing import Annotated
 
 import typer
 
-from fastrag.config import Config
+from fastrag.config import Config, ConfigLoader
+from fastrag.plugins import plugin_registry
 
 app = typer.Typer(help="CLI RAG generator")
 
@@ -12,10 +13,7 @@ app = typer.Typer(help="CLI RAG generator")
 def main(
     config: Annotated[
         Path,
-        typer.Option(
-            prompt="What is the path of the config YAML?",
-            help="Path to the config file.",
-        ),
+        typer.Argument(help="Path to the config file."),
     ] = Path("config.yaml"),
 ):
     """
@@ -27,7 +25,8 @@ def main(
     else:
         raise ValueError(f"Could not find config file at {config.absolute()}")
 
-    config = Config().from_yaml(config)
+    print(plugin_registry)
+    config: Config = ConfigLoader.from_settings(config)
 
 
 if __name__ == "__main__":

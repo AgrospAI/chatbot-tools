@@ -2,10 +2,11 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from fastrag.data import Data
+from fastrag.fetchers.fetcher import Fetcher
 
 
 @dataclass(frozen=True)
-class Text:
+class Text(Fetcher[list[str]]):
 
     path: Path
     """Path to read the text from"""

@@ -2,11 +2,12 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from fastrag.data import Data
-from fastrag.fetchers import Fetcher, Text
+from fastrag.fetchers.fetcher import Fetcher
+from fastrag.fetchers.text import Text
 
 
 @dataclass(frozen=True)
-class Directory:
+class Directory(Fetcher[dict[Path, list[str]]]):
 
     path: Path
     """Path of the folder to fetch"""
