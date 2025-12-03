@@ -1,0 +1,21 @@
+[project]
+name = "fastrag"
+version = "0.1.0"
+description = ""
+readme = "README.md"
+authors = [{ name = "AgrospAI", email = "agrospai@udl.cat" }]
+requires-python = ">=3.13"
+dependencies = [
+    "pyyaml>=6.0.3",
+    "typer>=0.20.0",
+]
+
+[project.scripts]
+fastrag = "fastrag:main"
+
+[build-system]
+requires = ["uv_build>=0.8.19,<0.9.0"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = ["mypy>=1.19.0", "ruff>=0.14.7"]
