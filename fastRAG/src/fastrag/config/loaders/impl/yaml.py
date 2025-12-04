@@ -22,7 +22,6 @@ class YamlLoader(ConfigLoader, yaml.SafeLoader):
             raise ValueError("Config file is empty")
 
         data = self._expand_env_vars(data)
-        data = self._resolve_paths(data)
 
         try:
             return Config(**data)
@@ -46,20 +45,5 @@ class YamlLoader(ConfigLoader, yaml.SafeLoader):
                 var_value = os.environ.get(var_name, "")
                 obj = obj[:start] + var_value + obj[end + 1 :]
             return obj
-        else:
-            return obj
-
-    @staticmethod
-    def _resolve_paths(obj):
-        if isinstance(obj, dict):
-            return {k: YamlLoader._resolve_paths(v) for k, v in obj.items()}
-        elif isinstance(obj, list):
-            return [YamlLoader._resolve_paths(v) for v in obj]
-        elif isinstance(obj, str):
-            p = Path(obj)
-            if not p.is_absolute():
-                # treat relative paths as relative to fastrag/resources
-                p = (RESOURCES_DIR / p).resolve()
-            return p
         else:
             return obj

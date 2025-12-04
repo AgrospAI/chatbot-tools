@@ -33,7 +33,8 @@ def main(
     )
 
     config = load_config(config)
-    load_plugins(config)
+    if config.plugins:
+        load_plugins(config)
 
 
 def load_config(config: Path) -> Config:
