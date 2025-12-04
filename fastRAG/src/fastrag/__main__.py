@@ -6,6 +6,7 @@ from rich.console import Console
 from rich.panel import Panel
 from rich.pretty import Pretty
 
+from fastrag import DEFAULT_CONFIG
 from fastrag.config import Config, ConfigLoader
 from fastrag.utils import version
 
@@ -18,7 +19,7 @@ def main(
     config: Annotated[
         Path,
         typer.Argument(help="Path to the config file."),
-    ] = Path("config.yaml"),
+    ] = DEFAULT_CONFIG,
 ):
     """
     Go through the process of generating a fastRAG.
@@ -31,7 +32,26 @@ def main(
         )
     )
 
-    from fastrag.plugins import plugin_registry
+    config = load_config(config)
+    load_plugins(config)
+
+
+def load_config(config: Path) -> Config:
+    if config == DEFAULT_CONFIG:
+        console.print("Using [bold magenta]DEFAULT[/bold magenta] config path")
+    else:
+        console.print(
+            f":scroll: [bold yellow]Loading config from[/bold yellow] {config!r}"
+        )
+    config: Config = ConfigLoader.from_settings(config)
+    console.print(Pretty(config))
+    return config
+
+
+def load_plugins(config: Config):
+    from fastrag.plugins import import_path, plugin_registry
+
+    import_path(config.plugins)
 
     console.print(
         Panel(
@@ -40,10 +60,6 @@ def main(
             border_style="green",
         )
     )
-
-    console.print(f":scroll: [bold yellow]Loading config from[/bold yellow] {config!r}")
-    config: Config = ConfigLoader.from_settings(config)
-    console.print(Pretty(config))
 
 
 if __name__ == "__main__":
