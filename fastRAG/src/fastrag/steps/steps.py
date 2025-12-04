@@ -1,13 +1,15 @@
 import time
 from abc import ABC, abstractmethod
-from typing import Generator, Literal
+from typing import Generator, Iterable, Literal
 
+from rich.console import Console
+from rich.panel import Panel
 from rich.progress import Progress
 
-from fastrag import PluginFactory, Steps
-from fastrag.config.config import Step
+from fastrag import PluginFactory, Step, Steps
 
 STEP_TYPE = Literal["sources", "parsing", "chunking", "embedding", "benchmarking"]
+console = Console()
 
 
 class StepRunner(PluginFactory, ABC):
@@ -17,6 +19,9 @@ class StepRunner(PluginFactory, ABC):
 
     @abstractmethod
     def run_step(self) -> Generator[int, None, None]: ...
+
+    @abstractmethod
+    def get_tasks(self) -> Iterable[str]: ...
 
     def calculate_total(self) -> int:
         return len(self._step)
@@ -56,6 +61,18 @@ class StepRunner(PluginFactory, ABC):
             for step_idx, step in enumerate(steps):
                 name, runner = step_names[step_idx], runners[step]
 
-                for advance in runner.run_step():
-                    progress.advance(tasks[name], advance=advance)
-                    time.sleep(0.02)
+                with Progress() as subprogress:
+                    for advance in runner.run_step():
+                        progress.advance(tasks[name], advance=advance)
+                        time.sleep(0.02)
+
+                if up_to == step_idx + 1:
+                    progress.stop()
+                    console.print(
+                        Panel.fit(
+                            f"Stopping execution after step [bold yellow]'{step_names[step_idx]}'[/bold yellow]",
+                            border_style="red",
+                        ),
+                        justify="center",
+                    )
+                    break

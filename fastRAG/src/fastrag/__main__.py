@@ -7,7 +7,7 @@ from rich.panel import Panel
 from rich.pretty import Pretty
 
 from fastrag import DEFAULT_CONFIG
-from fastrag.config import Config, ConfigLoader, Steps
+from fastrag.config import Config, ConfigLoader
 from fastrag.steps.steps import StepRunner
 from fastrag.utils import version
 
@@ -17,6 +17,12 @@ console = Console()
 
 @app.command()
 def main(
+    step: Annotated[
+        int,
+        typer.Argument(
+            help="What step to execute up to",
+        ),
+    ] = -1,
     config: Annotated[
         Path,
         typer.Argument(help="Path to the config file."),
@@ -25,12 +31,6 @@ def main(
         Path | None,
         typer.Argument(help="Path to the plugins directory."),
     ] = None,
-    step: Annotated[
-        str,
-        typer.Argument(
-            help="What step to execute up to",
-        ),
-    ] = "all",
 ):
     """
     Go through the process of generating a fastRAG.
@@ -51,18 +51,17 @@ def main(
     StepRunner.run(config.steps, step)
 
 
-def load_config(config: Path) -> Config:
-    if config == DEFAULT_CONFIG:
-        console.print(":scroll: Using [bold magenta]DEFAULT[/bold magenta] config path")
-    else:
-        console.print(
-            f":scroll: [bold yellow]Loading config from[/bold yellow] {config!r}"
-        )
-    config: Config = ConfigLoader.from_settings(config)
+def load_config(path: Path) -> Config:
+    config: Config = ConfigLoader.from_settings(path)
     console.print(
         Panel(
             Pretty(config),
-            title="Loaded Configuration",
+            title="[bold]Loaded Configuration[/bold]",
+            subtitle=(
+                ":scroll: Using [bold magenta]DEFAULT[/bold magenta] config path"
+                if config == DEFAULT_CONFIG
+                else f":scroll: [bold yellow]Loaded from[/bold yellow] {path!r}"
+            ),
             border_style="yellow",
         )
     )
@@ -78,7 +77,7 @@ def load_plugins(plugins: Path) -> None:
     console.print(
         Panel(
             Pretty(plugin_registry),
-            title="Plugin Registry",
+            title="[bold]Plugin Registry[/bold]",
             border_style="green",
         )
     )

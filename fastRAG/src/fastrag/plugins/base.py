@@ -70,7 +70,7 @@ class PluginFactory(BasePlugin):
                 f"Couldn't find implementation of [bold yellow]'{cls.__name__}'[/bold yellow] supporting '{val}'"
             )
         implementation = implementations[-1]
-        console.print(
-            f"Using [bold red]'{implementation.__name__}'[/bold red] implementation of [bold yellow]'{cls.__name__}'[/bold yellow]"
-        )
+        # console.print(
+        #     f"Using [bold red]'{implementation.__name__}'[/bold red] implementation of [bold yellow]'{cls.__name__}'[/bold yellow]"
+        # )
         return implementation
