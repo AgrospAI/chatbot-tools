@@ -17,7 +17,7 @@ class PluginRegistry:
     def get(self, interface: Type[PB]) -> List[Type[PB]]:
         return self._registry.get(interface, [])
 
-    def __str__(self) -> str:
+    def __repr__(self) -> str:
         interfaces = [iface.__name__ for iface in self._registry.keys()]
         implementations = {
             i.__name__: [impl.__name__ for impl in impls]

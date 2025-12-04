@@ -1,12 +1,12 @@
-from dataclasses import dataclass
 from typing import Iterable, TextIO, override
+
+import yaml
 
 from fastrag.config.config import Config
 from fastrag.config.loaders.loader import ConfigLoader
 
 
-@dataclass(frozen=True)
-class YamlLoader(ConfigLoader):
+class YamlLoader(ConfigLoader, yaml.SafeLoader):
 
     @classmethod
     def extensions(cls) -> Iterable[str]:
@@ -14,4 +14,4 @@ class YamlLoader(ConfigLoader):
 
     @override
     def load(self, fp: TextIO) -> Config:
-        print("Running YamlLoader load")
+        return Config(**yaml.safe_load(fp))

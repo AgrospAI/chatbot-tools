@@ -3,7 +3,7 @@ from __future__ import annotations
 from abc import abstractmethod
 from collections import defaultdict
 from pathlib import Path
-from typing import Dict, Iterable, TextIO
+from typing import Dict, Iterable, List, TextIO
 
 from fastrag.config.config import Config
 from fastrag.plugins import PluginBase, PluginRegistry, plugin_registry
@@ -21,7 +21,7 @@ class ConfigLoader(PluginBase):
     def load(self, fp: TextIO) -> Config: ...
 
     @classmethod
-    def get_supported_extensions(cls) -> Dict[str, Iterable[ConfigLoader]]:
+    def get_supported_extensions(cls) -> Dict[str, List[ConfigLoader]]:
         ext_map = defaultdict(list)
         for impl in cls.registry.get(ConfigLoader):
             for ext in impl.extensions():
@@ -36,6 +36,9 @@ class ConfigLoader(PluginBase):
 
     @classmethod
     def from_settings(cls, settings: Path) -> Config:
+        if not settings.exists():
+            raise ValueError(f"Could not find config file at {settings.absolute()}")
+
         ext = settings.suffix
         loader = cls.get_supported_loader(ext)
         if not loader:
