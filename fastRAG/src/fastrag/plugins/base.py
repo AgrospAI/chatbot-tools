@@ -5,37 +5,40 @@ from abc import ABC
 from collections import defaultdict
 from dataclasses import dataclass, field
 from textwrap import dedent
-from typing import Dict, Iterable, List, Type, TypeVar
+from typing import Iterable, TypeVar
+
+from rich.console import Console
 
 BP = TypeVar("BP", bound="BasePlugin")
+console = Console()
 
 
 @dataclass(frozen=True)
 class PluginRegistry:
-    _registry: Dict[Type[BP], List[Type[BP]]] = field(default_factory=lambda: {})
+    _registry: dict[type[BP], list[type[BP]]] = field(default_factory=lambda: {})
 
-    def register(self, interface: Type[BP], impl: Type[BP]):
+    def register(self, interface: type[BP], impl: type[BP]):
         self._registry.setdefault(interface, []).append(impl)
 
-    def get(self, interface: Type[BP]) -> List[Type[BP]]:
+    def get(self, interface: type[BP]) -> list[type[BP]]:
         return self._registry.get(interface, [])
 
-    def __repr__(self) -> str:
-        interfaces = [iface.__name__ for iface in self._registry.keys()]
-        implementations = {
-            i.__name__: [impl.__name__ for impl in impls]
-            for i, impls in self._registry.items()
-        }
+    # def __repr__(self) -> str:
+    #     interfaces = [iface.__name__ for iface in self._registry.keys()]
+    #     implementations = {
+    #         i.__name__: [impl.__name__ for impl in impls]
+    #         for i, impls in self._registry.items()
+    #     }
 
-        return dedent(
-            f"""
-            PluginRegistry(
-                total_interfaces={len(self._registry)},
-                interfaces={interfaces},
-                implementations={implementations}
-            )
-        """
-        ).strip()
+    #     return dedent(
+    #         f"""
+    #         PluginRegistry(
+    #             total_interfaces={len(self._registry)},
+    #             interfaces={interfaces},
+    #             implementations={implementations}
+    #         )
+    #     """
+    #     ).strip()
 
 
 class BasePlugin(ABC):
@@ -68,7 +71,7 @@ class PluginFactory(BasePlugin):
         raise NotImplementedError(f"{cls.__name__} must implement supported()")
 
     @classmethod
-    def get_supported(cls) -> Dict[str, List[PluginFactory]]:
+    def get_supported(cls) -> dict[str, list[PluginFactory]]:
         """Return mapping of supported types -> plugin classes"""
         supported_map = defaultdict(list)
         for impl in cls.registry.get(cls):
@@ -81,4 +84,10 @@ class PluginFactory(BasePlugin):
     @classmethod
     def get_supported_instance(cls, ext: str) -> PluginFactory | None:
         implementations = cls.get_supported().get(ext)
-        return random.choice(implementations) if implementations else None
+        if not implementations:
+            return None
+        implementation = random.choice(implementations)
+        console.print(
+            f"Using [bold red]{implementation.__name__}[/bold red] implementation"
+        )
+        return implementation

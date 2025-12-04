@@ -1,6 +1,5 @@
 from dataclasses import dataclass
 from pathlib import Path
-from typing import List
 
 
 @dataclass(frozen=True)
@@ -29,10 +28,16 @@ class Embedding(Strategy): ...
 class Benchmarking(Strategy): ...
 
 
-Step = List[Source] | Parsing | Chunking | Embedding | Benchmarking
+@dataclass(frozen=True)
+class Steps:
+    sources: Source
+    parsing: Parsing
+    chunking: Chunking
+    embedding: Embedding
+    benchmarking: Benchmarking
 
 
 @dataclass(frozen=True)
 class Config:
     cache: Path
-    steps: List[Step]
+    steps: Steps

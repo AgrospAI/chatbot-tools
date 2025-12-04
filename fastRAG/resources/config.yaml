@@ -2,27 +2,27 @@ cache:
   path: ./cache
   time: 5m
 steps:
-  - sources:
-      - strategy: URL
-        params:
-          url: ...
-      - strategy: Path
-        params:
-          path: ...
-      - strategy: Sitemap
-        params:
-          path: https://agrospai.udl.cat/sitemap.xml
-  - parsing: ...
-  - chunking:
-      strategy: RecursiveTextSplitter
+  sources:
+    - strategy: URL
       params:
-        chunk_size: 500
-  - embedding:
-      strategy: SimpleOpenAIAPI
+        url: ...
+    - strategy: Path
       params:
-        model: nomic-embed-text:latest
-        api_key: ${API_KEY}
-        url: chat.agrospai.udl.cat/api/
-  - benchmarking:
-      strategy:
+        path: ...
+    - strategy: Sitemap
       params:
+        path: https://agrospai.udl.cat/sitemap.xml
+  parsing: ...
+  chunking:
+    strategy: RecursiveTextSplitter
+    params:
+      chunk_size: 500
+  embedding:
+    strategy: SimpleOpenAIAPI
+    params:
+      model: nomic-embed-text:latest
+      api_key: ${API_KEY}
+      url: https://chat.agrospai.udl.cat/api/
+  benchmarking:
+    strategy:
+    params:

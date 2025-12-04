@@ -1,4 +1,4 @@
-from fastrag.config.config import Config
-from fastrag.config.loaders.loader import ConfigLoader
+from fastrag.config.config import Config, Steps
+from fastrag.config.loaders import ConfigLoader
 
-__all__ = [Config, ConfigLoader]
+__all__ = [Config, ConfigLoader, Steps]

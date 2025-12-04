@@ -4,12 +4,8 @@ from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import TextIO
 
-from rich.console import Console
-
 from fastrag.config.config import Config
 from fastrag.plugins.base import PluginFactory
-
-console = Console()
 
 
 class ConfigLoader(PluginFactory, ABC):
@@ -28,10 +24,6 @@ class ConfigLoader(PluginFactory, ABC):
             raise ValueError(
                 f"Could not find a loader for the settings extension {ext}"
             )
-
-        console.print(
-            f"Loading config with [bold red]{loader.__name__}[/bold red] class"
-        )
 
         with open(settings, "r") as f:
             return loader.load(loader, f)

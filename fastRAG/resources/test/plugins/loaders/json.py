@@ -1,4 +1,4 @@
-from pathlib import Path
+import json
 from typing import Iterable, TextIO, override
 
 from fastrag import Config, ConfigLoader
@@ -12,4 +12,4 @@ class JsonLoader(ConfigLoader):
 
     @override
     def load(self, fp: TextIO) -> Config:
-        return Config(test="JSON", sources=[], cache=Path(""))
+        return Config(**json.loads(fp.read()))

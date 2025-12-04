@@ -7,7 +7,7 @@ from rich.panel import Panel
 from rich.pretty import Pretty
 
 from fastrag import DEFAULT_CONFIG
-from fastrag.config import Config, ConfigLoader
+from fastrag.config import Config, ConfigLoader, Steps
 from fastrag.utils import version
 
 app = typer.Typer(help="CLI RAG generator")
@@ -24,20 +24,29 @@ def main(
         Path | None,
         typer.Argument(help="Path to the plugins directory."),
     ] = None,
+    step: Annotated[
+        str,
+        typer.Argument(
+            help="What step to execute up to",
+        ),
+    ] = "all",
 ):
     """
     Go through the process of generating a fastRAG.
     """
 
-    load_plugins(plugins)
     console.print(
         Panel.fit(
             f"[bold cyan]fastrag[/bold cyan] [green]v{version("fastrag")}[/green]",
             border_style="cyan",
-        )
+        ),
+        justify="center",
     )
 
-    config = load_config(config)
+    # Load plugins before config
+    load_plugins(plugins)
+    config: Config = load_config(config)
+    run(config.steps)
 
 
 def load_config(config: Path) -> Config:
@@ -52,7 +61,7 @@ def load_config(config: Path) -> Config:
     return config
 
 
-def load_plugins(plugins: Path):
+def load_plugins(plugins: Path) -> None:
     from fastrag.plugins import import_path, plugin_registry
 
     if plugins is not None:
@@ -65,6 +74,9 @@ def load_plugins(plugins: Path):
             border_style="green",
         )
     )
+
+
+def run(steps: Steps) -> None: ...
 
 
 if __name__ == "__main__":
