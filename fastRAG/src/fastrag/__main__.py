@@ -51,13 +51,19 @@ def main(
 
 def load_config(config: Path) -> Config:
     if config == DEFAULT_CONFIG:
-        console.print("Using [bold magenta]DEFAULT[/bold magenta] config path")
+        console.print(":scroll: Using [bold magenta]DEFAULT[/bold magenta] config path")
     else:
         console.print(
             f":scroll: [bold yellow]Loading config from[/bold yellow] {config!r}"
         )
     config: Config = ConfigLoader.from_settings(config)
-    console.print(Pretty(config))
+    console.print(
+        Panel(
+            Pretty(config),
+            title="Loaded Configuration",
+            border_style="yellow",
+        )
+    )
     return config
 
 

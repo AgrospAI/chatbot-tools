@@ -23,23 +23,6 @@ class PluginRegistry:
     def get(self, interface: type[BP]) -> list[type[BP]]:
         return self._registry.get(interface, [])
 
-    # def __repr__(self) -> str:
-    #     interfaces = [iface.__name__ for iface in self._registry.keys()]
-    #     implementations = {
-    #         i.__name__: [impl.__name__ for impl in impls]
-    #         for i, impls in self._registry.items()
-    #     }
-
-    #     return dedent(
-    #         f"""
-    #         PluginRegistry(
-    #             total_interfaces={len(self._registry)},
-    #             interfaces={interfaces},
-    #             implementations={implementations}
-    #         )
-    #     """
-    #     ).strip()
-
 
 class BasePlugin(ABC):
     """Base class for all plugin interfaces"""
