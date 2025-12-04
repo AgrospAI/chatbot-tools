@@ -1,10 +1,8 @@
 import os
-from pathlib import Path
 from typing import Iterable, TextIO, override
 
 import yaml
 
-from fastrag import RESOURCES_DIR
 from fastrag.config.config import Config
 from fastrag.config.loaders.loader import ConfigLoader
 

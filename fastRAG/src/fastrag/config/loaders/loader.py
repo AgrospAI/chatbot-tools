@@ -6,10 +6,10 @@ from pathlib import Path
 from typing import Dict, Iterable, List, TextIO
 
 from fastrag.config.config import Config
-from fastrag.plugins import PluginBase, PluginRegistry, plugin_registry
+from fastrag.plugins import BasePlugin, PluginRegistry, plugin_registry
 
 
-class ConfigLoader(PluginBase):
+class ConfigLoader(BasePlugin):
 
     registry: PluginRegistry = plugin_registry
 

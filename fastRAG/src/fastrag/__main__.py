@@ -16,6 +16,10 @@ console = Console()
 
 @app.command()
 def main(
+    plugins: Annotated[
+        Path | None,
+        typer.Argument(help="Path to the plugins directory."),
+    ] = None,
     config: Annotated[
         Path,
         typer.Argument(help="Path to the config file."),
@@ -25,6 +29,7 @@ def main(
     Go through the process of generating a fastRAG.
     """
 
+    load_plugins(plugins)
     console.print(
         Panel.fit(
             f"[bold cyan]fastrag[/bold cyan] [green]v{version("fastrag")}[/green]",
@@ -33,8 +38,6 @@ def main(
     )
 
     config = load_config(config)
-    if config.plugins:
-        load_plugins(config)
 
 
 def load_config(config: Path) -> Config:
@@ -49,10 +52,11 @@ def load_config(config: Path) -> Config:
     return config
 
 
-def load_plugins(config: Config):
+def load_plugins(plugins: Config):
     from fastrag.plugins import import_path, plugin_registry
 
-    import_path(config.plugins)
+    if plugins is not None:
+        import_path(plugins)
 
     console.print(
         Panel(

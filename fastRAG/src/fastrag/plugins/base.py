@@ -1,7 +1,7 @@
 from abc import ABC
 
 
-class PluginBase(ABC):
+class BasePlugin(ABC):
     """Base class for all plugin interfaces"""
 
     registry = None
@@ -12,8 +12,8 @@ class PluginBase(ABC):
         if not cls.registry:
             return
 
-        # Find the closest PluginBase-derived parent
+        # Find the closest BasePlugin-derived parent
         for base in cls.__bases__:
-            if issubclass(base, PluginBase) and base is not PluginBase:
+            if issubclass(base, BasePlugin) and base is not BasePlugin:
                 cls.registry.register(base, cls)
                 break

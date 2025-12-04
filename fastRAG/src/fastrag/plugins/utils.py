@@ -7,7 +7,6 @@ def import_path(base: Path) -> None:
         raise ValueError(f"{base} is not a valid directory")
 
     imported_modules = {}
-
     for file_path in base.rglob("*.py"):  # recursive, includes subdirectories
         if file_path.name == "__init__.py":
             continue  # skip package __init__ files

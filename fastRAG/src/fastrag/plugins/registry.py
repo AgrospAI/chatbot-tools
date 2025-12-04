@@ -2,9 +2,9 @@ from dataclasses import dataclass, field
 from textwrap import dedent
 from typing import Dict, List, Type, TypeVar
 
-from fastrag.plugins import PluginBase
+from fastrag.plugins import BasePlugin
 
-PB = TypeVar("PB", bound=PluginBase)
+PB = TypeVar("PB", bound=BasePlugin)
 
 
 @dataclass(frozen=True)
