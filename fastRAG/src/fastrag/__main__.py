@@ -52,7 +52,7 @@ def load_config(config: Path) -> Config:
     return config
 
 
-def load_plugins(plugins: Config):
+def load_plugins(plugins: Path):
     from fastrag.plugins import import_path, plugin_registry
 
     if plugins is not None:
