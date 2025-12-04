@@ -1,6 +1,5 @@
-from fastrag.fetchers.directory import Directory
 from fastrag.fetchers.fetcher import Fetcher
-from fastrag.fetchers.http import Http
-from fastrag.fetchers.text import Text
+from fastrag.fetchers.impl import DirectoryFetcher, HttpFetcher, FileFetcher
+from fastrag.fetchers.source import Source
 
-__all__ = [Fetcher, Text, Directory, Http]
+__all__ = [Fetcher, FileFetcher, DirectoryFetcher, HttpFetcher, Source]

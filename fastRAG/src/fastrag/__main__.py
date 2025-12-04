@@ -16,14 +16,14 @@ console = Console()
 
 @app.command()
 def main(
-    plugins: Annotated[
-        Path | None,
-        typer.Argument(help="Path to the plugins directory."),
-    ] = None,
     config: Annotated[
         Path,
         typer.Argument(help="Path to the config file."),
     ] = DEFAULT_CONFIG,
+    plugins: Annotated[
+        Path | None,
+        typer.Argument(help="Path to the plugins directory."),
+    ] = None,
 ):
     """
     Go through the process of generating a fastRAG.

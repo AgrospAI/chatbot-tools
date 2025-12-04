@@ -1,15 +1,12 @@
-from typing import Generic, TypeVar
+from abc import ABC, abstractmethod
+from pathlib import Path
+from typing import Iterable
 
-from fastrag.data import Data
-from fastrag.plugins.base import BasePlugin
-
-T = TypeVar("T")
+from fastrag.plugins.base import PluginFactory
 
 
-class Fetcher(BasePlugin, Generic[T]):
-    """
-    Base protocol for the classes that implement the fetch process.
-    """
+class Fetcher(PluginFactory, ABC):
 
-    def fetch(self) -> Data[T]:
-        raise NotImplementedError
+    @classmethod
+    @abstractmethod
+    def fetch(cls, value: str) -> Iterable[Path]: ...

@@ -7,10 +7,11 @@ from fastrag.config.config import Config
 from fastrag.config.loaders.loader import ConfigLoader
 
 
-class YamlLoader(ConfigLoader, yaml.SafeLoader):
+class YamlLoader(ConfigLoader):
 
+    @override
     @classmethod
-    def extensions(cls) -> Iterable[str]:
+    def supported(cls) -> Iterable[str]:
         return [".yaml", ".yml"]
 
     @override
