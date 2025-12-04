@@ -8,6 +8,7 @@ from rich.pretty import Pretty
 
 from fastrag import DEFAULT_CONFIG
 from fastrag.config import Config, ConfigLoader, Steps
+from fastrag.steps.steps import StepRunner
 from fastrag.utils import version
 
 app = typer.Typer(help="CLI RAG generator")
@@ -46,7 +47,8 @@ def main(
     # Load plugins before config
     load_plugins(plugins)
     config: Config = load_config(config)
-    run(config.steps)
+
+    StepRunner.run(config.steps, step)
 
 
 def load_config(config: Path) -> Config:
@@ -80,9 +82,6 @@ def load_plugins(plugins: Path) -> None:
             border_style="green",
         )
     )
-
-
-def run(steps: Steps) -> None: ...
 
 
 if __name__ == "__main__":

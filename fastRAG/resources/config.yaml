@@ -12,13 +12,20 @@ steps:
     - strategy: Sitemap
       params:
         path: https://agrospai.udl.cat/sitemap.xml
-  parsing: ...
+  parsing:
+    - strategy: HtmlParser
+      use:
+        - Sitemap
+        - URL
+    - strategy: FileParser
+      use:
+        - Path
   chunking:
     strategy: RecursiveTextSplitter
     params:
       chunk_size: 500
   embedding:
-    strategy: SimpleOpenAIAPI
+    strategy: OpenAI-Simple
     params:
       model: nomic-embed-text:latest
       api_key: ${API_KEY}

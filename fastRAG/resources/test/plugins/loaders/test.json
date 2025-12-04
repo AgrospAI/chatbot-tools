@@ -24,7 +24,21 @@
                 }
             }
         ],
-        "parsing": "...",
+        "parsing": [
+            {
+                "strategy": "HtmlParser",
+                "use": [
+                    "Sitemap",
+                    "URL"
+                ]
+            },
+            {
+                "strategy": "FileParser",
+                "use": [
+                    "Path"
+                ]
+            }
+        ],
         "chunking": {
             "strategy": "RecursiveTextSplitter",
             "params": {
@@ -32,7 +46,7 @@
             }
         },
         "embedding": {
-            "strategy": "SimpleOpenAIAPI",
+            "strategy": "OpenAI-Simple",
             "params": {
                 "model": "nomic-embed-text:latest",
                 "api_key": "${API_KEY}",

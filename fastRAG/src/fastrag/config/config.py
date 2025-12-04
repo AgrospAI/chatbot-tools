@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from pathlib import Path
+from typing import TypeVar
 
 
 @dataclass(frozen=True)
@@ -13,7 +14,9 @@ class Source(Strategy): ...
 
 
 @dataclass(frozen=True)
-class Parsing(Strategy): ...
+class Parsing:
+    strategy: str
+    use: list[str]
 
 
 @dataclass(frozen=True)
@@ -30,11 +33,16 @@ class Benchmarking(Strategy): ...
 
 @dataclass(frozen=True)
 class Steps:
-    sources: Source
-    parsing: Parsing
-    chunking: Chunking
-    embedding: Embedding
-    benchmarking: Benchmarking
+    sources: list[Source]
+    parsing: list[Parsing]
+    chunking: list[Chunking]
+    embedding: list[Embedding]
+    benchmarking: list[Benchmarking]
+
+
+T = TypeVar("T", bound=Source | Parsing | Chunking | Embedding | Benchmarking)
+
+Step = list[T]
 
 
 @dataclass(frozen=True)

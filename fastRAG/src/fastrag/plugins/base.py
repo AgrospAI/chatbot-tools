@@ -1,10 +1,8 @@
 from __future__ import annotations
 
-import random
 from abc import ABC
 from collections import defaultdict
 from dataclasses import dataclass, field
-from textwrap import dedent
 from typing import Iterable, TypeVar
 
 from rich.console import Console
@@ -65,12 +63,14 @@ class PluginFactory(BasePlugin):
         return dict(supported_map)
 
     @classmethod
-    def get_supported_instance(cls, ext: str) -> PluginFactory | None:
-        implementations = cls.get_supported().get(ext)
+    def get_supported_instance(cls, val: str) -> PluginFactory | None:
+        implementations = cls.get_supported().get(val)
         if not implementations:
-            return None
-        implementation = random.choice(implementations)
+            raise NotImplementedError(
+                f"Couldn't find implementation of [bold yellow]'{cls.__name__}'[/bold yellow] supporting '{val}'"
+            )
+        implementation = implementations[-1]
         console.print(
-            f"Using [bold red]{implementation.__name__}[/bold red] implementation"
+            f"Using [bold red]'{implementation.__name__}'[/bold red] implementation of [bold yellow]'{cls.__name__}'[/bold yellow]"
         )
         return implementation
