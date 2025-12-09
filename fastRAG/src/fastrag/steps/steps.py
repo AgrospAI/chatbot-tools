@@ -1,4 +1,3 @@
-import time
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Generator, Literal
@@ -41,13 +40,12 @@ class StepRunner(PluginFactory, ABC):
             "benchmarking": "Running benchmarks",
         }
 
-        steps = config.steps
+        cache, steps = config.cache, config.steps
 
         with Progress() as progress:
             runners: dict[str, StepRunner] = {
                 step: StepRunner.get_supported_instance(step)(
-                    cache=config.cache,
-                    step=steps[step_cfg],
+                    cache=cache, step=steps[step_cfg]
                 )
                 for step, step_cfg in zip(step_names, steps)
             }
@@ -65,7 +63,6 @@ class StepRunner(PluginFactory, ABC):
 
                 for _ in runner.run_step():
                     progress.advance(tasks[name], advance=1)
-                    time.sleep(0.02)
 
                 if up_to == step_idx + 1:
                     progress.stop()

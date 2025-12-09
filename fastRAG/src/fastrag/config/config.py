@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from dataclasses import dataclass
 from pathlib import Path
 from typing import TypeVar
@@ -6,7 +8,7 @@ from typing import TypeVar
 @dataclass(frozen=True)
 class Strategy:
     strategy: str
-    params: dict[str, str]
+    params: dict[str, str | int]
 
 
 @dataclass(frozen=True)
@@ -53,5 +55,5 @@ class Cache:
 
 @dataclass(frozen=True)
 class Config:
-    cache: Path
+    cache: Cache
     steps: Steps

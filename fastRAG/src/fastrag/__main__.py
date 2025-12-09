@@ -7,6 +7,7 @@ from rich.panel import Panel
 from rich.pretty import Pretty
 
 from fastrag import DEFAULT_CONFIG, Config, ConfigLoader
+from fastrag.helpers.constants import init_constants
 from fastrag.steps.steps import StepRunner
 from fastrag.helpers.utils import version
 
@@ -52,6 +53,7 @@ def main(
 
 def load_config(path: Path) -> Config:
     config: Config = ConfigLoader.from_settings(path)
+    init_constants(config.cache.path)
     console.print(
         Panel(
             Pretty(config),

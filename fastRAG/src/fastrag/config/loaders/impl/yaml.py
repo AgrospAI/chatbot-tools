@@ -1,10 +1,14 @@
 import os
+from pathlib import Path
 from typing import Iterable, TextIO, override
 
 import yaml
+from dacite import Config as Conf
+from dacite import from_dict
 
 from fastrag.config.config import Config
 from fastrag.config.loaders.loader import ConfigLoader
+from fastrag.helpers.path_field import PathField
 
 
 class YamlLoader(ConfigLoader):
@@ -22,10 +26,15 @@ class YamlLoader(ConfigLoader):
 
         data = self._expand_env_vars(data)
 
-        try:
-            return Config(**data)
-        except TypeError as e:
-            raise ValueError("Config must be well-formed") from e
+        return from_dict(
+            Config,
+            data,
+            config=Conf(
+                type_hooks={
+                    Path: Path,
+                }
+            ),
+        )
 
     @staticmethod
     def _expand_env_vars(obj):

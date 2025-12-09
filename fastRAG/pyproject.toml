@@ -6,6 +6,7 @@ readme = "README.md"
 authors = [{ name = "AgrospAI", email = "agrospai@udl.cat" }]
 requires-python = ">=3.13"
 dependencies = [
+    "dacite>=1.9.2",
     "pyyaml>=6.0.3",
     "rich>=14.2.0",
     "typer>=0.20.0",

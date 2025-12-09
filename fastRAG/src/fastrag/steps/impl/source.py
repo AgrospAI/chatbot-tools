@@ -23,10 +23,8 @@ class SourceStep(StepRunner):
     @override
     def run_step(self) -> Generator[None, None, None]:
         for source in self.step:
-            strategy, params = source["strategy"], source["params"]
-
-            Fetcher.get_supported_instance(strategy)(
-                **params,
+            Fetcher.get_supported_instance(source.strategy)(
+                **source.params,
                 cache=self.cache,
             ).fetch()
 

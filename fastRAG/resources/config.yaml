@@ -21,15 +21,16 @@ steps:
       use:
         - Path
   chunking:
-    strategy: RecursiveTextSplitter
-    params:
-      chunk_size: 500
+    - strategy: RecursiveTextSplitter
+      params:
+        chunk_size: 500
   embedding:
-    strategy: OpenAI-Simple
-    params:
-      model: nomic-embed-text:latest
-      api_key: ${API_KEY}
-      url: https://chat.agrospai.udl.cat/api/
+    - strategy: OpenAI-Simple
+      params:
+        model: nomic-embed-text:latest
+        api_key: ${API_KEY}
+        url: https://chat.agrospai.udl.cat/api/
   benchmarking:
-    strategy:
-    params:
+    - strategy: ...
+      params:
+        test: asdsa

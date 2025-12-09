@@ -8,6 +8,7 @@ from fastrag.helpers import PathField
 
 @dataclass(frozen=True)
 class PathFetcher(Fetcher):
+    """Copy the source file tree into the cache"""
 
     path: PathField = PathField()
 
@@ -18,6 +19,5 @@ class PathFetcher(Fetcher):
 
     @override
     def fetch(self) -> Iterable[Path]:
-        print(self.cache)
 
         return []
