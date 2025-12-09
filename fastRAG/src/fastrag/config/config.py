@@ -46,6 +46,12 @@ Step = list[T]
 
 
 @dataclass(frozen=True)
+class Cache:
+    path: Path
+    time: str
+
+
+@dataclass(frozen=True)
 class Config:
     cache: Path
     steps: Steps

@@ -18,5 +18,6 @@ class PathFetcher(Fetcher):
 
     @override
     def fetch(self) -> Iterable[Path]:
+        print(self.cache)
 
-        return
+        return []

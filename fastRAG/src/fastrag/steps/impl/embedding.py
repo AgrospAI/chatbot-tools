@@ -1,9 +1,14 @@
+from dataclasses import dataclass
 from typing import Generator, Iterable, override
 
+from fastrag.config.config import Embedding
 from fastrag.steps.steps import StepRunner
 
 
+@dataclass(frozen=True)
 class EmbeddingStep(StepRunner):
+
+    step: list[Embedding]
 
     @override
     @classmethod
@@ -12,5 +17,5 @@ class EmbeddingStep(StepRunner):
 
     @override
     def run_step(self) -> Generator[None, None, None]:
-        for step in self._step:
-            yield 1
+        for step in self.step:
+            yield

@@ -1,7 +1,18 @@
 from pathlib import Path
 
 import fastrag
-from fastrag.config import Config, ConfigLoader, Step, Steps
+from fastrag.config import (
+    Cache,
+    Config,
+    ConfigLoader,
+    Step,
+    Steps,
+    Benchmarking,
+    Source,
+    Chunking,
+    Embedding,
+    Parsing,
+)
 from fastrag.fetchers import Fetcher
 from fastrag.helpers import PathField, URLField
 from fastrag.plugins import BasePlugin, PluginFactory
@@ -17,6 +28,12 @@ __all__ = [
     ConfigLoader,
     Fetcher,
     Config,
+    Source,
+    Benchmarking,
+    Cache,
+    Parsing,
+    Chunking,
+    Embedding,
     Steps,
     Step,
     PathField,

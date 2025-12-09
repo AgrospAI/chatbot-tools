@@ -47,7 +47,7 @@ def main(
     load_plugins(plugins)
     config: Config = load_config(config)
 
-    StepRunner.run(config.steps, step)
+    StepRunner.run(config, step)
 
 
 def load_config(path: Path) -> Config:

@@ -1,9 +1,14 @@
+from dataclasses import dataclass
 from typing import Generator, Iterable, override
 
+from fastrag.config.config import Benchmarking
 from fastrag.steps.steps import StepRunner
 
 
+@dataclass(frozen=True)
 class BenchmarkingStep(StepRunner):
+
+    step: list[Benchmarking]
 
     @override
     @classmethod
@@ -12,5 +17,5 @@ class BenchmarkingStep(StepRunner):
 
     @override
     def run_step(self) -> Generator[None, None, None]:
-        for step in self._step:
-            yield 1
+        for step in self.step:
+            yield

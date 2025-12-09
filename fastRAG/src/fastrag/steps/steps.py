@@ -1,30 +1,31 @@
 import time
 from abc import ABC, abstractmethod
+from dataclasses import dataclass
 from typing import Generator, Literal
 
 from rich.console import Console
 from rich.panel import Panel
 from rich.progress import Progress
 
-from fastrag import PluginFactory, Step, Steps
+from fastrag import Cache, Config, PluginFactory
 
 STEP_TYPE = Literal["sources", "parsing", "chunking", "embedding", "benchmarking"]
 console = Console()
 
 
+@dataclass(frozen=True)
 class StepRunner(PluginFactory, ABC):
 
-    def __init__(self, step: list[Step]) -> None:
-        self._step = step
+    cache: Cache
 
     @abstractmethod
     def run_step(self) -> Generator[None, None, None]: ...
 
     def calculate_total(self) -> int:
-        return len(self._step)
+        return len(self.step)
 
     @classmethod
-    def run(cls, steps: Steps, up_to: str) -> None:
+    def run(cls, config: Config, up_to: str) -> None:
         step_names: list[STEP_TYPE] = [
             "sources",
             "parsing",
@@ -40,9 +41,14 @@ class StepRunner(PluginFactory, ABC):
             "benchmarking": "Running benchmarks",
         }
 
+        steps = config.steps
+
         with Progress() as progress:
             runners: dict[str, StepRunner] = {
-                step: StepRunner.get_supported_instance(step)(steps[step_cfg])
+                step: StepRunner.get_supported_instance(step)(
+                    cache=config.cache,
+                    step=steps[step_cfg],
+                )
                 for step, step_cfg in zip(step_names, steps)
             }
 

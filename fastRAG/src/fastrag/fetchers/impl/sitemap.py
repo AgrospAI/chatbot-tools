@@ -2,8 +2,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterable, override
 
-from fastrag.fetchers.fetcher import Fetcher
-from fastrag.helpers.url_field import URLField
+from fastrag.fetchers import Fetcher
+from fastrag.helpers import URLField
 
 
 @dataclass(frozen=True)
@@ -18,4 +18,4 @@ class SitemapXMLFetcher(Fetcher):
 
     @override
     def fetch(self) -> Iterable[Path]:
-        return
+        return []

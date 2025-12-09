@@ -1,18 +1,19 @@
+from dataclasses import dataclass
 from typing import Generator, Iterable, override
 
 from rich.console import Console
 
-from fastrag.config.config import Source, Step
+from fastrag.config.config import Source
 from fastrag.fetchers.fetcher import Fetcher
 from fastrag.steps.steps import StepRunner
 
 console = Console()
 
 
+@dataclass(frozen=True)
 class SourceStep(StepRunner):
 
-    def __init__(self, step: Step) -> None:
-        self._step: list[Source] = step
+    step: list[Source]
 
     @override
     @classmethod
@@ -21,12 +22,12 @@ class SourceStep(StepRunner):
 
     @override
     def run_step(self) -> Generator[None, None, None]:
-        for source in self._step:
-            strategy = source["strategy"]
-            params = source["params"]
+        for source in self.step:
+            strategy, params = source["strategy"], source["params"]
 
-            print(params)
+            Fetcher.get_supported_instance(strategy)(
+                **params,
+                cache=self.cache,
+            ).fetch()
 
-            fetcher: Fetcher = Fetcher.get_supported_instance(strategy)(**params)
-            fetcher.fetch()
             yield
