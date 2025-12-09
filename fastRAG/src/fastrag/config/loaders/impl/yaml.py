@@ -8,7 +8,6 @@ from dacite import from_dict
 
 from fastrag.config.config import Config
 from fastrag.config.loaders.loader import ConfigLoader
-from fastrag.helpers.path_field import PathField
 
 
 class YamlLoader(ConfigLoader):
