@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from dataclasses import dataclass
+from dataclasses import dataclass, fields
 from typing import Generator, Literal
 
 from rich.console import Console
@@ -25,13 +25,9 @@ class StepRunner(PluginFactory, ABC):
 
     @classmethod
     def run(cls, config: Config, up_to: str) -> None:
-        step_names: list[STEP_TYPE] = [
-            "sources",
-            "parsing",
-            "chunking",
-            "embedding",
-            "benchmarking",
-        ]
+        cache, steps = config.cache, fields(config.steps)
+
+        step_names: list[STEP_TYPE] = [f.name for f in steps]
         descriptions: dict[STEP_TYPE, str] = {
             "sources": "Fetching sources",
             "parsing": "Parsing fetched documents",
@@ -40,14 +36,13 @@ class StepRunner(PluginFactory, ABC):
             "benchmarking": "Running benchmarks",
         }
 
-        cache, steps = config.cache, config.steps
-
         with Progress() as progress:
             runners: dict[str, StepRunner] = {
-                step: StepRunner.get_supported_instance(step)(
-                    cache=cache, step=steps[step_cfg]
+                step.name: StepRunner.get_supported_instance(step.name)(
+                    cache=cache,
+                    step=getattr(config.steps, step.name),
                 )
-                for step, step_cfg in zip(step_names, steps)
+                for step in steps
             }
 
             tasks = {
@@ -58,11 +53,11 @@ class StepRunner(PluginFactory, ABC):
                 for i, step in enumerate(step_names, start=1)
             }
 
-            for step_idx, step in enumerate(steps):
+            for step_idx, step in enumerate(step_names):
                 name, runner = step_names[step_idx], runners[step]
 
                 for _ in runner.run_step():
-                    progress.advance(tasks[name], advance=1)
+                    progress.advance(tasks[name])
 
                 if up_to == step_idx + 1:
                     progress.stop()
