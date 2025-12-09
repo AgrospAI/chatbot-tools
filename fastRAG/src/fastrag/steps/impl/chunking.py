@@ -11,10 +11,6 @@ class ChunkingStep(StepRunner):
         return ["chunking"]
 
     @override
-    def get_tasks(self) -> Iterable[str]:
-        return [""]
-
-    @override
-    def run_step(self) -> Generator[int, None, None]:
+    def run_step(self) -> Generator[None, None, None]:
         for step in self._step:
             yield 1

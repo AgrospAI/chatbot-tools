@@ -3,6 +3,7 @@ from __future__ import annotations
 from abc import ABC
 from collections import defaultdict
 from dataclasses import dataclass, field
+from textwrap import dedent
 from typing import Iterable, TypeVar
 
 from rich.console import Console
@@ -13,6 +14,7 @@ console = Console()
 
 @dataclass(frozen=True)
 class PluginRegistry:
+
     _registry: dict[type[BP], list[type[BP]]] = field(default_factory=lambda: {})
 
     def register(self, interface: type[BP], impl: type[BP]):
@@ -20,6 +22,21 @@ class PluginRegistry:
 
     def get(self, interface: type[BP]) -> list[type[BP]]:
         return self._registry.get(interface, [])
+
+    def __repr__(self) -> str:
+        interfaces = [iface.__name__ for iface in self._registry.keys()]
+        implementations = {
+            i.__name__: [impl.__name__ for impl in impls]
+            for i, impls in self._registry.items()
+        }
+
+        return dedent(
+            f"""PluginRegistry( 
+                total_interfaces={len(self._registry)}, 
+                interfaces={interfaces}, 
+                implementations={implementations} 
+                )"""
+        ).strip()
 
 
 class BasePlugin(ABC):
@@ -66,8 +83,9 @@ class PluginFactory(BasePlugin):
     def get_supported_instance(cls, val: str) -> PluginFactory | None:
         implementations = cls.get_supported().get(val)
         if not implementations:
+            console.print()
             raise NotImplementedError(
-                f"Couldn't find implementation of [bold yellow]'{cls.__name__}'[/bold yellow] supporting '{val}'"
+                f"Couldn't find implementation of '{cls.__name__}' supporting '{val}'"
             )
         implementation = implementations[-1]
         # console.print(

@@ -7,14 +7,15 @@ from fastrag.helpers.url_field import URLField
 
 
 @dataclass(frozen=True)
-class HttpFetcher(Fetcher):
+class SitemapXMLFetcher(Fetcher):
 
     url: URLField = URLField()
 
     @classmethod
     @override
-    def supported(self) -> Iterable[str]:
-        return ["URL"]
+    def supported(cls) -> Iterable[str]:
+        return ["SitemapXML"]
 
     @override
-    def fetch(self) -> Iterable[Path]: ...
+    def fetch(self) -> Iterable[Path]:
+        return

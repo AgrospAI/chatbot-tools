@@ -6,10 +6,9 @@ from rich.console import Console
 from rich.panel import Panel
 from rich.pretty import Pretty
 
-from fastrag import DEFAULT_CONFIG
-from fastrag.config import Config, ConfigLoader
+from fastrag import DEFAULT_CONFIG, Config, ConfigLoader
 from fastrag.steps.steps import StepRunner
-from fastrag.utils import version
+from fastrag.helpers.utils import version
 
 app = typer.Typer(help="CLI RAG generator")
 console = Console()

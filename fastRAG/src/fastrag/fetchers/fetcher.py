@@ -7,6 +7,7 @@ from fastrag.plugins.base import PluginFactory
 
 class Fetcher(PluginFactory, ABC):
 
-    @classmethod
+    def __init__(self, *args, **kwargs) -> None: ...
+
     @abstractmethod
-    def fetch(cls, value: str) -> Iterable[Path]: ...
+    def fetch(self) -> Iterable[Path]: ...

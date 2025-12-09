@@ -1,6 +1,6 @@
 import time
 from abc import ABC, abstractmethod
-from typing import Generator, Iterable, Literal
+from typing import Generator, Literal
 
 from rich.console import Console
 from rich.panel import Panel
@@ -14,14 +14,11 @@ console = Console()
 
 class StepRunner(PluginFactory, ABC):
 
-    def __init__(self, step: Step) -> None:
+    def __init__(self, step: list[Step]) -> None:
         self._step = step
 
     @abstractmethod
-    def run_step(self) -> Generator[int, None, None]: ...
-
-    @abstractmethod
-    def get_tasks(self) -> Iterable[str]: ...
+    def run_step(self) -> Generator[None, None, None]: ...
 
     def calculate_total(self) -> int:
         return len(self._step)
@@ -44,12 +41,11 @@ class StepRunner(PluginFactory, ABC):
         }
 
         with Progress() as progress:
-            runners = {
-                step: StepRunner.get_supported_instance(step)(step_cfg)
+            runners: dict[str, StepRunner] = {
+                step: StepRunner.get_supported_instance(step)(steps[step_cfg])
                 for step, step_cfg in zip(step_names, steps)
             }
 
-            # Create all tasks
             tasks = {
                 step: progress.add_task(
                     f"{i}. {descriptions[step]}...",
@@ -61,10 +57,9 @@ class StepRunner(PluginFactory, ABC):
             for step_idx, step in enumerate(steps):
                 name, runner = step_names[step_idx], runners[step]
 
-                with Progress() as subprogress:
-                    for advance in runner.run_step():
-                        progress.advance(tasks[name], advance=advance)
-                        time.sleep(0.02)
+                for _ in runner.run_step():
+                    progress.advance(tasks[name], advance=1)
+                    time.sleep(0.02)
 
                 if up_to == step_idx + 1:
                     progress.stop()

@@ -5,13 +5,13 @@ steps:
   sources:
     - strategy: URL
       params:
-        url: ...
+        url: https://chatgpt.com/
     - strategy: Path
       params:
-        path: ...
-    - strategy: Sitemap
+        path: ../
+    - strategy: SitemapXML
       params:
-        path: https://agrospai.udl.cat/sitemap.xml
+        url: https://agrospai.udl.cat/sitemap.xml
   parsing:
     - strategy: HtmlParser
       use:
