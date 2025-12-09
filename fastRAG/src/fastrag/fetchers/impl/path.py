@@ -1,3 +1,4 @@
+import os
 import shutil
 from dataclasses import dataclass
 from pathlib import Path
@@ -22,5 +23,11 @@ class PathFetcher(Fetcher):
     def fetch(self) -> Iterable[Path]:
         constants = get_constants()
         dest = constants.source / str(hash(self.path))
-        shutil.copytree(self.path, dest, dirs_exist_ok=True)
+
+        if self.path.is_dir():
+            shutil.copytree(self.path, dest, dirs_exist_ok=True)
+        elif self.path.is_file():
+            os.makedirs(dest, exist_ok=True)
+            shutil.copyfile(self.path, dest / self.path.name)
+
         return [dest]

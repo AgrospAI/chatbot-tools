@@ -12,4 +12,4 @@ class PathField:
         p = Path(value)
         if not p.exists():
             raise FileNotFoundError(f"Path does not exist: {value}")
-        obj.__dict__[self.name] = value
+        obj.__dict__[self.name] = p
