@@ -1,7 +1,7 @@
 import os
 import shutil
+import humanize
 from dataclasses import dataclass
-from pathlib import Path
 from typing import AsyncGenerator, Iterable, override
 
 from fastrag.fetchers import Fetcher, FetcherEvent
@@ -25,7 +25,8 @@ class PathFetcher(Fetcher):
         dest = constants.source / str(hash(self.path))
 
         yield FetcherEvent(
-            FetcherEvent.Type.PROGRESS, f"Copying {self.path.stat().st_size}"
+            FetcherEvent.Type.PROGRESS,
+            f"Copying {humanize.naturalsize(self.path.stat().st_size)}",
         )
 
         try:
@@ -36,5 +37,3 @@ class PathFetcher(Fetcher):
                 shutil.copyfile(self.path, dest / self.path.name)
         except Exception as e:
             yield FetcherEvent(FetcherEvent.Type.EXCEPTION, f"ERROR: {e}")
-
-        return

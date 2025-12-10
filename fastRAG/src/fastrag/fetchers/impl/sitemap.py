@@ -1,6 +1,10 @@
+import asyncio
+import io
+import os
 import re
 import xml.etree.ElementTree as ET
 from dataclasses import dataclass
+from pathlib import Path
 from typing import AsyncGenerator, Iterable, override
 from zipfile import ZipFile
 
@@ -51,21 +55,25 @@ class SitemapXMLFetcher(Fetcher):
         # 3. Fetch filtered URLs
         constants = get_constants()
         dest = constants.source / f"sitemap-{str(hash(self.url))}"
+        os.makedirs(dest, exist_ok=True)
 
         async with httpx.AsyncClient(timeout=10) as client:
-            with ZipFile(dest, "w") as zpf:
-                for url in urls:
-                    yield FetcherEvent(FetcherEvent.Type.PROGRESS, f"Fetching {url}")
+            tasks = [self.fetch_async(client, url, dest) for url in urls]
+            results = await asyncio.gather(*tasks)
 
-                    res = await client.get(url)
-                    if res.is_error:
-                        yield FetcherEvent(
-                            FetcherEvent.Type.EXCEPTION, f"Received {res.status_code}"
-                        )
+        for event in results:
+            if event:
+                yield event
+        yield FetcherEvent(FetcherEvent.Type.PROGRESS, f"ZIP created: {dest}")
 
-                    filename = url.replace("https://", "").replace("/", "_") + ".html"
-                    zpf.writestr(filename, res.text)
+    async def fetch_async(self, client, url: str, dest: Path):
+        try:
+            res = await client.get(url)
+        except Exception as e:
+            return FetcherEvent(FetcherEvent.Type.EXCEPTION, f"ERROR: {e}")
 
-                    yield FetcherEvent(FetcherEvent.Type.PROGRESS, f"Stored {filename}")
+        filename = url.replace("https://", "").replace("/", "_") + ".html"
+        with open(dest / filename, "w", encoding="utf-8") as f:
+            f.write(res.text)
 
-        return
+        return FetcherEvent(FetcherEvent.Type.PROGRESS, f"Fetched {filename}")

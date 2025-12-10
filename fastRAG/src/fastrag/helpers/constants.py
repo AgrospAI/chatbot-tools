@@ -1,3 +1,4 @@
+import os
 from dataclasses import dataclass
 from functools import cached_property
 from pathlib import Path
@@ -10,6 +11,11 @@ class Constants:
     @cached_property
     def source(self) -> Path:
         return self.base / "source"
+
+    def __post_init__(self) -> None:
+        # Ensure all paths exist
+        os.makedirs(self.base, exist_ok=True)
+        os.makedirs(self.source, exist_ok=True)
 
 
 # Global singleton
