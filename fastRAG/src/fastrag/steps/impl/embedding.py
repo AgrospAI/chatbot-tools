@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Generator, Iterable, override
+from typing import Iterable, override
 
 from fastrag.config.config import Embedding
 from fastrag.steps.steps import StepRunner
@@ -16,6 +16,4 @@ class EmbeddingStep(StepRunner):
         return ["embedding"]
 
     @override
-    def run_step(self) -> Generator[None, None, None]:
-        for step in self.step:
-            yield
+    async def run_step(self) -> None: ...

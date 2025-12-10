@@ -1,10 +1,11 @@
+import asyncio
 from dataclasses import dataclass
-from typing import Generator, Iterable, override
+from typing import Iterable, override
 
 from rich.console import Console
 
 from fastrag.config.config import Source
-from fastrag.fetchers.fetcher import Fetcher
+from fastrag.fetchers.fetcher import Fetcher, FetcherEvent
 from fastrag.steps.steps import StepRunner
 
 console = Console()
@@ -21,11 +22,32 @@ class SourceStep(StepRunner):
         return ["sources"]
 
     @override
-    def run_step(self) -> Generator[None, None, None]:
-        for source in self.step:
+    async def run_step(self) -> None:
+        fetchers = [
             Fetcher.get_supported_instance(source.strategy)(
                 **source.params,
                 cache=self.cache,
             ).fetch()
+            for source in self.step
+        ]
+        tasks = [asyncio.create_task(fetcher.__anext__()) for fetcher in fetchers]
 
-            yield
+        while tasks:
+            done, _ = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
+
+            for d in done:
+                try:
+                    event: FetcherEvent = d.result()
+                except StopAsyncIteration:
+                    tasks.remove(d)
+                    self.progress.advance(self.task_id)
+                    continue
+
+                match event.type:
+                    case FetcherEvent.Type.PROGRESS:
+                        self.progress.log(event.data)
+                    case FetcherEvent.Type.EXCEPTION:
+                        self.progress.log(f"[red]{event.data}[/red]")
+
+                idx = tasks.index(d)
+                tasks[idx] = asyncio.create_task(fetchers[idx].__anext__())

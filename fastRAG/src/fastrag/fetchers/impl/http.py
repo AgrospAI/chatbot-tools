@@ -1,8 +1,7 @@
 from dataclasses import dataclass
-from pathlib import Path
-from typing import Iterable, override
+from typing import AsyncGenerator, Iterable, override
 
-from fastrag.fetchers import Fetcher
+from fastrag.fetchers import Fetcher, FetcherEvent
 from fastrag.helpers import URLField
 
 
@@ -17,5 +16,7 @@ class HttpFetcher(Fetcher):
         return ["URL"]
 
     @override
-    def fetch(self) -> Iterable[Path]:
-        return []
+    async def fetch(self) -> AsyncGenerator[FetcherEvent, None]:
+        yield
+
+        return

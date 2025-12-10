@@ -1,10 +1,23 @@
+from __future__ import annotations
+
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from pathlib import Path
-from typing import Iterable
+from enum import StrEnum, auto
+from typing import AsyncGenerator
 
 from fastrag.config.config import Cache
 from fastrag.plugins.base import PluginFactory
+
+
+@dataclass(frozen=True)
+class FetcherEvent:
+
+    class Type(StrEnum):
+        PROGRESS = auto()
+        EXCEPTION = auto()
+
+    type: FetcherEvent.Type
+    data: any
 
 
 @dataclass(frozen=True)
@@ -21,4 +34,4 @@ class Fetcher(PluginFactory, ABC):
         object.__setattr__(self, "cache", c)
 
     @abstractmethod
-    def fetch(self) -> Iterable[Path]: ...
+    def fetch(self) -> AsyncGenerator[FetcherEvent, None]: ...

@@ -2,9 +2,9 @@ import os
 import shutil
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Iterable, override
+from typing import AsyncGenerator, Iterable, override
 
-from fastrag.fetchers import Fetcher
+from fastrag.fetchers import Fetcher, FetcherEvent
 from fastrag.helpers import PathField, get_constants
 
 
@@ -20,14 +20,21 @@ class PathFetcher(Fetcher):
         return ["Path"]
 
     @override
-    def fetch(self) -> Iterable[Path]:
+    async def fetch(self) -> AsyncGenerator[FetcherEvent, None]:
         constants = get_constants()
         dest = constants.source / str(hash(self.path))
 
-        if self.path.is_dir():
-            shutil.copytree(self.path, dest, dirs_exist_ok=True)
-        elif self.path.is_file():
-            os.makedirs(dest, exist_ok=True)
-            shutil.copyfile(self.path, dest / self.path.name)
+        yield FetcherEvent(
+            FetcherEvent.Type.PROGRESS, f"Copying {self.path.stat().st_size}"
+        )
 
-        return [dest]
+        try:
+            if self.path.is_dir():
+                shutil.copytree(self.path, dest, dirs_exist_ok=True)
+            elif self.path.is_file():
+                os.makedirs(dest, exist_ok=True)
+                shutil.copyfile(self.path, dest / self.path.name)
+        except Exception as e:
+            yield FetcherEvent(FetcherEvent.Type.EXCEPTION, f"ERROR: {e}")
+
+        return

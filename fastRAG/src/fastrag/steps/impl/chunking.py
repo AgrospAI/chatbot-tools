@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Generator, Iterable, override
+from typing import Iterable, override
 
 from fastrag.config.config import Chunking
 from fastrag.steps.steps import StepRunner
@@ -16,6 +16,4 @@ class ChunkingStep(StepRunner):
         return ["chunking"]
 
     @override
-    def run_step(self) -> Generator[None, None, None]:
-        for step in self.step:
-            yield
+    async def run_step(self) -> None: ...

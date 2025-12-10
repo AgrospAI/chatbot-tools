@@ -8,7 +8,7 @@ from typing import TypeVar
 @dataclass(frozen=True)
 class Strategy:
     strategy: str
-    params: dict[str, str | int]
+    params: dict
 
 
 @dataclass(frozen=True)

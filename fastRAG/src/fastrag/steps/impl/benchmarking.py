@@ -16,6 +16,4 @@ class BenchmarkingStep(StepRunner):
         return ["benchmarking"]
 
     @override
-    def run_step(self) -> Generator[None, None, None]:
-        for step in self.step:
-            yield
+    async def run_step(self) -> None: ...

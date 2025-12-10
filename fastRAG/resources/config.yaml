@@ -3,15 +3,17 @@ cache:
   time: 5m
 steps:
   sources:
-    - strategy: URL
-      params:
-        url: https://chatgpt.com/
+    # - strategy: URL
+    #   params:
+    #     url: https://chatgpt.com/
     - strategy: Path
       params:
         path: ./resources/test/sample.json
     - strategy: SitemapXML
       params:
         url: https://agrospai.udl.cat/sitemap.xml
+        regex:
+          - https?://[^/]+/docs/
   parsing:
     - strategy: HtmlParser
       use:
