@@ -1,12 +1,10 @@
 import asyncio
-import io
 import os
 import re
 import xml.etree.ElementTree as ET
 from dataclasses import dataclass
 from pathlib import Path
 from typing import AsyncGenerator, Iterable, override
-from zipfile import ZipFile
 
 import httpx
 from rich.console import Console

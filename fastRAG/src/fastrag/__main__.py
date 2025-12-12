@@ -1,4 +1,5 @@
 from pathlib import Path
+import shutil
 from typing import Annotated
 
 import typer
@@ -10,17 +11,38 @@ from fastrag import (
     DEFAULT_CONFIG,
     Config,
     ConfigLoader,
+    StepRunner,
     init_constants,
     version,
-    StepRunner,
+    Constants,
 )
 
-app = typer.Typer(help="CLI RAG generator")
+app = typer.Typer(help="CLI RAG generator", add_completion=False)
 console = Console()
 
 
 @app.command()
-def main(
+def clean(
+    sure: Annotated[
+        bool,
+        typer.Option(prompt="Are you sure you want to continue?"),
+    ] = False,
+):
+    """Clean the caches"""
+
+    if not sure:
+        return
+
+    with open(Constants.global_cache()) as f:
+        lines = f.readlines()
+        for path in lines:
+            shutil.rmtree(path)
+
+        Constants.global_cache().unlink()
+
+
+@app.command()
+def run(
     step: Annotated[
         int,
         typer.Argument(
@@ -33,7 +55,7 @@ def main(
     ] = DEFAULT_CONFIG,
     plugins: Annotated[
         Path | None,
-        typer.Argument(help="Path to the plugins directory."),
+        typer.Option("--plugins", "-p", help="Path to the plugins directory."),
     ] = None,
 ):
     """

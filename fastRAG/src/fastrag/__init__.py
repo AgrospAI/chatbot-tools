@@ -14,7 +14,7 @@ from fastrag.config import (
     Steps,
 )
 from fastrag.fetchers import Fetcher
-from fastrag.helpers import PathField, URLField, init_constants, version
+from fastrag.helpers import PathField, URLField, init_constants, version, Constants
 from fastrag.plugins import BasePlugin, PluginFactory
 from fastrag.steps import StepRunner
 
@@ -40,6 +40,7 @@ __all__ = [
     PathField,
     URLField,
     init_constants,
+    Constants,
     version,
     StepRunner,
 ]

@@ -3,9 +3,6 @@ cache:
   time: 5m
 steps:
   sources:
-    # - strategy: URL
-    #   params:
-    #     url: https://chatgpt.com/
     - strategy: Path
       params:
         path: ./resources/test/sample.json

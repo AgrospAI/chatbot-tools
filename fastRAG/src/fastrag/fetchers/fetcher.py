@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import StrEnum, auto
 from typing import AsyncGenerator
 
@@ -23,7 +23,7 @@ class FetcherEvent:
 @dataclass(frozen=True)
 class Fetcher(PluginFactory, ABC):
 
-    cache: Cache
+    cache: Cache = field(repr=False)
 
     def __post_init__(self):
         c = self.cache
