@@ -21,7 +21,7 @@ console = Console()
 
 
 @dataclass(frozen=True)
-class StepRunner(PluginFactory, ABC):
+class IStepRunner(PluginFactory, ABC):
 
     progress: Progress
     task_id: int
@@ -57,8 +57,8 @@ class StepRunner(PluginFactory, ABC):
             TextColumn("•"),
             TimeRemainingColumn(),
         ) as progress:
-            runners: dict[str, StepRunner] = {
-                step.name: StepRunner.get_supported_instance(step.name)(
+            runners: dict[str, IStepRunner] = {
+                step.name: IStepRunner.get_supported_instance(step.name)(
                     progress=progress,
                     task_id=idx,
                     cache=cache,

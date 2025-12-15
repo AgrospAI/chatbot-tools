@@ -1,12 +1,12 @@
 from dataclasses import dataclass
 from typing import AsyncGenerator, Iterable, override
 
-from fastrag.fetchers import Fetcher, FetcherEvent
+from fastrag.fetchers import FetcherEvent, IFetcher
 from fastrag.helpers import URLField
 
 
 @dataclass(frozen=True)
-class HttpFetcher(Fetcher):
+class HttpFetcher(IFetcher):
 
     url: URLField = URLField()
 

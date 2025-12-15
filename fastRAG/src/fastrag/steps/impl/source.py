@@ -3,12 +3,12 @@ from dataclasses import dataclass
 from typing import Iterable, override
 
 from fastrag.config.config import Source
-from fastrag.fetchers.fetcher import Fetcher, FetcherEvent
-from fastrag.steps.steps import StepRunner
+from fastrag.fetchers.fetcher import FetcherEvent, IFetcher
+from fastrag.steps.steps import IStepRunner
 
 
 @dataclass(frozen=True)
-class SourceStep(StepRunner):
+class SourceStep(IStepRunner):
 
     step: list[Source]
 
@@ -20,7 +20,7 @@ class SourceStep(StepRunner):
     @override
     async def run_step(self) -> None:
         fetchers = [
-            Fetcher.get_supported_instance(source.strategy)(
+            IFetcher.get_supported_instance(source.strategy)(
                 **source.params,
                 cache=self.cache,
             ).fetch()

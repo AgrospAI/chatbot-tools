@@ -6,7 +6,7 @@ from fastrag.config.config import Config
 from fastrag.plugins.base import PluginFactory
 
 
-class ConfigLoader(PluginFactory, ABC):
+class IConfigLoader(PluginFactory, ABC):
 
     @abstractmethod
     def load(self, fp: TextIO) -> Config: ...
@@ -17,7 +17,7 @@ class ConfigLoader(PluginFactory, ABC):
             raise ValueError(f"Could not find config file at {settings.absolute()}")
 
         ext = settings.suffix
-        loader = ConfigLoader.get_supported_instance(ext)
+        loader = IConfigLoader.get_supported_instance(ext)
         if not loader:
             raise ValueError(
                 f"Could not find a loader for the settings extension {ext}"

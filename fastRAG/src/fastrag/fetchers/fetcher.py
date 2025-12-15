@@ -13,15 +13,16 @@ from fastrag.plugins.base import PluginFactory
 class FetcherEvent:
 
     class Type(StrEnum):
-        PROGRESS = auto()
+        ENTRY = auto()
         EXCEPTION = auto()
+        PROGRESS = auto()
 
     type: FetcherEvent.Type
     data: any
 
 
 @dataclass(frozen=True)
-class Fetcher(PluginFactory, ABC):
+class IFetcher(PluginFactory, ABC):
 
     cache: Cache = field(repr=False)
 

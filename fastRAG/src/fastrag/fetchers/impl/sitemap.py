@@ -1,15 +1,14 @@
 import asyncio
-import os
 import re
 import xml.etree.ElementTree as ET
 from dataclasses import dataclass
-from pathlib import Path
 from typing import AsyncGenerator, Iterable, override
 
 import httpx
 from rich.console import Console
 
-from fastrag.fetchers import Fetcher, FetcherEvent
+from fastrag.cache.cache import ICache
+from fastrag.fetchers import FetcherEvent, IFetcher
 from fastrag.helpers import URLField
 from fastrag.helpers.constants import get_constants
 
@@ -17,7 +16,7 @@ console = Console()
 
 
 @dataclass(frozen=True)
-class SitemapXMLFetcher(Fetcher):
+class SitemapXMLFetcher(IFetcher):
 
     regex: list[str] | None
     url: URLField = URLField()
@@ -29,7 +28,6 @@ class SitemapXMLFetcher(Fetcher):
 
     @override
     async def fetch(self) -> AsyncGenerator[FetcherEvent, None]:
-
         # 1. Fetch sitemap
         res = httpx.get(self.url)
         res.raise_for_status()
@@ -47,31 +45,25 @@ class SitemapXMLFetcher(Fetcher):
 
         yield FetcherEvent(
             type="progress",
-            data=f"Retrieving {len(urls)} URLs (filtered {skipped}/{len(urls) + skipped})",
+            data=f"Retrieving {len(urls)} URLs (filtered out {skipped} out of {len(urls) + skipped})",
         )
 
         # 3. Fetch filtered URLs
-        constants = get_constants()
-        dest = constants.source / f"sitemap-{str(hash(self.url))}"
-        os.makedirs(dest, exist_ok=True)
-
+        cache = get_constants().cache
         async with httpx.AsyncClient(timeout=10) as client:
-            tasks = [self.fetch_async(client, url, dest) for url in urls]
+            tasks = [self.fetch_async(client, url, cache) for url in urls]
             results = await asyncio.gather(*tasks)
 
         for event in results:
-            if event:
-                yield event
-        yield FetcherEvent(FetcherEvent.Type.PROGRESS, f"ZIP created: {dest}")
+            yield event
 
-    async def fetch_async(self, client, url: str, dest: Path):
+        yield FetcherEvent(FetcherEvent.Type.PROGRESS, "Completed sitemap.xml")
+
+    async def fetch_async(self, client, url: str, cache: ICache):
         try:
             res = await client.get(url)
         except Exception as e:
             return FetcherEvent(FetcherEvent.Type.EXCEPTION, f"ERROR: {e}")
 
-        filename = url.replace("https://", "").replace("/", "_") + ".html"
-        with open(dest / filename, "w", encoding="utf-8") as f:
-            f.write(res.text)
-
-        return FetcherEvent(FetcherEvent.Type.PROGRESS, f"Fetched {filename}")
+        await cache.store(url, res.text.encode(), "sourcing", {})
+        return FetcherEvent(FetcherEvent.Type.PROGRESS, f"Fetched {url}")

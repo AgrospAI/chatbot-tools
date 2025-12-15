@@ -2,11 +2,11 @@ from dataclasses import dataclass
 from typing import Generator, Iterable, override
 
 from fastrag.config.config import Benchmarking
-from fastrag.steps.steps import StepRunner
+from fastrag.steps.steps import IStepRunner
 
 
 @dataclass(frozen=True)
-class BenchmarkingStep(StepRunner):
+class BenchmarkingStep(IStepRunner):
 
     step: list[Benchmarking]
 

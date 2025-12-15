@@ -2,11 +2,11 @@ from dataclasses import dataclass
 from typing import Iterable, override
 
 from fastrag.config.config import Embedding
-from fastrag.steps.steps import StepRunner
+from fastrag.steps.steps import IStepRunner
 
 
 @dataclass(frozen=True)
-class EmbeddingStep(StepRunner):
+class EmbeddingStep(IStepRunner):
 
     step: list[Embedding]
 

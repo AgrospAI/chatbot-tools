@@ -7,10 +7,10 @@ from dacite import Config as Conf
 from dacite import from_dict
 
 from fastrag.config.config import Config
-from fastrag.config.loaders.loader import ConfigLoader
+from fastrag.config.loaders.loader import IConfigLoader
 
 
-class YamlLoader(ConfigLoader):
+class YamlLoader(IConfigLoader):
 
     @override
     @classmethod

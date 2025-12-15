@@ -2,11 +2,11 @@ from dataclasses import dataclass
 from typing import Iterable, override
 
 from fastrag.config.config import Chunking
-from fastrag.steps.steps import StepRunner
+from fastrag.steps.steps import IStepRunner
 
 
 @dataclass(frozen=True)
-class ChunkingStep(StepRunner):
+class ChunkingStep(IStepRunner):
 
     step: list[Chunking]
 

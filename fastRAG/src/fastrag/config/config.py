@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import InitVar, dataclass, field
 from pathlib import Path
 from typing import TypeVar
 
@@ -50,7 +50,19 @@ Step = list[T]
 @dataclass(frozen=True)
 class Cache:
     path: Path
-    time: str
+    _lifespan: int = field(init=False)
+
+    lifespan: InitVar[str]
+
+    @property
+    def lifespan(self) -> int:
+        return self._lifespan
+
+    def __post_init__(self, lifespan: str) -> None:
+        # To avoid circular import
+        from fastrag.helpers.utils import parse_to_seconds
+
+        object.__setattr__(self, "_lifespan", parse_to_seconds(lifespan))
 
 
 @dataclass(frozen=True)

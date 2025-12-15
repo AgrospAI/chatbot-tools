@@ -3,10 +3,10 @@ from fastrag.steps.impl.chunking import ChunkingStep
 from fastrag.steps.impl.embedding import EmbeddingStep
 from fastrag.steps.impl.parsing import ParsingStep
 from fastrag.steps.impl.source import SourceStep
-from fastrag.steps.steps import StepRunner
+from fastrag.steps.steps import IStepRunner
 
 __all__ = [
-    StepRunner,
+    IStepRunner,
     SourceStep,
     ParsingStep,
     EmbeddingStep,

@@ -1,28 +1,39 @@
 import os
-from dataclasses import dataclass
+from dataclasses import InitVar, dataclass, field
 from pathlib import Path
 from typing import ClassVar
+
+from fastrag.cache.cache import ICache
+from fastrag.config.config import Config
 
 
 @dataclass(frozen=True)
 class Constants:
-    base: Path
+
+    config: InitVar[Config]
+
+    base: Path = field(init=False)
+    cache: ICache = field(init=False)
 
     global_: ClassVar[Path] = Path.home().joinpath(".fastrag")
+
+    def __post_init__(self, config: Config) -> None:
+        for k, v in {
+            "base": config.cache.path,
+            "cache": ICache.get_supported_instance("local")(
+                base=config.cache.path,
+                lifespan=config.cache.lifespan,
+            ),
+        }.items():
+            object.__setattr__(self, k, v)
+
+        # Ensure all paths exist
+        for path in [self.global_, self.base]:
+            os.makedirs(path, exist_ok=True)
 
     @classmethod
     def global_cache(cls) -> Path:
         return cls.global_ / "caches"
-
-    @property
-    def source(self) -> Path:
-        return self.base / "source"
-
-    def __post_init__(self) -> None:
-        # Ensure all paths exist
-        os.makedirs(self.global_, exist_ok=True)
-        os.makedirs(self.base, exist_ok=True)
-        os.makedirs(self.source, exist_ok=True)
 
 
 # Global singleton
@@ -41,10 +52,10 @@ def _register_constants(constants: Constants) -> None:
         f.write(str(constants.base.absolute()))
 
 
-def init_constants(cache: Path) -> None:
+def init_constants(config: Config) -> None:
     global _constants
     if _constants is None:
-        _constants = Constants(cache)
+        _constants = Constants(config)
         _register_constants(_constants)
 
 

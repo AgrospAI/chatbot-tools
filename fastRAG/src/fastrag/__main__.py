@@ -10,8 +10,8 @@ from rich.pretty import Pretty
 from fastrag import (
     DEFAULT_CONFIG,
     Config,
-    ConfigLoader,
-    StepRunner,
+    IConfigLoader,
+    IStepRunner,
     init_constants,
     version,
     Constants,
@@ -26,7 +26,7 @@ def clean(
     sure: Annotated[
         bool,
         typer.Option(prompt="Are you sure you want to continue?"),
-    ] = False,
+    ] = True,
 ):
     """Clean the caches"""
 
@@ -74,12 +74,12 @@ def run(
     load_plugins(plugins)
     config: Config = load_config(config)
 
-    StepRunner.run(config, step)
+    IStepRunner.run(config, step)
 
 
 def load_config(path: Path) -> Config:
-    config: Config = ConfigLoader.from_settings(path)
-    init_constants(config.cache.path)
+    config: Config = IConfigLoader.from_settings(path)
+    init_constants(config)
     console.print(
         Panel(
             Pretty(config),

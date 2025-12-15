@@ -2,11 +2,11 @@ from dataclasses import dataclass
 from typing import Iterable, override
 
 from fastrag.config.config import Parsing
-from fastrag.steps.steps import StepRunner
+from fastrag.steps.steps import IStepRunner
 
 
 @dataclass(frozen=True)
-class ParsingStep(StepRunner):
+class ParsingStep(IStepRunner):
 
     step: list[Parsing]
 
