@@ -5,7 +5,7 @@ from typing import AsyncGenerator, Iterable, override
 import humanize
 
 from fastrag.constants import get_constants
-from fastrag.fetchers import FetcherEvent, IFetcher
+from fastrag.fetchers import FetchingEvent, IFetcher
 from fastrag.helpers import PathField
 
 
@@ -36,10 +36,10 @@ class PathFetcher(IFetcher):
         return ["Path"]
 
     @override
-    async def fetch(self) -> AsyncGenerator[FetcherEvent, None]:
+    async def fetch(self) -> AsyncGenerator[FetchingEvent, None]:
 
-        yield FetcherEvent(
-            FetcherEvent.Type.PROGRESS,
+        yield FetchingEvent(
+            FetchingEvent.Type.PROGRESS,
             f"Copying local files ({humanize.naturalsize(self.path.stat().st_size)})",
         )
 
@@ -51,8 +51,8 @@ class PathFetcher(IFetcher):
                     contents=p.read_bytes,
                     metadata=None,
                 )
-                yield FetcherEvent(
-                    FetcherEvent.Type.PROGRESS,
+                yield FetchingEvent(
+                    FetchingEvent.Type.PROGRESS,
                     (
                         f"Skipping local file {self.path.resolve().as_uri()}"
                         if existed
@@ -61,6 +61,6 @@ class PathFetcher(IFetcher):
                 )
 
         except Exception as e:
-            yield FetcherEvent(FetcherEvent.Type.EXCEPTION, f"ERROR: {e}")
+            yield FetchingEvent(FetchingEvent.Type.EXCEPTION, f"ERROR: {e}")
 
-        yield FetcherEvent(FetcherEvent.Type.COMPLETED, "Completed local path copy")
+        yield FetchingEvent(FetchingEvent.Type.COMPLETED, "Completed local path copy")

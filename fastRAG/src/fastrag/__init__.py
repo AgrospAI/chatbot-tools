@@ -17,7 +17,8 @@ from fastrag.config import (
 from fastrag.constants import Constants, get_constants, init_constants
 from fastrag.fetchers import IFetcher
 from fastrag.helpers import PathField, URLField, version
-from fastrag.plugins import BasePlugin, PluginFactory
+from fastrag.parsing import IParser
+from fastrag.plugins import BasePlugin, IPluginFactory
 from fastrag.steps import IStepRunner
 
 PACKAGE_DIR = Path(fastrag.__file__).parent.parent.parent
@@ -27,7 +28,7 @@ DEFAULT_CONFIG = RESOURCES_DIR / "config.yaml"
 
 __all__ = [
     BasePlugin,
-    PluginFactory,
+    IPluginFactory,
     IConfigLoader,
     ICache,
     IFetcher,
@@ -47,4 +48,5 @@ __all__ = [
     Constants,
     version,
     IStepRunner,
+    IParser,
 ]

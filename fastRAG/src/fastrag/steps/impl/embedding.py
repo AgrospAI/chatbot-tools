@@ -1,14 +1,16 @@
 from dataclasses import dataclass
-from typing import Iterable, override
+from typing import AsyncIterable, ClassVar, Iterable, Mapping, override
 
 from fastrag.config.config import Embedding
-from fastrag.steps.steps import IStepRunner
+from fastrag.embeddings.events import EmbeddingEvent
+from fastrag.steps.impl.arunner import IAsyncStepRunner
 
 
 @dataclass(frozen=True)
-class EmbeddingStep(IStepRunner):
+class EmbeddingStep(IAsyncStepRunner):
 
     step: list[Embedding]
+    description: ClassVar[str] = "Embedding chunks"
 
     @override
     @classmethod
@@ -16,4 +18,15 @@ class EmbeddingStep(IStepRunner):
         return ["embedding"]
 
     @override
-    async def run_step(self) -> None: ...
+    def get_tasks(self) -> Mapping[int, AsyncIterable]:
+        return []
+
+    @override
+    def callback(self, event: EmbeddingEvent) -> None:
+        match event.type:
+            case EmbeddingEvent.Type.PROGRESS:
+                self.progress.log(event.data)
+            case EmbeddingEvent.Type.COMPLETED:
+                self.progress.log(f"[green]:heavy_check_mark: {event.data}[/green]")
+            case EmbeddingEvent.Type.EXCEPTION:
+                self.progress.log(f"[red]{event.data}[/red]")

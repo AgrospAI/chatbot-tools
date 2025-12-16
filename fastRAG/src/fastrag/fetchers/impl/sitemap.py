@@ -9,7 +9,7 @@ from rich.console import Console
 
 from fastrag.cache.cache import ICache
 from fastrag.constants import get_constants
-from fastrag.fetchers import FetcherEvent, IFetcher
+from fastrag.fetchers import FetchingEvent, IFetcher
 from fastrag.helpers import URLField
 
 console = Console()
@@ -27,7 +27,7 @@ class SitemapXMLFetcher(IFetcher):
         return ["SitemapXML"]
 
     @override
-    async def fetch(self) -> AsyncGenerator[FetcherEvent, None]:
+    async def fetch(self) -> AsyncGenerator[FetchingEvent, None]:
         # 1. Fetch sitemap
         res = httpx.get(self.url)
         res.raise_for_status()
@@ -43,7 +43,7 @@ class SitemapXMLFetcher(IFetcher):
             else:
                 skipped += 1
 
-        yield FetcherEvent(
+        yield FetchingEvent(
             type="progress",
             data=f"Retrieving {len(urls)} URLs (filtered out {skipped} out of {len(urls) + skipped})",
         )
@@ -57,16 +57,16 @@ class SitemapXMLFetcher(IFetcher):
         for event in results:
             yield event
 
-        yield FetcherEvent(FetcherEvent.Type.COMPLETED, "Completed sitemap.xml")
+        yield FetchingEvent(FetchingEvent.Type.COMPLETED, "Completed sitemap.xml")
 
     async def fetch_async(self, client, url: str, cache: ICache):
         if cache.is_present(url):
-            return FetcherEvent(FetcherEvent.Type.PROGRESS, f"Cached {url}")
+            return FetchingEvent(FetchingEvent.Type.PROGRESS, f"Cached {url}")
 
         try:
             res = await client.get(url)
         except Exception as e:
-            return FetcherEvent(FetcherEvent.Type.EXCEPTION, f"ERROR: {e}")
+            return FetchingEvent(FetchingEvent.Type.EXCEPTION, f"ERROR: {e}")
 
         await cache.create(url, res.text.encode(), "sourcing", {})
-        return FetcherEvent(FetcherEvent.Type.PROGRESS, f"Fetched {url}")
+        return FetchingEvent(FetchingEvent.Type.PROGRESS, f"Fetched {url}")

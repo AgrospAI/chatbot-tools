@@ -6,10 +6,7 @@ from dataclasses import dataclass, field
 from textwrap import dedent
 from typing import Iterable, TypeVar
 
-from rich.console import Console
-
 BP = TypeVar("BP", bound="BasePlugin")
-console = Console()
 
 
 @dataclass(frozen=True)
@@ -47,15 +44,13 @@ class BasePlugin(ABC):
     def __init_subclass__(cls):
         super().__init_subclass__()
 
-        # Find the closest BasePlugin-derived parent
-        for base in cls.__bases__:
+        for base in cls.__mro__[1:]:
             if issubclass(base, BasePlugin) and base is not BasePlugin:
                 cls.registry.register(base, cls)
-                break
 
 
-class PluginFactory(BasePlugin):
-    """PluginFactory that handles the registration and usage of interfaces"""
+class IPluginFactory(BasePlugin):
+    """IPluginFactory that handles the registration and usage of interfaces"""
 
     @classmethod
     def supported(cls) -> Iterable[str]:
@@ -63,13 +58,12 @@ class PluginFactory(BasePlugin):
         Abstract classes do not implement supported.
         Concrete plugins must override this method
         """
-        """Return mapping of supported types -> plugin classes"""
         if getattr(cls, "__abstractmethods__", False):
             return []
         raise NotImplementedError(f"{cls.__name__} must implement supported()")
 
     @classmethod
-    def get_supported(cls) -> dict[str, list[PluginFactory]]:
+    def get_supported(cls) -> dict[str, list[IPluginFactory]]:
         """Return mapping of supported types -> plugin classes"""
         supported_map = defaultdict(list)
         for impl in cls.registry.get(cls):
@@ -80,15 +74,11 @@ class PluginFactory(BasePlugin):
         return dict(supported_map)
 
     @classmethod
-    def get_supported_instance(cls, val: str) -> PluginFactory | None:
+    def get_supported_instance(cls, val: str) -> IPluginFactory | None:
         implementations = cls.get_supported().get(val)
         if not implementations:
-            console.print()
             raise NotImplementedError(
                 f"Couldn't find implementation of '{cls.__name__}' supporting '{val}'"
             )
         implementation = implementations[-1]
-        # console.print(
-        #     f"Using [bold red]'{implementation.__name__}'[/bold red] implementation of [bold yellow]'{cls.__name__}'[/bold yellow]"
-        # )
         return implementation

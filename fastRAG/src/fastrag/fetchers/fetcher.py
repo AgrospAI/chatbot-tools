@@ -1,38 +1,13 @@
-from __future__ import annotations
-
 from abc import ABC, abstractmethod
-from dataclasses import dataclass, field
-from enum import StrEnum, auto
-from typing import AsyncGenerator
+from typing import AsyncGenerator, TypeAlias
 
-from fastrag.config.config import Cache
-from fastrag.plugins.base import PluginFactory
+from fastrag.events import Event
+from fastrag.plugins.base import IPluginFactory
 
-
-@dataclass(frozen=True)
-class FetcherEvent:
-
-    class Type(StrEnum):
-        COMPLETED = auto()
-        EXCEPTION = auto()
-        PROGRESS = auto()
-
-    type: FetcherEvent.Type
-    data: any
+FetchingEvent: TypeAlias = Event
 
 
-@dataclass(frozen=True)
-class IFetcher(PluginFactory, ABC):
-
-    cache: Cache = field(repr=False)
-
-    def __post_init__(self):
-        c = self.cache
-
-        if isinstance(c, dict):
-            c = Cache(**c)
-
-        object.__setattr__(self, "cache", c)
+class IFetcher(IPluginFactory, ABC):
 
     @abstractmethod
-    def fetch(self) -> AsyncGenerator[FetcherEvent, None]: ...
+    async def fetch(self) -> AsyncGenerator[FetchingEvent, None]: ...

@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Callable, Iterable, Literal
 
 from fastrag.helpers.utils import PosixTimestamp, timestamp
-from fastrag.plugins.base import PluginFactory
+from fastrag.plugins.base import IPluginFactory
 
 CacheSection = Literal[
     "sourcing",
@@ -39,7 +39,7 @@ class CacheEntry:
 
 
 @dataclass(frozen=True)
-class ICache(PluginFactory, ABC):
+class ICache(IPluginFactory, ABC):
 
     base: Path
     lifespan: int

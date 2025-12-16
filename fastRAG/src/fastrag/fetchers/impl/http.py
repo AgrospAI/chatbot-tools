@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from typing import AsyncGenerator, Iterable, override
 
-from fastrag.fetchers import FetcherEvent, IFetcher
+from fastrag.fetchers import FetchingEvent, IFetcher
 from fastrag.helpers import URLField
 
 
@@ -16,7 +16,7 @@ class HttpFetcher(IFetcher):
         return ["URL"]
 
     @override
-    async def fetch(self) -> AsyncGenerator[FetcherEvent, None]:
+    async def fetch(self) -> AsyncGenerator[FetchingEvent, None]:
         yield
 
         return

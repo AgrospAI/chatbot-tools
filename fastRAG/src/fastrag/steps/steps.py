@@ -1,4 +1,3 @@
-import asyncio
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, fields
 from typing import Literal
@@ -14,37 +13,24 @@ from rich.progress import (
     TimeRemainingColumn,
 )
 
-from fastrag import Cache, Config, PluginFactory
+from fastrag import Config, IPluginFactory
 
 STEP_TYPE = Literal["sources", "parsing", "chunking", "embedding", "benchmarking"]
 console = Console()
 
 
 @dataclass(frozen=True)
-class IStepRunner(PluginFactory, ABC):
+class IStepRunner(IPluginFactory, ABC):
 
     progress: Progress
     task_id: int
-    cache: Cache
-
-    @abstractmethod
-    async def run_step(self) -> None: ...
 
     def calculate_total(self) -> int:
         return len(self.step)
 
     @classmethod
     def run(cls, config: Config, up_to: str) -> None:
-        cache, steps = config.cache, fields(config.steps)
-
-        step_names: list[STEP_TYPE] = [f.name for f in steps]
-        descriptions: dict[STEP_TYPE, str] = {
-            "sources": "Fetching sources",
-            "parsing": "Parsing fetched documents",
-            "chunking": "Chunking fetched documents",
-            "embedding": "Embedding chunks",
-            "benchmarking": "Running benchmarks",
-        }
+        step_names = [step.name for step in fields(config.steps)]
 
         with Progress(
             TextColumn(
@@ -58,34 +44,29 @@ class IStepRunner(PluginFactory, ABC):
             TimeRemainingColumn(),
         ) as progress:
             runners: dict[str, IStepRunner] = {
-                step.name: IStepRunner.get_supported_instance(step.name)(
+                step: IStepRunner.get_supported_instance(step)(
                     progress=progress,
                     task_id=idx,
-                    cache=cache,
-                    step=getattr(config.steps, step.name),
+                    step=getattr(config.steps, step),
                 )
-                for idx, step in enumerate(steps)
+                for idx, step in enumerate(step_names)
             }
 
             for step_idx, step in enumerate(step_names):
                 progress.add_task(
-                    f"{step_idx + 1}. {descriptions[step]} -",
+                    f"{step_idx + 1}. {runners[step].description} -",
                     total=runners[step].calculate_total(),
                 )
 
                 runner = runners[step]
-
-                async def runner_loop():
-                    await runner.run_step()
-
-                asyncio.run(runner_loop())
+                runner.run()
 
                 # Manual stop of application after given step
                 if up_to == step_idx + 1:
                     progress.stop()
                     console.print(
                         Panel.fit(
-                            f"Stopping execution after step [bold yellow]'{step_names[step_idx]}'[/bold yellow]",
+                            f"Stopping execution after step [bold yellow]'{step}'[/bold yellow]",
                             border_style="red",
                         ),
                         justify="center",

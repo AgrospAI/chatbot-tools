@@ -1,16 +1,16 @@
-import asyncio
 from dataclasses import dataclass
-from typing import Iterable, override
+from typing import AsyncIterable, ClassVar, Iterable, Mapping, override
 
 from fastrag.config.config import Source
-from fastrag.fetchers.fetcher import FetcherEvent, IFetcher
-from fastrag.steps.steps import IStepRunner
+from fastrag.fetchers.fetcher import FetchingEvent, IFetcher
+from fastrag.steps.impl.arunner import IAsyncStepRunner
 
 
 @dataclass(frozen=True)
-class SourceStep(IStepRunner):
+class SourceStep(IAsyncStepRunner):
 
     step: list[Source]
+    description: ClassVar[str] = "Fetching sources"
 
     @override
     @classmethod
@@ -18,38 +18,18 @@ class SourceStep(IStepRunner):
         return ["sources"]
 
     @override
-    async def run_step(self) -> None:
-        fetchers = [
-            IFetcher.get_supported_instance(source.strategy)(
-                **source.params,
-                cache=self.cache,
-            ).fetch()
+    def get_tasks(self) -> Mapping[int, AsyncIterable]:
+        return [
+            IFetcher.get_supported_instance(source.strategy)(**source.params).fetch()
             for source in self.step
         ]
-        tasks = [asyncio.create_task(fetcher.__anext__()) for fetcher in fetchers]
 
-        while tasks:
-            done, _ = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
-
-            for d in done:
-                idx = tasks.index(d)
-
-                try:
-                    event: FetcherEvent = d.result()
-                except StopAsyncIteration:
-                    tasks.pop(idx)
-                    fetchers.pop(idx)
-                    self.progress.advance(self.task_id)
-                    continue
-
-                match event.type:
-                    case FetcherEvent.Type.PROGRESS:
-                        self.progress.log(event.data)
-                    case FetcherEvent.Type.COMPLETED:
-                        self.progress.log(
-                            f"[green]:heavy_check_mark: {event.data}[/green]"
-                        )
-                    case FetcherEvent.Type.EXCEPTION:
-                        self.progress.log(f"[red]{event.data}[/red]")
-
-                tasks[idx] = asyncio.create_task(fetchers[idx].__anext__())
+    @override
+    def callback(self, event: FetchingEvent) -> None:
+        match event.type:
+            case FetchingEvent.Type.PROGRESS:
+                self.progress.log(event.data)
+            case FetchingEvent.Type.COMPLETED:
+                self.progress.log(f"[green]:heavy_check_mark: {event.data}[/green]")
+            case FetchingEvent.Type.EXCEPTION:
+                self.progress.log(f"[red]{event.data}[/red]")

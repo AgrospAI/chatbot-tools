@@ -1,7 +1,9 @@
 from dataclasses import dataclass
-from typing import Iterable, override
+from typing import ClassVar, Generator, Iterable, override
 
 from fastrag.config.config import Chunking
+from fastrag.events import Event
+from fastrag.parsing.parser import ParsingEvent
 from fastrag.steps.steps import IStepRunner
 
 
@@ -9,6 +11,7 @@ from fastrag.steps.steps import IStepRunner
 class ChunkingStep(IStepRunner):
 
     step: list[Chunking]
+    description: ClassVar[str] = "Chunking fetched documents"
 
     @override
     @classmethod
@@ -16,4 +19,7 @@ class ChunkingStep(IStepRunner):
         return ["chunking"]
 
     @override
-    async def run_step(self) -> None: ...
+    def run(self) -> Generator[ParsingEvent, None, None]: ...
+
+    @override
+    def callback(self, event: Event) -> None: ...

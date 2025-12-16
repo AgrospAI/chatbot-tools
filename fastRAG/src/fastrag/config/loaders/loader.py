@@ -3,10 +3,10 @@ from pathlib import Path
 from typing import TextIO
 
 from fastrag.config.config import Config
-from fastrag.plugins.base import PluginFactory
+from fastrag.plugins.base import IPluginFactory
 
 
-class IConfigLoader(PluginFactory, ABC):
+class IConfigLoader(IPluginFactory, ABC):
 
     @abstractmethod
     def load(self, fp: TextIO) -> Config: ...
