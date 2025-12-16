@@ -1,6 +1,6 @@
 import asyncio
 from abc import ABC, abstractmethod
-from typing import AsyncIterable, Mapping, override
+from typing import AsyncGenerator, Iterable, override
 
 from fastrag.events import Event
 from fastrag.steps.steps import IStepRunner
@@ -9,7 +9,7 @@ from fastrag.steps.steps import IStepRunner
 class IAsyncStepRunner(IStepRunner, ABC):
 
     @abstractmethod
-    def get_tasks(self) -> Mapping[int, AsyncIterable]: ...
+    def get_tasks(self) -> Iterable[AsyncGenerator[Event, None]]: ...
 
     @classmethod
     @abstractmethod

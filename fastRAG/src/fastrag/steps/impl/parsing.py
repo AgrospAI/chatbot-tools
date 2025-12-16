@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import AsyncIterable, ClassVar, Iterable, Mapping, override
+from typing import AsyncGenerator, ClassVar, Iterable, override
 
 from fastrag.config.config import Parsing
 from fastrag.parsing.parser import IParser, ParsingEvent
@@ -18,7 +18,7 @@ class ParsingStep(IAsyncStepRunner):
         return ["parsing"]
 
     @override
-    def get_tasks(self) -> Mapping[int, AsyncIterable]:
+    def get_tasks(self) -> Iterable[AsyncGenerator[ParsingEvent, None]]:
         return [
             IParser.get_supported_instance(source.strategy)(source.use).parse()
             for source in self.step

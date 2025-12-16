@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import AsyncIterable, ClassVar, Iterable, Mapping, override
+from typing import AsyncGenerator, ClassVar, Iterable, override
 
 from fastrag.config.config import Source
 from fastrag.fetchers.fetcher import FetchingEvent, IFetcher
@@ -18,7 +18,7 @@ class SourceStep(IAsyncStepRunner):
         return ["sources"]
 
     @override
-    def get_tasks(self) -> Mapping[int, AsyncIterable]:
+    def get_tasks(self) -> Iterable[AsyncGenerator[FetchingEvent, None]]:
         return [
             IFetcher.get_supported_instance(source.strategy)(**source.params).fetch()
             for source in self.step
