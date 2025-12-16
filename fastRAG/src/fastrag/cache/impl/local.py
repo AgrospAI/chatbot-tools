@@ -4,18 +4,23 @@ import os
 from asyncio import Lock
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Iterable, get_args, override
+from typing import Callable, Iterable, get_args, override
 
 from fastrag.cache.cache import CacheEntry, CacheSection, ICache
+from fastrag.helpers import PosixTimestamp, timestamp
 
 type Metadata = dict[str, CacheEntry]
+
+
+def is_outdated(time: PosixTimestamp, lifespan: int) -> bool:
+    return time + lifespan < timestamp()
 
 
 @dataclass(frozen=True)
 class LocalCache(ICache):
 
     _lock: Lock = field(init=False, repr=False, default_factory=Lock)
-    metadata: Metadata = field(init=False)
+    metadata: Metadata = field(init=False, default_factory=lambda: dict)
 
     def __post_init__(self) -> None:
         # Load metadata from file
@@ -31,6 +36,8 @@ class LocalCache(ICache):
 
         object.__setattr__(self, "metadata", metadata)
 
+        self._delete_invalid()
+
     @override
     @classmethod
     def supported(cls) -> Iterable[str]:
@@ -42,22 +49,18 @@ class LocalCache(ICache):
 
     @override
     def is_present(self, uri: str) -> bool:
-        entry = self.get(uri)
-        return entry is not None and not self.is_outdated(entry.timestamp)
+        entry = self.metadata.get(uri, None)
+        return entry is not None and not is_outdated(entry.timestamp, self.lifespan)
 
     @override
-    def hash(self, content: str) -> str:
-        return hashlib.sha256(content).hexdigest()
-
-    @override
-    async def store(
+    async def create(
         self,
         uri: str,
         contents: bytes,
         section: CacheSection,
         metadata: dict | None = None,
     ) -> CacheEntry:
-        digest = self.hash(contents)
+        digest = hashlib.sha256(contents).hexdigest()
         entry = CacheEntry(
             content_hash=digest,
             path=self.base / section / digest,
@@ -67,16 +70,47 @@ class LocalCache(ICache):
         async with self._lock:
             self.metadata[uri] = entry
             self._save(entry.path, contents)
+            self._save_metadata()
         return entry
 
     @override
-    async def get(self, uri: str) -> CacheEntry | None:
-        return self.metadata.get(uri, None)
+    async def get_or_create(
+        self,
+        uri: str,
+        contents: Callable[..., bytes],
+        section: CacheSection,
+        metadata: dict | None = None,
+    ) -> tuple[bool, CacheEntry]:
+        entry = await self.get(uri)
+        if entry:
+            return True, entry
+        return False, await self.create(uri, contents(), section, metadata)
 
-    def _save(self, path: Path, contents: bytes):
+    @override
+    async def get(self, uri: str) -> CacheEntry | None:
+        return self.metadata.get(uri) if self.is_present(uri) else None
+
+    @override
+    async def get_entries(self, section: CacheSection) -> Iterable[CacheEntry]:
+        return (entry for entry in self.metadata.values() if entry.section == section)
+
+    def _delete_invalid(self) -> None:
+        outdated = [
+            (h, v.path)
+            for h, v in self.metadata.items()
+            if is_outdated(v.timestamp, self.lifespan)
+        ]
+        for h, item in outdated:
+            item.unlink(missing_ok=True)
+            self.metadata.pop(h)
+        self._save_metadata()
+
+    def _save_metadata(self) -> None:
         self.metadata_path.touch(mode=0o770, exist_ok=True)
         raw = {k: v.to_dict() for k, v in self.metadata.items()}
         with open(self.metadata_path, "w") as f:
             json.dump(raw, f, indent=2)
+
+    def _save(self, path: Path, contents: bytes) -> None:
         with open(path, "wb") as f:
             f.write(contents)

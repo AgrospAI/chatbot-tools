@@ -3,8 +3,7 @@ from dataclasses import InitVar, dataclass, field
 from pathlib import Path
 from typing import ClassVar
 
-from fastrag.cache.cache import ICache
-from fastrag.config.config import Config
+from fastrag import Config, ICache
 
 
 @dataclass(frozen=True)

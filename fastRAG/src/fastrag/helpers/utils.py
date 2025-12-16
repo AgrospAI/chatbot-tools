@@ -1,6 +1,8 @@
 import re
+from datetime import datetime
 from importlib.metadata import PackageNotFoundError
 from importlib.metadata import version as v
+from typing import TypeAlias
 
 
 def version(package_name: str) -> str:
@@ -37,3 +39,10 @@ def parse_to_seconds(time: str) -> int:
         raise ValueError("Unsupported time unit") from e
 
     return total_seconds
+
+
+PosixTimestamp: TypeAlias = float
+
+
+def timestamp() -> PosixTimestamp:
+    return datetime.now().timestamp()

@@ -8,9 +8,9 @@ import httpx
 from rich.console import Console
 
 from fastrag.cache.cache import ICache
+from fastrag.constants import get_constants
 from fastrag.fetchers import FetcherEvent, IFetcher
 from fastrag.helpers import URLField
-from fastrag.helpers.constants import get_constants
 
 console = Console()
 
@@ -57,13 +57,16 @@ class SitemapXMLFetcher(IFetcher):
         for event in results:
             yield event
 
-        yield FetcherEvent(FetcherEvent.Type.PROGRESS, "Completed sitemap.xml")
+        yield FetcherEvent(FetcherEvent.Type.COMPLETED, "Completed sitemap.xml")
 
     async def fetch_async(self, client, url: str, cache: ICache):
+        if cache.is_present(url):
+            return FetcherEvent(FetcherEvent.Type.PROGRESS, f"Cached {url}")
+
         try:
             res = await client.get(url)
         except Exception as e:
             return FetcherEvent(FetcherEvent.Type.EXCEPTION, f"ERROR: {e}")
 
-        await cache.store(url, res.text.encode(), "sourcing", {})
+        await cache.create(url, res.text.encode(), "sourcing", {})
         return FetcherEvent(FetcherEvent.Type.PROGRESS, f"Fetched {url}")

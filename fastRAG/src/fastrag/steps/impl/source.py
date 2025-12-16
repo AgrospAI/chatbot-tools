@@ -45,6 +45,10 @@ class SourceStep(IStepRunner):
                 match event.type:
                     case FetcherEvent.Type.PROGRESS:
                         self.progress.log(event.data)
+                    case FetcherEvent.Type.COMPLETED:
+                        self.progress.log(
+                            f"[green]:heavy_check_mark: {event.data}[/green]"
+                        )
                     case FetcherEvent.Type.EXCEPTION:
                         self.progress.log(f"[red]{event.data}[/red]")
 

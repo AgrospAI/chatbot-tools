@@ -13,7 +13,7 @@ from fastrag.plugins.base import PluginFactory
 class FetcherEvent:
 
     class Type(StrEnum):
-        ENTRY = auto()
+        COMPLETED = auto()
         EXCEPTION = auto()
         PROGRESS = auto()
 

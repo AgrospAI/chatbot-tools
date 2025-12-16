@@ -1,5 +1,5 @@
-from pathlib import Path
 import shutil
+from pathlib import Path
 from typing import Annotated
 
 import typer
@@ -10,11 +10,11 @@ from rich.pretty import Pretty
 from fastrag import (
     DEFAULT_CONFIG,
     Config,
+    Constants,
     IConfigLoader,
     IStepRunner,
     init_constants,
     version,
-    Constants,
 )
 
 app = typer.Typer(help="CLI RAG generator", add_completion=False)
@@ -31,6 +31,11 @@ def clean(
     """Clean the caches"""
 
     if not sure:
+        return
+
+    path = Constants.global_cache()
+    if not path.exists():
+        console.print(f"[bold red]Could not find global cache at {path}[/bold red]")
         return
 
     with open(Constants.global_cache()) as f:
