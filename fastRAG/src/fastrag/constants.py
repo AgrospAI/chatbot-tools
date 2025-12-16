@@ -11,6 +11,7 @@ class Constants:
 
     config: InitVar[Config]
 
+    verbose: bool = field()
     base: Path = field(init=False)
     cache: ICache = field(init=False)
 
@@ -51,10 +52,10 @@ def _register_constants(constants: Constants) -> None:
         f.write(str(constants.base.absolute()))
 
 
-def init_constants(config: Config) -> None:
+def init_constants(config: Config, is_verbose: bool) -> None:
     global _constants
     if _constants is None:
-        _constants = Constants(config)
+        _constants = Constants(config, is_verbose)
         _register_constants(_constants)
 
 

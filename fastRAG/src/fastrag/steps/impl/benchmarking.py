@@ -1,9 +1,8 @@
 from dataclasses import dataclass
 from typing import ClassVar, Generator, Iterable, override
 
-from fastrag.benchmarking.benchmarking import BenchmarkingEvent
+from fastrag.benchmarking.benchmarker import BenchmarkingEvent
 from fastrag.config.config import Benchmarking
-from fastrag.events import Event
 from fastrag.steps.steps import IStepRunner
 
 
@@ -11,7 +10,7 @@ from fastrag.steps.steps import IStepRunner
 class BenchmarkingStep(IStepRunner):
 
     step: list[Benchmarking]
-    description: ClassVar[str] = "Running benchmarks"
+    description: ClassVar[str] = "BENCH"
 
     @override
     @classmethod
@@ -22,4 +21,19 @@ class BenchmarkingStep(IStepRunner):
     def run(self) -> Generator[BenchmarkingEvent, None, None]: ...
 
     @override
-    def callback(self, event: Event) -> None: ...
+    def _log_verbose(self, event: BenchmarkingEvent) -> None:
+        match event.type:
+            case BenchmarkingEvent.Type.PROGRESS:
+                self.progress.log(event.data)
+            case BenchmarkingEvent.Type.COMPLETED:
+                self.progress.log(f"[green]:heavy_check_mark: {event.data}[/green]")
+            case BenchmarkingEvent.Type.EXCEPTION:
+                self.progress.log(f"[red]:x: {event.data}[/red]")
+
+    @override
+    def _log(self, event: BenchmarkingEvent) -> None:
+        match event.type:
+            case BenchmarkingEvent.Type.COMPLETED:
+                self.progress.log(f"[green]:heavy_check_mark: {event.data}[/green]")
+            case BenchmarkingEvent.Type.EXCEPTION:
+                self.progress.log(f"[red]:x: {event.data}[/red]")

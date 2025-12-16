@@ -5,14 +5,11 @@ from dataclasses import dataclass
 from typing import AsyncGenerator, Iterable, override
 
 import httpx
-from rich.console import Console
 
 from fastrag.cache.cache import ICache
 from fastrag.constants import get_constants
 from fastrag.fetchers import FetchingEvent, IFetcher
 from fastrag.helpers import URLField
-
-console = Console()
 
 
 @dataclass(frozen=True)

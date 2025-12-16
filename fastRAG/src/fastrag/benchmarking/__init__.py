@@ -1,3 +1,3 @@
-from fastrag.benchmarking.benchmarking import BenchmarkingEvent
+from fastrag.benchmarking.benchmarker import BenchmarkingEvent
 
 __all__ = [BenchmarkingEvent]

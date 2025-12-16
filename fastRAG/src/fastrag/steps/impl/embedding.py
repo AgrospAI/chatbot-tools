@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from typing import AsyncGenerator, ClassVar, Iterable, override
 
 from fastrag.config.config import Embedding
-from fastrag.embeddings.events import EmbeddingEvent
+from fastrag.embeddings import EmbeddingEvent
 from fastrag.steps.impl.arunner import IAsyncStepRunner
 
 
@@ -10,7 +10,7 @@ from fastrag.steps.impl.arunner import IAsyncStepRunner
 class EmbeddingStep(IAsyncStepRunner):
 
     step: list[Embedding]
-    description: ClassVar[str] = "Embedding chunks"
+    description: ClassVar[str] = "EMBED"
 
     @override
     @classmethod
@@ -22,11 +22,19 @@ class EmbeddingStep(IAsyncStepRunner):
         return []
 
     @override
-    def callback(self, event: EmbeddingEvent) -> None:
+    def _log_verbose(self, event: EmbeddingEvent) -> None:
         match event.type:
             case EmbeddingEvent.Type.PROGRESS:
                 self.progress.log(event.data)
             case EmbeddingEvent.Type.COMPLETED:
                 self.progress.log(f"[green]:heavy_check_mark: {event.data}[/green]")
             case EmbeddingEvent.Type.EXCEPTION:
-                self.progress.log(f"[red]{event.data}[/red]")
+                self.progress.log(f"[red]:x: {event.data}[/red]")
+
+    @override
+    def _log(self, event: EmbeddingEvent) -> None:
+        match event.type:
+            case EmbeddingEvent.Type.COMPLETED:
+                self.progress.log(f"[green]:heavy_check_mark: {event.data}[/green]")
+            case EmbeddingEvent.Type.EXCEPTION:
+                self.progress.log(f"[red]:x: {event.data}[/red]")

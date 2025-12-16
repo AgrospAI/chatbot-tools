@@ -62,6 +62,10 @@ def run(
         Path | None,
         typer.Option("--plugins", "-p", help="Path to the plugins directory."),
     ] = None,
+    verbose: Annotated[
+        bool,
+        typer.Option("--verbose", "-v", help="Verbose prints"),
+    ] = False,
 ):
     """
     Go through the process of generating a fastRAG.
@@ -75,16 +79,16 @@ def run(
         justify="center",
     )
 
+    console.quiet = not verbose
+
     # Load plugins before config
     load_plugins(plugins)
-    config: Config = load_config(config)
-
-    IStepRunner.run(config, step)
+    IStepRunner.run(load_config(config, verbose), step)
 
 
-def load_config(path: Path) -> Config:
+def load_config(path: Path, verbose: bool) -> Config:
     config: Config = IConfigLoader.from_settings(path)
-    init_constants(config)
+    init_constants(config, verbose)
     console.print(
         Panel(
             Pretty(config),

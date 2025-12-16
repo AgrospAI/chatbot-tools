@@ -10,7 +10,7 @@ from fastrag.steps.impl.arunner import IAsyncStepRunner
 class ParsingStep(IAsyncStepRunner):
 
     step: list[Parsing]
-    description: ClassVar[str] = "Parsing fetched documents"
+    description: ClassVar[str] = "PARSE"
 
     @override
     @classmethod
@@ -25,11 +25,19 @@ class ParsingStep(IAsyncStepRunner):
         ]
 
     @override
-    def callback(self, event: ParsingEvent) -> None:
+    def _log_verbose(self, event: ParsingEvent) -> None:
         match event.type:
             case ParsingEvent.Type.PROGRESS:
                 self.progress.log(event.data)
             case ParsingEvent.Type.COMPLETED:
                 self.progress.log(f"[green]:heavy_check_mark: {event.data}[/green]")
             case ParsingEvent.Type.EXCEPTION:
-                self.progress.log(f"[red]{event.data}[/red]")
+                self.progress.log(f"[red]:x: {event.data}[/red]")
+
+    @override
+    def _log(self, event: ParsingEvent) -> None:
+        match event.type:
+            case ParsingEvent.Type.COMPLETED:
+                self.progress.log(f"[green]:heavy_check_mark: {event.data}[/green]")
+            case ParsingEvent.Type.EXCEPTION:
+                self.progress.log(f"[red]:x: {event.data}[/red]")

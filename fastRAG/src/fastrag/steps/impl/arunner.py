@@ -11,9 +11,8 @@ class IAsyncStepRunner(IStepRunner, ABC):
     @abstractmethod
     def get_tasks(self) -> Iterable[AsyncGenerator[Event, None]]: ...
 
-    @classmethod
-    @abstractmethod
-    def callback(cls, event: Event) -> None: ...
+    def callback(self, event: Event) -> None:
+        self._callback(event)
 
     @override
     def run(cls):

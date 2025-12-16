@@ -1,6 +1,9 @@
 from dataclasses import dataclass
 from typing import AsyncGenerator, Iterable, override
 
+from httpx import AsyncClient
+
+from fastrag.constants import get_constants
 from fastrag.fetchers import FetchingEvent, IFetcher
 from fastrag.helpers import URLField
 
@@ -12,11 +15,23 @@ class HttpFetcher(IFetcher):
 
     @classmethod
     @override
-    def supported(self) -> Iterable[str]:
+    def supported(cls) -> Iterable[str]:
         return ["URL"]
 
     @override
     async def fetch(self) -> AsyncGenerator[FetchingEvent, None]:
-        yield
+        cache = get_constants().cache
 
-        return
+        if cache.is_present(self.url):
+            yield FetchingEvent(FetchingEvent.Type.COMPLETED, f"Cached {self.url}")
+            return
+
+        try:
+            async with AsyncClient(timeout=10) as client:
+                res = await client.get(self.url)
+        except Exception as e:
+            yield FetchingEvent(FetchingEvent.Type.EXCEPTION, f"ERROR: {e}")
+            return
+
+        yield FetchingEvent(FetchingEvent.Type.COMPLETED, f"Fetched {self.url}")
+        await cache.create(self.url, res.text.encode(), "sourcing", {})

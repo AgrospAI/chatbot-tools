@@ -1,8 +1,6 @@
-from abc import ABC
-from dataclasses import dataclass, fields
-from typing import Literal
+from abc import ABC, abstractmethod
+from dataclasses import dataclass, field, fields
 
-from rich.console import Console
 from rich.panel import Panel
 from rich.progress import (
     BarColumn,
@@ -14,9 +12,8 @@ from rich.progress import (
 )
 
 from fastrag import Config, IPluginFactory
-
-STEP_TYPE = Literal["sources", "parsing", "chunking", "embedding", "benchmarking"]
-console = Console()
+from fastrag.events import Event
+from fastrag.steps.logs import LogCallback, set_logging_callback
 
 
 @dataclass(frozen=True)
@@ -24,6 +21,16 @@ class IStepRunner(IPluginFactory, ABC):
 
     progress: Progress
     task_id: int
+    _callback: LogCallback = field(init=False, repr=False)
+
+    def __post_init__(self) -> None:
+        set_logging_callback(self)
+
+    @abstractmethod
+    def _log(self, event: Event) -> None: ...
+
+    @abstractmethod
+    def _log_verbose(self, event: Event) -> None: ...
 
     def calculate_total(self) -> int:
         return len(self.step)
@@ -43,6 +50,7 @@ class IStepRunner(IPluginFactory, ABC):
             TextColumn("•"),
             TimeRemainingColumn(),
         ) as progress:
+
             runners: dict[str, IStepRunner] = {
                 step: IStepRunner.get_supported_instance(step)(
                     progress=progress,
@@ -63,12 +71,12 @@ class IStepRunner(IPluginFactory, ABC):
 
                 # Manual stop of application after given step
                 if up_to == step_idx + 1:
-                    progress.stop()
-                    console.print(
+                    progress.print(
                         Panel.fit(
-                            f"Stopping execution after step [bold yellow]'{step}'[/bold yellow]",
+                            f"Stopping execution after step [bold yellow]{step.capitalize()}[/bold yellow]",
                             border_style="red",
                         ),
                         justify="center",
                     )
+                    progress.stop()
                     break

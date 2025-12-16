@@ -10,7 +10,7 @@ from fastrag.steps.impl.arunner import IAsyncStepRunner
 class SourceStep(IAsyncStepRunner):
 
     step: list[Source]
-    description: ClassVar[str] = "Fetching sources"
+    description: ClassVar[str] = "FETCH"
 
     @override
     @classmethod
@@ -25,11 +25,19 @@ class SourceStep(IAsyncStepRunner):
         ]
 
     @override
-    def callback(self, event: FetchingEvent) -> None:
+    def _log_verbose(self, event: FetchingEvent) -> None:
         match event.type:
             case FetchingEvent.Type.PROGRESS:
                 self.progress.log(event.data)
             case FetchingEvent.Type.COMPLETED:
                 self.progress.log(f"[green]:heavy_check_mark: {event.data}[/green]")
             case FetchingEvent.Type.EXCEPTION:
-                self.progress.log(f"[red]{event.data}[/red]")
+                self.progress.log(f"[red]:x: {event.data}[/red]")
+
+    @override
+    def _log(self, event: FetchingEvent) -> None:
+        match event.type:
+            case FetchingEvent.Type.COMPLETED:
+                self.progress.log(f"[green]:heavy_check_mark: {event.data}[/green]")
+            case FetchingEvent.Type.EXCEPTION:
+                self.progress.log(f"[red]:x: {event.data}[/red]")

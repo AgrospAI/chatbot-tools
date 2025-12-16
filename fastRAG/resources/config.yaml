@@ -11,6 +11,9 @@ steps:
         url: https://agrospai.udl.cat/sitemap.xml
         regex:
           - https?://[^/]+/docs/
+    - strategy: URL
+      params:
+        url: https://agrospai.udl.cat
   parsing:
     - strategy: HtmlParser
       use:
