@@ -34,4 +34,4 @@ class HttpFetcher(IFetcher):
             return
 
         yield FetchingEvent(FetchingEvent.Type.COMPLETED, f"Fetched {self.url}")
-        await cache.create(self.url, res.text.encode(), "sourcing", {})
+        await cache.create(self.url, res.text.encode(), "fetching", {})

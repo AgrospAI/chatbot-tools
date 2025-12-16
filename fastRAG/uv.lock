@@ -59,6 +59,7 @@ version = "0.1.0"
 source = { editable = "." }
 dependencies = [
     { name = "dacite" },
+    { name = "html-to-markdown" },
     { name = "httpx" },
     { name = "humanize" },
     { name = "pyyaml" },
@@ -75,6 +76,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "dacite", specifier = ">=1.9.2" },
+    { name = "html-to-markdown", specifier = ">=2.14.11" },
     { name = "httpx", specifier = ">=0.28.1" },
     { name = "humanize", specifier = ">=4.14.0" },
     { name = "pyyaml", specifier = ">=6.0.3" },
@@ -95,6 +97,17 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/01/ee/02a2c011bdab74c6fb3c75474d40b3052059d95df7e73351460c8588d963/h11-0.16.0.tar.gz", hash = "sha256:4e35b956cf45792e4caa5885e69fba00bdbc6ffafbfa020300e549b208ee5ff1", size = 101250, upload-time = "2025-04-24T03:35:25.427Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/04/4b/29cac41a4d98d144bf5f6d33995617b185d14b22401f75ca86f384e87ff1/h11-0.16.0-py3-none-any.whl", hash = "sha256:63cf8bbe7522de3bf65932fda1d9c2772064ffb3dae62d55932da54b31cb6c86", size = 37515, upload-time = "2025-04-24T03:35:24.344Z" },
+]
+
+[[package]]
+name = "html-to-markdown"
+version = "2.14.11"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/b4/0c/6cbccf246c89910d66579fd481486d1f971cc864ab7bb8882b5f9095cb81/html_to_markdown-2.14.11.tar.gz", hash = "sha256:df9a30a6a0523949d56a41c0ee234f25d7f802cb37afd8a44906481bfce9567e", size = 164812, upload-time = "2025-12-16T09:24:16.042Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/e3/61/430966bd6578d82645251c698be0da5378ec72df232f99644e900698d363/html_to_markdown-2.14.11-cp310-abi3-macosx_11_0_arm64.whl", hash = "sha256:185a6838c0168b42e7c761af2a218fe8108d3409ecd1c48fc7d62bc3cfa9ef2c", size = 7321042, upload-time = "2025-12-16T09:24:10.945Z" },
+    { url = "https://files.pythonhosted.org/packages/d1/e6/00e52e31b33b18899d7f5740c6e82b92534e15d75af902410da26ecf6114/html_to_markdown-2.14.11-cp310-abi3-manylinux2014_x86_64.manylinux_2_17_x86_64.whl", hash = "sha256:5678d346f71268a4aabe9fe737f901ced267c7d3c023f5cc6ab035e45eb4c059", size = 8054064, upload-time = "2025-12-16T09:24:12.786Z" },
+    { url = "https://files.pythonhosted.org/packages/59/4a/2a97e6e0896793e2906387b9214dce9664dc7794be117053308e225463c7/html_to_markdown-2.14.11-cp310-abi3-win_amd64.whl", hash = "sha256:862f7cc7b1efc5dca82771fa83feaeebb9ff5081184218d2adb7405e11e0c945", size = 8095010, upload-time = "2025-12-16T09:24:14.583Z" },
 ]
 
 [[package]]

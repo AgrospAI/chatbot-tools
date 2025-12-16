@@ -1,41 +1,12 @@
-from __future__ import annotations
-
 from abc import ABC, abstractmethod
-from dataclasses import asdict, dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
-from typing import Callable, Iterable, Literal
+from typing import Callable, Iterable
 
-from fastrag.helpers.utils import PosixTimestamp, timestamp
+from fastrag.cache.entry import CacheEntry
+from fastrag.cache.filters import Filter
+from fastrag.config.config import StepNames
 from fastrag.plugins.base import IPluginFactory
-
-CacheSection = Literal[
-    "sourcing",
-    "parsing",
-    "chunking",
-    "embedding",
-    "benchmarking",
-]
-
-
-@dataclass(frozen=True)
-class CacheEntry:
-
-    content_hash: str
-    section: CacheSection
-    path: Path
-    timestamp: PosixTimestamp = field(default_factory=timestamp)
-    metadata: dict | None = field(default=None)
-
-    def to_dict(self) -> dict:
-        d = asdict(self)
-        d["path"] = str(self.path.resolve().as_uri())
-        return d
-
-    @staticmethod
-    def from_dict(d: dict) -> CacheEntry:
-        d = dict(d)
-        d["path"] = Path(d["path"])
-        return CacheEntry(**d)
 
 
 @dataclass(frozen=True)
@@ -52,7 +23,7 @@ class ICache(IPluginFactory, ABC):
         self,
         uri: str,
         contents: bytes,
-        section: CacheSection,
+        step: StepNames,
         metadata: dict | None = None,
     ) -> CacheEntry: ...
 
@@ -61,7 +32,7 @@ class ICache(IPluginFactory, ABC):
         self,
         uri: str,
         contents: Callable[..., bytes],
-        section: CacheSection,
+        step: StepNames,
         metadata: dict | None = None,
     ) -> tuple[bool, CacheEntry]: ...
 
@@ -69,4 +40,6 @@ class ICache(IPluginFactory, ABC):
     async def get(self, uri: str) -> CacheEntry | None: ...
 
     @abstractmethod
-    async def get_entries(self, section: CacheSection) -> Iterable[CacheEntry]: ...
+    async def get_entries(
+        self, filter: Filter | None = None
+    ) -> Iterable[CacheEntry]: ...

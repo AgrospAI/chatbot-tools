@@ -47,7 +47,7 @@ class PathFetcher(IFetcher):
             for p in list_paths(self.path):
                 existed, _ = await get_constants().cache.get_or_create(
                     uri=p.resolve().as_uri(),
-                    section="sourcing",
+                    step="fetching",
                     contents=p.read_bytes,
                     metadata=None,
                 )

@@ -2,7 +2,7 @@ cache:
   path: ./.fastrag
   lifespan: 1d
 steps:
-  sources:
+  fetching:
     - strategy: Path
       params:
         path: ./resources/test/sample.json

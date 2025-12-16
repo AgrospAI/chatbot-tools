@@ -1,12 +1,12 @@
 import hashlib
 import json
-import os
 from asyncio import Lock
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Callable, Iterable, get_args, override
 
-from fastrag.cache.cache import CacheEntry, CacheSection, ICache
+from fastrag.cache.cache import CacheEntry, StepNames, ICache
+from fastrag.helpers.filters import Filter
 from fastrag.helpers import PosixTimestamp, timestamp
 
 type Metadata = dict[str, CacheEntry]
@@ -31,8 +31,9 @@ class LocalCache(ICache):
                 raw = json.load(f)
                 metadata = {k: CacheEntry.from_dict(v) for k, v in raw.items()}
 
-        for section in get_args(CacheSection):
-            os.makedirs(self.base / section, exist_ok=True)
+        for step in get_args(StepNames):
+            path: Path = self.base / step
+            path.mkdir(parents=True, exist_ok=True)
 
         object.__setattr__(self, "metadata", metadata)
 
@@ -57,15 +58,15 @@ class LocalCache(ICache):
         self,
         uri: str,
         contents: bytes,
-        section: CacheSection,
+        step: StepNames,
         metadata: dict | None = None,
     ) -> CacheEntry:
         digest = hashlib.sha256(contents).hexdigest()
         entry = CacheEntry(
             content_hash=digest,
-            path=self.base / section / digest,
+            path=self.base / step / digest,
             metadata=metadata,
-            section=section,
+            step=step,
         )
         async with self._lock:
             self.metadata[uri] = entry
@@ -78,21 +79,23 @@ class LocalCache(ICache):
         self,
         uri: str,
         contents: Callable[..., bytes],
-        section: CacheSection,
+        step: StepNames,
         metadata: dict | None = None,
     ) -> tuple[bool, CacheEntry]:
         entry = await self.get(uri)
         if entry:
             return True, entry
-        return False, await self.create(uri, contents(), section, metadata)
+        return False, await self.create(uri, contents(), step, metadata)
 
     @override
     async def get(self, uri: str) -> CacheEntry | None:
         return self.metadata.get(uri) if self.is_present(uri) else None
 
     @override
-    async def get_entries(self, section: CacheSection) -> Iterable[CacheEntry]:
-        return (entry for entry in self.metadata.values() if entry.section == section)
+    async def get_entries(self, filter: Filter | None = None) -> Iterable[CacheEntry]:
+        if not filter:
+            return [entry for entry in self.metadata.values()]
+        return [entry for entry in self.metadata.values() if filter.apply(entry)]
 
     def _delete_invalid(self) -> None:
         outdated = [
@@ -100,6 +103,9 @@ class LocalCache(ICache):
             for h, v in self.metadata.items()
             if is_outdated(v.timestamp, self.lifespan)
         ]
+        if not outdated:
+            return
+
         for h, item in outdated:
             item.unlink(missing_ok=True)
             self.metadata.pop(h)

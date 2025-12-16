@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
-from dataclasses import dataclass, field, fields
+from dataclasses import dataclass, field
+from typing import get_args
 
 from rich.panel import Panel
 from rich.progress import (
@@ -12,6 +13,7 @@ from rich.progress import (
 )
 
 from fastrag import Config, IPluginFactory
+from fastrag.config.config import StepNames
 from fastrag.events import Event
 from fastrag.steps.logs import LogCallback, set_logging_callback
 
@@ -37,8 +39,6 @@ class IStepRunner(IPluginFactory, ABC):
 
     @classmethod
     def run(cls, config: Config, up_to: str) -> None:
-        step_names = [step.name for step in fields(config.steps)]
-
         with Progress(
             TextColumn(
                 "[progress.percentage]{task.description} {task.percentage:>3.0f}%"
@@ -50,17 +50,17 @@ class IStepRunner(IPluginFactory, ABC):
             TextColumn("•"),
             TimeRemainingColumn(),
         ) as progress:
-
+            names = get_args(StepNames)
             runners: dict[str, IStepRunner] = {
                 step: IStepRunner.get_supported_instance(step)(
                     progress=progress,
                     task_id=idx,
                     step=getattr(config.steps, step),
                 )
-                for idx, step in enumerate(step_names)
+                for idx, step in enumerate(names)
             }
 
-            for step_idx, step in enumerate(step_names):
+            for step_idx, step in enumerate(names):
                 progress.add_task(
                     f"{step_idx + 1}. {runners[step].description} -",
                     total=runners[step].calculate_total(),

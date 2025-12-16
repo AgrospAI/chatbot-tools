@@ -19,6 +19,7 @@ class EmbeddingStep(IAsyncStepRunner):
 
     @override
     def get_tasks(self) -> Iterable[AsyncGenerator[EmbeddingEvent, None]]:
+        # TODO: Fill with asyncio task calls
         return []
 
     @override

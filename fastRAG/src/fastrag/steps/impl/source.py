@@ -15,7 +15,7 @@ class SourceStep(IAsyncStepRunner):
     @override
     @classmethod
     def supported(cls) -> Iterable[str]:
-        return ["sources"]
+        return ["fetching"]
 
     @override
     def get_tasks(self) -> Iterable[AsyncGenerator[FetchingEvent, None]]:
