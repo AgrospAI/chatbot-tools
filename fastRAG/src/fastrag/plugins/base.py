@@ -1,84 +1,38 @@
-from __future__ import annotations
-
-from abc import ABC
-from collections import defaultdict
-from dataclasses import dataclass, field
-from textwrap import dedent
-from typing import Iterable, TypeVar
-
-BP = TypeVar("BP", bound="BasePlugin")
+from typing import Dict, List, Type
 
 
-@dataclass(frozen=True)
 class PluginRegistry:
 
-    _registry: dict[type[BP], list[type[BP]]] = field(default_factory=lambda: {})
+    _registry: dict[str, Dict[str, List[Type]]] = {}
 
-    def register(self, interface: type[BP], impl: type[BP]):
-        self._registry.setdefault(interface, []).append(impl)
+    @classmethod
+    def register(cls, plugin_cls: Type, key: str, supported: List[str] | str):
+        for sup in supported:
+            cls._registry.setdefault(key, {}).setdefault(sup, []).append(plugin_cls)
+        return plugin_cls
 
-    def get(self, interface: type[BP]) -> list[type[BP]]:
-        return self._registry.get(interface, [])
+    @classmethod
+    def get(cls, key: str, sup: str) -> Type | None:
+        plugins = cls._registry.get(key, {}).get(sup, [])
+        if not plugins:
+            raise ValueError(f"Could not find '{key}' '{sup}' pair")
+        return plugins[-1]
 
-    def __repr__(self) -> str:
-        interfaces = [iface.__name__ for iface in self._registry.keys()]
-        implementations = {
-            i.__name__: [impl.__name__ for impl in impls]
-            for i, impls in self._registry.items()
+    @classmethod
+    def representation(cls) -> dict:
+        return {
+            k: {kk: [vvv.__name__ for vvv in vv] for kk, vv in v.items()}
+            for k, v in cls._registry.items()
         }
 
-        return dedent(
-            f"""PluginRegistry( 
-                total_interfaces={len(self._registry)}, 
-                interfaces={interfaces}, 
-                implementations={implementations} 
-                )"""
-        ).strip()
 
+def plugin(*, key: str, supported: str | List[str]):
+    normalized = [*supported] if isinstance(supported, list) else [supported]
 
-class BasePlugin(ABC):
-    """Base class for all plugin interfaces"""
+    def decorator(cls: Type) -> None:
+        cls.key = key
+        cls.supported = supported
 
-    registry: PluginRegistry = PluginRegistry()
+        return PluginRegistry.register(cls, key=key, supported=normalized)
 
-    def __init_subclass__(cls):
-        super().__init_subclass__()
-
-        for base in cls.__mro__[1:]:
-            if issubclass(base, BasePlugin) and base is not BasePlugin:
-                cls.registry.register(base, cls)
-
-
-class IPluginFactory(BasePlugin):
-    """IPluginFactory that handles the registration and usage of interfaces"""
-
-    @classmethod
-    def supported(cls) -> Iterable[str]:
-        """
-        Abstract classes do not implement supported.
-        Concrete plugins must override this method
-        """
-        if getattr(cls, "__abstractmethods__", False):
-            return []
-        raise NotImplementedError(f"{cls.__name__} must implement supported()")
-
-    @classmethod
-    def get_supported(cls) -> dict[str, list[IPluginFactory]]:
-        """Return mapping of supported types -> plugin classes"""
-        supported_map = defaultdict(list)
-        for impl in cls.registry.get(cls):
-            if getattr(impl, "__abstractmethods__", False):  # Skip abstract classes
-                continue
-            for t in impl.supported():
-                supported_map[t].append(impl)
-        return dict(supported_map)
-
-    @classmethod
-    def get_supported_instance(cls, val: str) -> IPluginFactory | None:
-        implementations = cls.get_supported().get(val)
-        if not implementations:
-            raise NotImplementedError(
-                f"Couldn't find implementation of '{cls.__name__}' supporting '{val}'"
-            )
-        implementation = implementations[-1]
-        return implementation
+    return decorator

@@ -1,4 +1,4 @@
-from fastrag.parsing.impl.html import HtmlParser
-from fastrag.parsing.parser import IParser
+from fastrag.parsing.file import FileParser
+from fastrag.parsing.html import HtmlParser
 
-__all__ = [IParser, HtmlParser]
+__all__ = [HtmlParser, FileParser]

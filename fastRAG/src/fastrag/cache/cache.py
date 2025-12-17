@@ -6,11 +6,10 @@ from typing import Callable, Iterable
 from fastrag.cache.entry import CacheEntry
 from fastrag.cache.filters import Filter
 from fastrag.config.config import StepNames
-from fastrag.plugins.base import IPluginFactory
 
 
 @dataclass(frozen=True)
-class ICache(IPluginFactory, ABC):
+class ICache(ABC):
 
     base: Path
     lifespan: int

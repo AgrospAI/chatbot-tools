@@ -1,24 +1,24 @@
 from dataclasses import dataclass
-from typing import ClassVar, Generator, Iterable, override
+from typing import AsyncGenerator, ClassVar, Generator, Iterable, override
 
-from fastrag.benchmarking.benchmarker import BenchmarkingEvent
+from fastrag.benchmarking.events import BenchmarkingEvent
 from fastrag.config.config import Benchmarking
-from fastrag.steps.steps import IStepRunner
+from fastrag.plugins.base import plugin
+from fastrag.steps.impl.arunner import IAsyncStepRunner
 
 
 @dataclass(frozen=True)
-class BenchmarkingStep(IStepRunner):
+@plugin(key="step", supported="benchmarking")
+class BenchmarkingStep(IAsyncStepRunner):
 
     step: list[Benchmarking]
     description: ClassVar[str] = "BENCH"
 
     @override
-    @classmethod
-    def supported(cls) -> Iterable[str]:
-        return ["benchmarking"]
+    def run(self) -> Generator[BenchmarkingEvent, None, None]: ...
 
     @override
-    def run(self) -> Generator[BenchmarkingEvent, None, None]: ...
+    def get_tasks(self) -> Iterable[AsyncGenerator[BenchmarkingEvent, None]]: ...
 
     @override
     def _log_verbose(self, event: BenchmarkingEvent) -> None:

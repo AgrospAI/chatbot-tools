@@ -1,3 +1,3 @@
-from fastrag.chunking.chunker import ChunkingEvent
+from fastrag.chunking.events import ChunkingEvent
 
 __all__ = [ChunkingEvent]

@@ -1,3 +1,3 @@
-from fastrag.embeddings.embedders.embedder import EmbeddingEvent
+from fastrag.embeddings.events import EmbeddingEvent
 
 __all__ = [EmbeddingEvent]

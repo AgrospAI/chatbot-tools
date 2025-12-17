@@ -1,12 +1,13 @@
 from dataclasses import dataclass
 from functools import partial
 from pathlib import Path
-from typing import AsyncGenerator, ClassVar, Iterable, override
+from typing import AsyncGenerator, ClassVar, override
 
 from fastrag.cache.filters import MetadataFilter, StepFilter
 from fastrag.constants import get_constants
 from fastrag.helpers.filters import OrFilter
-from fastrag.parsing.parser import IParser, ParsingEvent
+from fastrag.parsing.events import ParsingEvent
+from fastrag.plugins.base import plugin
 
 
 def to_markdown(fmt: str, path: Path) -> bytes:
@@ -24,16 +25,12 @@ def to_markdown(fmt: str, path: Path) -> bytes:
 
 
 @dataclass(frozen=True)
-class FileParser(IParser):
+@plugin(key="parsing", supported="FileParser")
+class FileParser:
 
     use: list[str]
 
     supported_extensions: ClassVar[list[str]] = ["docx", "pdf"]
-
-    @override
-    @classmethod
-    def supported(cls) -> Iterable[str]:
-        return ["FileParser"]
 
     @override
     async def parse(self) -> AsyncGenerator[ParsingEvent, None]:
@@ -49,7 +46,7 @@ class FileParser(IParser):
                 uri=entry.path.resolve().absolute().as_uri(),
                 contents=contents,
                 step="parsing",
-                metadata={"source": uri, "strategy": self.supported()[0]},
+                metadata={"source": uri, "strategy": FileParser.supported},
             )
             yield ParsingEvent(
                 ParsingEvent.Type.PROGRESS,

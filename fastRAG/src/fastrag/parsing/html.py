@@ -1,13 +1,14 @@
 from dataclasses import dataclass
 from functools import partial
 from pathlib import Path
-from typing import AsyncGenerator, Iterable, override
+from typing import AsyncGenerator, override
 
 from html_to_markdown import convert_to_markdown
 
 from fastrag.cache.filters import MetadataFilter, StepFilter
 from fastrag.constants import get_constants
-from fastrag.parsing.parser import IParser, ParsingEvent
+from fastrag.parsing.events import ParsingEvent
+from fastrag.plugins.base import plugin
 
 
 def read(path: Path) -> bytes:
@@ -16,14 +17,10 @@ def read(path: Path) -> bytes:
 
 
 @dataclass(frozen=True)
-class HtmlParser(IParser):
+@plugin(key="parsing", supported="HtmlParser")
+class HtmlParser:
 
     use: list[str]
-
-    @override
-    @classmethod
-    def supported(cls) -> Iterable[str]:
-        return ["HtmlParser"]
 
     @override
     async def parse(self) -> AsyncGenerator[ParsingEvent, None]:
@@ -36,7 +33,7 @@ class HtmlParser(IParser):
                 uri=entry.path.resolve().as_uri(),
                 contents=contents,
                 step="parsing",
-                metadata={"source": uri, "strategy": self.supported()[0]},
+                metadata={"source": uri, "strategy": HtmlParser.supported},
             )
             yield ParsingEvent(
                 ParsingEvent.Type.PROGRESS,

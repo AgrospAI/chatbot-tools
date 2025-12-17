@@ -12,14 +12,15 @@ from rich.progress import (
     TimeRemainingColumn,
 )
 
-from fastrag import Config, IPluginFactory
+from fastrag import Config
 from fastrag.config.config import StepNames
 from fastrag.events import Event
+from fastrag.plugins.base import PluginRegistry
 from fastrag.steps.logs import LogCallback, set_logging_callback
 
 
 @dataclass(frozen=True)
-class IStepRunner(IPluginFactory, ABC):
+class IStepRunner(ABC):
 
     progress: Progress
     task_id: int
@@ -52,7 +53,7 @@ class IStepRunner(IPluginFactory, ABC):
         ) as progress:
             names = get_args(StepNames)
             runners: dict[str, IStepRunner] = {
-                step: IStepRunner.get_supported_instance(step)(
+                step: PluginRegistry.get("step", step)(
                     progress=progress,
                     task_id=idx,
                     step=getattr(config.steps, step),

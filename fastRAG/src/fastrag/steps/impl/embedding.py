@@ -3,19 +3,16 @@ from typing import AsyncGenerator, ClassVar, Iterable, override
 
 from fastrag.config.config import Embedding
 from fastrag.embeddings import EmbeddingEvent
+from fastrag.plugins.base import plugin
 from fastrag.steps.impl.arunner import IAsyncStepRunner
 
 
 @dataclass(frozen=True)
+@plugin(key="step", supported="embedding")
 class EmbeddingStep(IAsyncStepRunner):
 
     step: list[Embedding]
     description: ClassVar[str] = "EMBED"
-
-    @override
-    @classmethod
-    def supported(cls) -> Iterable[str]:
-        return ["embedding"]
 
     @override
     def get_tasks(self) -> Iterable[AsyncGenerator[EmbeddingEvent, None]]:

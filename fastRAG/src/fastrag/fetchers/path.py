@@ -1,12 +1,13 @@
 from dataclasses import dataclass
 from pathlib import Path
-from typing import AsyncGenerator, Iterable, override
+from typing import AsyncGenerator, override
 
 import humanize
 
 from fastrag.constants import get_constants
-from fastrag.fetchers import FetchingEvent, IFetcher
+from fastrag.fetchers import FetchingEvent
 from fastrag.helpers import PathField
+from fastrag.plugins.base import plugin
 
 
 def get_uri(p: Path) -> str:
@@ -25,19 +26,14 @@ def list_paths(p: Path) -> list[Path]:
 
 
 @dataclass(frozen=True)
-class PathFetcher(IFetcher):
+@plugin(key="fetching", supported="Path")
+class PathFetcher:
     """Copy the source file tree into the cache"""
 
     path: PathField = PathField()
 
-    @classmethod
-    @override
-    def supported(cls) -> Iterable[str]:
-        return ["Path"]
-
     @override
     async def fetch(self) -> AsyncGenerator[FetchingEvent, None]:
-
         yield FetchingEvent(
             FetchingEvent.Type.PROGRESS,
             f"Copying local files ({humanize.naturalsize(self.path.stat().st_size)})",
@@ -49,7 +45,10 @@ class PathFetcher(IFetcher):
                     uri=p.resolve().as_uri(),
                     step="fetching",
                     contents=p.read_bytes,
-                    metadata={"format": p.suffix[1:], "strategy": self.supported()[0]},
+                    metadata={
+                        "format": p.suffix[1:],
+                        "strategy": PathFetcher.supported,
+                    },
                 )
                 yield FetchingEvent(
                     FetchingEvent.Type.PROGRESS,

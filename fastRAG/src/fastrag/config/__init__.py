@@ -9,11 +9,10 @@ from fastrag.config.config import (
     Step,
     Steps,
 )
-from fastrag.config.loaders import IConfigLoader
+from fastrag.config.loaders.yaml import YamlLoader
 
 __all__ = [
     Config,
-    IConfigLoader,
     Steps,
     Step,
     Cache,
@@ -22,4 +21,5 @@ __all__ = [
     Parsing,
     Chunking,
     Embedding,
+    YamlLoader,
 ]

@@ -1,25 +1,19 @@
 import os
 from pathlib import Path
-from typing import Iterable, TextIO, override
 
 import yaml
 from dacite import Config as Conf
 from dacite import from_dict
 
 from fastrag.config.config import Config
-from fastrag.config.loaders.loader import IConfigLoader
+from fastrag.plugins.base import plugin
 
 
-class YamlLoader(IConfigLoader):
+@plugin(key="config", supported=[".yaml", ".yml"])
+class YamlLoader:
 
-    @override
-    @classmethod
-    def supported(cls) -> Iterable[str]:
-        return [".yaml", ".yml"]
-
-    @override
-    def load(self, fp: TextIO) -> Config:
-        data = yaml.safe_load(fp)
+    def load(self, config: Path) -> Config:
+        data = yaml.safe_load(config.read_text())
         if not data:
             raise ValueError("Config file is empty")
 

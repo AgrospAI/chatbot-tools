@@ -1,5 +1,3 @@
-from fastrag.config.config import Steps
-from fastrag.config.loaders.impl.yaml import YamlLoader
-from fastrag.config.loaders.loader import IConfigLoader
+from fastrag.config.loaders.yaml import YamlLoader
 
-__all__ = [IConfigLoader, YamlLoader, Steps]
+__all__ = [YamlLoader]

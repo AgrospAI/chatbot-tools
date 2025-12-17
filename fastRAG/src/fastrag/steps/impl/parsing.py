@@ -2,25 +2,22 @@ from dataclasses import dataclass
 from typing import AsyncGenerator, ClassVar, Iterable, override
 
 from fastrag.config.config import Parsing
-from fastrag.parsing.parser import IParser, ParsingEvent
+from fastrag.parsing.events import ParsingEvent
+from fastrag.plugins.base import PluginRegistry, plugin
 from fastrag.steps.impl.arunner import IAsyncStepRunner
 
 
 @dataclass(frozen=True)
+@plugin(key="step", supported="parsing")
 class ParsingStep(IAsyncStepRunner):
 
     step: list[Parsing]
     description: ClassVar[str] = "PARSE"
 
     @override
-    @classmethod
-    def supported(cls) -> Iterable[str]:
-        return ["parsing"]
-
-    @override
     def get_tasks(self) -> Iterable[AsyncGenerator[ParsingEvent, None]]:
         return [
-            IParser.get_supported_instance(source.strategy)(source.use).parse()
+            PluginRegistry.get("parsing", source.strategy)(source.use).parse()
             for source in self.step
         ]
 

@@ -8,6 +8,7 @@ from typing import Callable, Iterable, get_args, override
 from fastrag.cache.cache import CacheEntry, StepNames, ICache
 from fastrag.helpers.filters import Filter
 from fastrag.helpers import PosixTimestamp, timestamp
+from fastrag.plugins.base import plugin
 
 type Metadata = dict[str, CacheEntry]
 
@@ -17,6 +18,7 @@ def is_outdated(time: PosixTimestamp, lifespan: int) -> bool:
 
 
 @dataclass(frozen=True)
+@plugin(key="cache", supported="local")
 class LocalCache(ICache):
 
     _lock: Lock = field(init=False, repr=False, default_factory=Lock)

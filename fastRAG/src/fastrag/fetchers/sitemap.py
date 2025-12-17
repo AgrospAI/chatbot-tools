@@ -2,26 +2,23 @@ import asyncio
 import re
 import xml.etree.ElementTree as ET
 from dataclasses import dataclass
-from typing import AsyncGenerator, Iterable, override
+from typing import AsyncGenerator, override
 
 import httpx
 
 from fastrag.cache.cache import ICache
 from fastrag.constants import get_constants
-from fastrag.fetchers import FetchingEvent, IFetcher
+from fastrag.fetchers import FetchingEvent
 from fastrag.helpers import URLField
+from fastrag.plugins.base import plugin
 
 
 @dataclass(frozen=True)
-class SitemapXMLFetcher(IFetcher):
+@plugin(key="fetching", supported="SitemapXML")
+class SitemapXMLFetcher:
 
     regex: list[str] | None
     url: URLField = URLField()
-
-    @classmethod
-    @override
-    def supported(cls) -> Iterable[str]:
-        return ["SitemapXML"]
 
     @override
     async def fetch(self) -> AsyncGenerator[FetchingEvent, None]:
@@ -69,6 +66,6 @@ class SitemapXMLFetcher(IFetcher):
             url,
             res.text.encode(),
             "fetching",
-            {"format": "html", "strategy": self.supported()[0]},
+            {"format": "html", "strategy": SitemapXMLFetcher.supported},
         )
         return FetchingEvent(FetchingEvent.Type.PROGRESS, f"Fetching {url}")

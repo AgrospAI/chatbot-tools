@@ -2,25 +2,22 @@ from dataclasses import dataclass
 from typing import AsyncGenerator, ClassVar, Iterable, override
 
 from fastrag.config.config import Source
-from fastrag.fetchers.fetcher import FetchingEvent, IFetcher
+from fastrag.fetchers.events import FetchingEvent
+from fastrag.plugins.base import PluginRegistry, plugin
 from fastrag.steps.impl.arunner import IAsyncStepRunner
 
 
 @dataclass(frozen=True)
+@plugin(key="step", supported="fetching")
 class SourceStep(IAsyncStepRunner):
 
     step: list[Source]
     description: ClassVar[str] = "FETCH"
 
     @override
-    @classmethod
-    def supported(cls) -> Iterable[str]:
-        return ["fetching"]
-
-    @override
     def get_tasks(self) -> Iterable[AsyncGenerator[FetchingEvent, None]]:
         return [
-            IFetcher.get_supported_instance(source.strategy)(**source.params).fetch()
+            PluginRegistry.get("fetching", source.strategy)(**source.params).fetch()
             for source in self.step
         ]
 

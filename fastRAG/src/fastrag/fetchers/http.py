@@ -1,22 +1,19 @@
 from dataclasses import dataclass
-from typing import AsyncGenerator, Iterable, override
+from typing import AsyncGenerator, override
 
 from httpx import AsyncClient
 
 from fastrag.constants import get_constants
-from fastrag.fetchers import FetchingEvent, IFetcher
+from fastrag.fetchers import FetchingEvent
 from fastrag.helpers import URLField
+from fastrag.plugins.base import plugin
 
 
 @dataclass(frozen=True)
-class HttpFetcher(IFetcher):
+@plugin(key="fetching", supported="URL")
+class HttpFetcher:
 
     url: URLField = URLField()
-
-    @classmethod
-    @override
-    def supported(cls) -> Iterable[str]:
-        return ["URL"]
 
     @override
     async def fetch(self) -> AsyncGenerator[FetchingEvent, None]:
@@ -38,5 +35,5 @@ class HttpFetcher(IFetcher):
             self.url,
             res.text.encode(),
             "fetching",
-            {"format": "html", "strategy": self.supported()[0]},
+            {"format": "html", "strategy": HttpFetcher.supported},
         )

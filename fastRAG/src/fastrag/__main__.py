@@ -11,11 +11,11 @@ from fastrag import (
     DEFAULT_CONFIG,
     Config,
     Constants,
-    IConfigLoader,
     IStepRunner,
     init_constants,
     version,
 )
+from fastrag.plugins import PluginRegistry, import_path
 
 app = typer.Typer(help="CLI RAG generator", add_completion=False)
 console = Console()
@@ -87,7 +87,7 @@ def run(
 
 
 def load_config(path: Path, verbose: bool) -> Config:
-    config: Config = IConfigLoader.from_settings(path)
+    config: Config = PluginRegistry.get("config", path.suffix)().load(path)
     init_constants(config, verbose)
     console.print(
         Panel(
@@ -105,14 +105,13 @@ def load_config(path: Path, verbose: bool) -> Config:
 
 
 def load_plugins(plugins: Path) -> None:
-    from fastrag.plugins import import_path, plugin_registry
 
     if plugins is not None:
         import_path(plugins)
 
     console.print(
         Panel(
-            Pretty(plugin_registry),
+            Pretty(PluginRegistry.representation(), expand_all=True),
             title="[bold]Plugin Registry[/bold]",
             border_style="green",
         )
