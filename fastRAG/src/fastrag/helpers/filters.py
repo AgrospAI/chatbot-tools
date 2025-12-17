@@ -28,3 +28,16 @@ class MultiFilter(Filter[T]):
 
     def __or__(self, other: Filter):
         return MultiFilter([*self.filters, other])
+
+
+@dataclass
+class OrFilter(Filter[T]):
+
+    filters: list[Filter[T]]
+
+    def __init__(self, *args) -> None:
+        self.filters = [*args]
+
+    @override
+    def apply(self, entry: T) -> bool:
+        return any(f.apply(entry) for f in self.filters)

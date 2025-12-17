@@ -5,7 +5,7 @@ steps:
   fetching:
     - strategy: Path
       params:
-        path: ./resources/test/sample.json
+        path: ./resources/test/
     - strategy: SitemapXML
       params:
         url: https://agrospai.udl.cat/sitemap.xml

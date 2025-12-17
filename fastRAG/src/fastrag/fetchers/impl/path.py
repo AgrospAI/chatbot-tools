@@ -49,14 +49,13 @@ class PathFetcher(IFetcher):
                     uri=p.resolve().as_uri(),
                     step="fetching",
                     contents=p.read_bytes,
-                    metadata=None,
+                    metadata={"format": p.suffix[1:], "strategy": self.supported()[0]},
                 )
                 yield FetchingEvent(
                     FetchingEvent.Type.PROGRESS,
                     (
-                        f"Skipping local file {self.path.resolve().as_uri()}"
-                        if existed
-                        else f"Copied local file {self.path.resolve().as_uri()}"
+                        ("Cached" if existed else "Copied")
+                        + f" local path {p.resolve().as_uri()}"
                     ),
                 )
 

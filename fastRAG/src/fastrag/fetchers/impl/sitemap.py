@@ -65,5 +65,10 @@ class SitemapXMLFetcher(IFetcher):
         except Exception as e:
             return FetchingEvent(FetchingEvent.Type.EXCEPTION, f"ERROR: {e}")
 
-        await cache.create(url, res.text.encode(), "fetching", {"format": "html"})
-        return FetchingEvent(FetchingEvent.Type.PROGRESS, f"Fetched {url}")
+        await cache.create(
+            url,
+            res.text.encode(),
+            "fetching",
+            {"format": "html", "strategy": self.supported()[0]},
+        )
+        return FetchingEvent(FetchingEvent.Type.PROGRESS, f"Fetching {url}")

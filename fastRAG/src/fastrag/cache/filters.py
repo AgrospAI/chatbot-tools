@@ -26,7 +26,9 @@ class MetadataFilter(Filter[CacheEntry]):
 
     @override
     def apply(self, entry: CacheEntry) -> bool:
+        if not entry.metadata:
+            return False
         for key, expected in self.criteria.items():
-            if entry.metadata and entry.metadata.get(key) != expected:
+            if entry.metadata.get(key) != expected:
                 return False
         return True

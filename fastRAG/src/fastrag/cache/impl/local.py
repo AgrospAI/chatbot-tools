@@ -92,10 +92,12 @@ class LocalCache(ICache):
         return self.metadata.get(uri) if self.is_present(uri) else None
 
     @override
-    async def get_entries(self, filter: Filter | None = None) -> Iterable[CacheEntry]:
+    async def get_entries(
+        self, filter: Filter | None = None
+    ) -> Iterable[tuple[str, CacheEntry]]:
         if not filter:
-            return [entry for entry in self.metadata.values()]
-        return [entry for entry in self.metadata.values() if filter.apply(entry)]
+            return [(k, e) for k, e in self.metadata.items()]
+        return [(k, e) for k, e in self.metadata.items() if filter.apply(e)]
 
     def _delete_invalid(self) -> None:
         outdated = [
