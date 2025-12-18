@@ -28,7 +28,7 @@ class Runner(IRunner):
         return len(self.step)
 
     @override
-    def run(cls, config: Config, up_to: str) -> None:
+    def run(self, config: Config, run_steps: int) -> None:
         with Progress(
             TextColumn(
                 "[progress.percentage]{task.description} {task.percentage:>3.0f}%"
@@ -91,7 +91,7 @@ class Runner(IRunner):
                 asyncio.run(runner_loop(runners[step]))
 
                 # Manual stop of application after given step
-                if up_to == step_idx + 1:
+                if run_steps == step_idx + 1:
                     progress.print(
                         Panel.fit(
                             f"Stopping execution after step [bold yellow]{step.capitalize()}[/bold yellow]",
