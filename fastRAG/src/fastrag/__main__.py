@@ -11,11 +11,9 @@ from fastrag import (
     DEFAULT_CONFIG,
     Config,
     Constants,
-    IStep,
     init_constants,
     version,
 )
-from fastrag.config.loaders.loader import IConfigLoader
 from fastrag.plugins import PluginRegistry, import_path
 from fastrag.systems import System
 
@@ -27,7 +25,7 @@ console = Console()
 def clean(
     sure: Annotated[
         bool,
-        typer.Option(prompt="Are you sure you want to continue?"),
+        typer.Option("--yes", "-y", prompt="Are you sure you want to continue?"),
     ] = True,
 ):
     """Clean the caches"""
