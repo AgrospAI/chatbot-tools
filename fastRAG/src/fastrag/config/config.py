@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import InitVar, dataclass, field
+from dataclasses import InitVar, asdict, dataclass, field
 from pathlib import Path
 from typing import Literal, TypeAlias, TypeVar
 
@@ -42,6 +42,8 @@ class Steps:
     chunking: list[Chunking] | None
     embedding: list[Embedding] | None
     benchmarking: list[Benchmarking] | None
+
+    asdict = asdict
 
 
 StepNames: TypeAlias = Literal[

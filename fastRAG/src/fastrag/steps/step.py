@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import AsyncGenerator, Iterable
+from typing import AsyncGenerator, Iterable, List
 
 from rich.progress import Progress
 
@@ -17,11 +17,24 @@ class IStep(Loggable, ABC):
     task_id: int
 
     def calculate_total(self) -> int:
+        """Calculates the number of tasks to perform by this step
+
+        Returns:
+            int: number of tasks to perform
+        """
         return len(self.step) if self.step else 0
 
     @property
     def is_present(self) -> bool:
+        """If the step is present"""
         return self.step is not None
 
     @abstractmethod
-    def get_tasks(self) -> Iterable[AsyncGenerator[Event, None]]: ...
+    def get_tasks(self) -> List[AsyncGenerator[Event, None]]:
+        """Generate a list with the tasks to perform
+
+        Returns:
+            List[AsyncGenerator[Event, None]]: list with the different tasks
+        """
+
+        raise NotImplementedError

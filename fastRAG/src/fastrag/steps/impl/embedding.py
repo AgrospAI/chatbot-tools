@@ -1,7 +1,8 @@
 from dataclasses import dataclass
-from typing import AsyncGenerator, ClassVar, Iterable, override
+from typing import AsyncGenerator, ClassVar, List, override
 
 from fastrag.config.config import Embedding
+from fastrag.events import Event
 from fastrag.plugins import plugin
 from fastrag.steps.embeddings import EmbeddingEvent
 from fastrag.steps.step import IStep
@@ -16,7 +17,7 @@ class EmbeddingStep(IStep):
     description: ClassVar[str] = "EMBED"
 
     @override
-    def get_tasks(self) -> Iterable[AsyncGenerator[EmbeddingEvent, None]]:
+    def get_tasks(self) -> List[AsyncGenerator[Event, None]]:
         # TODO: Fill with asyncio task calls
         return []
 

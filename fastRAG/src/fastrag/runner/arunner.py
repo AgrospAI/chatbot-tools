@@ -40,7 +40,10 @@ class Runner(IRunner):
             TextColumn("•"),
             TimeRemainingColumn(),
         ) as progress:
-            names = get_args(StepNames)
+            names = [
+                step for step in get_args(StepNames) if getattr(config.steps, step)
+            ]
+
             runners: dict[str, IStep] = {
                 step: PluginRegistry.get_instance(
                     System.STEP,
@@ -67,7 +70,8 @@ class Runner(IRunner):
 
                     while tasks:
                         done, _ = await asyncio.wait(
-                            tasks, return_when=asyncio.FIRST_COMPLETED
+                            tasks,
+                            return_when=asyncio.FIRST_COMPLETED,
                         )
 
                         for d in done:

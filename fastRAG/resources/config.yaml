@@ -15,13 +15,13 @@ steps:
       params:
         url: https://agrospai.udl.cat
   parsing:
-    #   - strategy: HtmlParser
-    #     use:
-    #       - Sitemap
-    #       - URL
-    #   - strategy: FileParser
-    #     use:
-    #       - Path
+    - strategy: HtmlParser
+      use:
+        - Sitemap
+        - URL
+    - strategy: FileParser
+      use:
+        - Path
   chunking:
     - strategy: RecursiveTextSplitter
       params:

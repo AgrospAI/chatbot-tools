@@ -1,7 +1,8 @@
 from dataclasses import dataclass
-from typing import AsyncGenerator, ClassVar, Iterable, override
+from typing import AsyncGenerator, ClassVar, List, override
 
 from fastrag.config.config import Benchmarking
+from fastrag.events import Event
 from fastrag.plugins import plugin
 from fastrag.steps.benchmarking import BenchmarkingEvent
 from fastrag.steps.step import IStep
@@ -16,7 +17,7 @@ class BenchmarkingStep(IStep):
     description: ClassVar[str] = "BENCH"
 
     @override
-    def get_tasks(self) -> Iterable[AsyncGenerator[BenchmarkingEvent, None]]:
+    def get_tasks(self) -> List[AsyncGenerator[Event, None]]:
         return []
 
     @override

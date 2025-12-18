@@ -1,9 +1,9 @@
 from dataclasses import dataclass
-from typing import AsyncGenerator, ClassVar, Iterable, override
+from typing import AsyncGenerator, ClassVar, List, override
 
 from fastrag.config.config import Chunking
+from fastrag.events import Event
 from fastrag.plugins import plugin
-from fastrag.steps.benchmarking.events import BenchmarkingEvent
 from fastrag.steps.chunking import ChunkingEvent
 from fastrag.steps.step import IStep
 from fastrag.systems import System
@@ -17,7 +17,7 @@ class ChunkingStep(IStep):
     description: ClassVar[str] = "CHUNK"
 
     @override
-    def get_tasks(self) -> Iterable[AsyncGenerator[BenchmarkingEvent, None]]:
+    def get_tasks(self) -> List[AsyncGenerator[Event, None]]:
         return []
 
     @override

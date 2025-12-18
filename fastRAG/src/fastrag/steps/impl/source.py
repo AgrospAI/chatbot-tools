@@ -1,7 +1,8 @@
 from dataclasses import dataclass
-from typing import AsyncGenerator, ClassVar, Iterable, override
+from typing import AsyncGenerator, ClassVar, List, override
 
 from fastrag.config.config import Source
+from fastrag.events import Event
 from fastrag.plugins import PluginRegistry, plugin
 from fastrag.steps.fetchers.events import FetchingEvent
 from fastrag.steps.step import IStep
@@ -16,7 +17,7 @@ class SourceStep(IStep):
     description: ClassVar[str] = "FETCH"
 
     @override
-    def get_tasks(self) -> Iterable[AsyncGenerator[FetchingEvent, None]]:
+    def get_tasks(self) -> List[AsyncGenerator[Event, None]]:
         return [
             PluginRegistry.get_instance(
                 System.FETCHING,

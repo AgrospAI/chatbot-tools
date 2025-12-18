@@ -1,7 +1,8 @@
 from dataclasses import dataclass
-from typing import AsyncGenerator, ClassVar, Iterable, override
+from typing import AsyncGenerator, ClassVar, List, override
 
 from fastrag.config.config import Parsing
+from fastrag.events import Event
 from fastrag.plugins import PluginRegistry, plugin
 from fastrag.steps.parsing.events import ParsingEvent
 from fastrag.steps.step import IStep
@@ -16,7 +17,7 @@ class ParsingStep(IStep):
     description: ClassVar[str] = "PARSE"
 
     @override
-    def get_tasks(self) -> Iterable[AsyncGenerator[ParsingEvent, None]]:
+    def get_tasks(self) -> List[AsyncGenerator[Event, None]]:
         return [
             PluginRegistry.get_instance(
                 System.PARSING,
