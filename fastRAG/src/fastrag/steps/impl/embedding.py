@@ -2,14 +2,15 @@ from dataclasses import dataclass
 from typing import AsyncGenerator, ClassVar, Iterable, override
 
 from fastrag.config.config import Embedding
-from fastrag.embeddings import EmbeddingEvent
-from fastrag.plugins.base import plugin
-from fastrag.steps.impl.arunner import IAsyncStepRunner
+from fastrag.plugins import plugin
+from fastrag.steps.embeddings import EmbeddingEvent
+from fastrag.steps.step import IStep
+from fastrag.systems import System
 
 
 @dataclass(frozen=True)
-@plugin(key="step", supported="embedding")
-class EmbeddingStep(IAsyncStepRunner):
+@plugin(system=System.STEP, supported="embedding")
+class EmbeddingStep(IStep):
 
     step: list[Embedding]
     description: ClassVar[str] = "EMBED"
@@ -20,7 +21,7 @@ class EmbeddingStep(IAsyncStepRunner):
         return []
 
     @override
-    def _log_verbose(self, event: EmbeddingEvent) -> None:
+    def log_verbose(self, event: EmbeddingEvent) -> None:
         match event.type:
             case EmbeddingEvent.Type.PROGRESS:
                 self.progress.log(event.data)
@@ -28,11 +29,15 @@ class EmbeddingStep(IAsyncStepRunner):
                 self.progress.log(f"[green]:heavy_check_mark: {event.data}[/green]")
             case EmbeddingEvent.Type.EXCEPTION:
                 self.progress.log(f"[red]:x: {event.data}[/red]")
+            case _:
+                self.progress.log(f"[red]:?: UNEXPECTED EVENT: {event}[/red]")
 
     @override
-    def _log(self, event: EmbeddingEvent) -> None:
+    def log(self, event: EmbeddingEvent) -> None:
         match event.type:
             case EmbeddingEvent.Type.COMPLETED:
                 self.progress.log(f"[green]:heavy_check_mark: {event.data}[/green]")
             case EmbeddingEvent.Type.EXCEPTION:
                 self.progress.log(f"[red]:x: {event.data}[/red]")
+            case _:
+                self.progress.log(f"[red]:?: UNEXPECTED EVENT: {event}[/red]")

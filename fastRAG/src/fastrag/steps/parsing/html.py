@@ -7,8 +7,10 @@ from html_to_markdown import convert_to_markdown
 
 from fastrag.cache.filters import MetadataFilter, StepFilter
 from fastrag.constants import get_constants
-from fastrag.parsing.events import ParsingEvent
-from fastrag.plugins.base import plugin
+from fastrag.plugins import plugin
+from fastrag.steps.parsing.events import ParsingEvent
+from fastrag.steps.parsing.parsing import IParser
+from fastrag.systems import System
 
 
 def read(path: Path) -> bytes:
@@ -17,8 +19,8 @@ def read(path: Path) -> bytes:
 
 
 @dataclass(frozen=True)
-@plugin(key="parsing", supported="HtmlParser")
-class HtmlParser:
+@plugin(system=System.PARSING, supported="HtmlParser")
+class HtmlParser(IParser):
 
     use: list[str]
 

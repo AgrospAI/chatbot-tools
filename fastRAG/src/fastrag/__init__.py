@@ -8,6 +8,7 @@ from fastrag.config import (
     Chunking,
     Config,
     Embedding,
+    IConfigLoader,
     Parsing,
     Source,
     Step,
@@ -16,7 +17,8 @@ from fastrag.config import (
 from fastrag.constants import Constants, get_constants, init_constants
 from fastrag.helpers import PathField, URLField, version
 from fastrag.plugins import PluginRegistry, import_path, plugin
-from fastrag.steps import IStepRunner
+from fastrag.runner.runner import IRunner
+from fastrag.steps import IStep
 
 PACKAGE_DIR = Path(fastrag.__file__).parent.parent.parent
 RESOURCES_DIR = PACKAGE_DIR / "resources"
@@ -43,5 +45,7 @@ __all__ = [
     init_constants,
     Constants,
     version,
-    IStepRunner,
+    IStep,
+    IConfigLoader,
+    IRunner,
 ]

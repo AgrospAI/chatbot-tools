@@ -5,9 +5,11 @@ from typing import AsyncGenerator, override
 import humanize
 
 from fastrag.constants import get_constants
-from fastrag.fetchers import FetchingEvent
 from fastrag.helpers import PathField
-from fastrag.plugins.base import plugin
+from fastrag.plugins import plugin
+from fastrag.steps.fetchers.events import FetchingEvent
+from fastrag.steps.fetchers.fetcher import IFetcher
+from fastrag.systems import System
 
 
 def get_uri(p: Path) -> str:
@@ -15,10 +17,8 @@ def get_uri(p: Path) -> str:
 
 
 def list_paths(p: Path) -> list[Path]:
-
     if p.is_file():
         return [p]
-
     if p.is_dir():
         return [p for p in p.glob("*") if p.is_file()]
 
@@ -26,9 +26,8 @@ def list_paths(p: Path) -> list[Path]:
 
 
 @dataclass(frozen=True)
-@plugin(key="fetching", supported="Path")
-class PathFetcher:
-    """Copy the source file tree into the cache"""
+@plugin(system=System.FETCHING, supported="Path")
+class PathFetcher(IFetcher):
 
     path: PathField = PathField()
 

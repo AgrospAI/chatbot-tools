@@ -8,14 +8,16 @@ import httpx
 
 from fastrag.cache.cache import ICache
 from fastrag.constants import get_constants
-from fastrag.fetchers import FetchingEvent
 from fastrag.helpers import URLField
-from fastrag.plugins.base import plugin
+from fastrag.plugins import plugin
+from fastrag.steps.fetchers.events import FetchingEvent
+from fastrag.steps.fetchers.fetcher import IFetcher
+from fastrag.systems import System
 
 
 @dataclass(frozen=True)
-@plugin(key="fetching", supported="SitemapXML")
-class SitemapXMLFetcher:
+@plugin(system=System.FETCHING, supported="SitemapXML")
+class SitemapXMLFetcher(IFetcher):
 
     regex: list[str] | None
     url: URLField = URLField()

@@ -1,27 +1,26 @@
 from dataclasses import dataclass
-from typing import AsyncGenerator, ClassVar, Generator, Iterable, override
+from typing import AsyncGenerator, ClassVar, Iterable, override
 
-from fastrag.benchmarking.events import BenchmarkingEvent
 from fastrag.config.config import Benchmarking
-from fastrag.plugins.base import plugin
-from fastrag.steps.impl.arunner import IAsyncStepRunner
+from fastrag.plugins import plugin
+from fastrag.steps.benchmarking import BenchmarkingEvent
+from fastrag.steps.step import IStep
+from fastrag.systems import System
 
 
 @dataclass(frozen=True)
-@plugin(key="step", supported="benchmarking")
-class BenchmarkingStep(IAsyncStepRunner):
+@plugin(system=System.STEP, supported="benchmarking")
+class BenchmarkingStep(IStep):
 
     step: list[Benchmarking]
     description: ClassVar[str] = "BENCH"
 
     @override
-    def run(self) -> Generator[BenchmarkingEvent, None, None]: ...
+    def get_tasks(self) -> Iterable[AsyncGenerator[BenchmarkingEvent, None]]:
+        return []
 
     @override
-    def get_tasks(self) -> Iterable[AsyncGenerator[BenchmarkingEvent, None]]: ...
-
-    @override
-    def _log_verbose(self, event: BenchmarkingEvent) -> None:
+    def log_verbose(self, event: BenchmarkingEvent) -> None:
         match event.type:
             case BenchmarkingEvent.Type.PROGRESS:
                 self.progress.log(event.data)
@@ -29,11 +28,15 @@ class BenchmarkingStep(IAsyncStepRunner):
                 self.progress.log(f"[green]:heavy_check_mark: {event.data}[/green]")
             case BenchmarkingEvent.Type.EXCEPTION:
                 self.progress.log(f"[red]:x: {event.data}[/red]")
+            case _:
+                self.progress.log(f"[red]:?: UNEXPECTED EVENT: {event}[/red]")
 
     @override
-    def _log(self, event: BenchmarkingEvent) -> None:
+    def log(self, event: BenchmarkingEvent) -> None:
         match event.type:
             case BenchmarkingEvent.Type.COMPLETED:
                 self.progress.log(f"[green]:heavy_check_mark: {event.data}[/green]")
             case BenchmarkingEvent.Type.EXCEPTION:
                 self.progress.log(f"[red]:x: {event.data}[/red]")
+            case _:
+                self.progress.log(f"[red]:?: UNEXPECTED EVENT: {event}[/red]")

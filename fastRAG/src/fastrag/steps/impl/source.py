@@ -2,14 +2,15 @@ from dataclasses import dataclass
 from typing import AsyncGenerator, ClassVar, Iterable, override
 
 from fastrag.config.config import Source
-from fastrag.fetchers.events import FetchingEvent
-from fastrag.plugins.base import PluginRegistry, plugin
-from fastrag.steps.impl.arunner import IAsyncStepRunner
+from fastrag.plugins import PluginRegistry, plugin
+from fastrag.steps.fetchers.events import FetchingEvent
+from fastrag.steps.step import IStep
+from fastrag.systems import System
 
 
 @dataclass(frozen=True)
-@plugin(key="step", supported="fetching")
-class SourceStep(IAsyncStepRunner):
+@plugin(system=System.STEP, supported="fetching")
+class SourceStep(IStep):
 
     step: list[Source]
     description: ClassVar[str] = "FETCH"
@@ -17,12 +18,16 @@ class SourceStep(IAsyncStepRunner):
     @override
     def get_tasks(self) -> Iterable[AsyncGenerator[FetchingEvent, None]]:
         return [
-            PluginRegistry.get("fetching", source.strategy)(**source.params).fetch()
+            PluginRegistry.get_instance(
+                System.FETCHING,
+                source.strategy,
+                **source.params,
+            ).fetch()
             for source in self.step
         ]
 
     @override
-    def _log_verbose(self, event: FetchingEvent) -> None:
+    def log_verbose(self, event: FetchingEvent) -> None:
         match event.type:
             case FetchingEvent.Type.PROGRESS:
                 self.progress.log(event.data)
@@ -30,11 +35,15 @@ class SourceStep(IAsyncStepRunner):
                 self.progress.log(f"[green]:heavy_check_mark: {event.data}[/green]")
             case FetchingEvent.Type.EXCEPTION:
                 self.progress.log(f"[red]:x: {event.data}[/red]")
+            case _:
+                self.progress.log(f"[red]:?: UNEXPECTED EVENT: {event}[/red]")
 
     @override
-    def _log(self, event: FetchingEvent) -> None:
+    def log(self, event: FetchingEvent) -> None:
         match event.type:
             case FetchingEvent.Type.COMPLETED:
                 self.progress.log(f"[green]:heavy_check_mark: {event.data}[/green]")
             case FetchingEvent.Type.EXCEPTION:
                 self.progress.log(f"[red]:x: {event.data}[/red]")
+            case _:
+                self.progress.log(f"[red]:?: UNEXPECTED EVENT: {event}[/red]")

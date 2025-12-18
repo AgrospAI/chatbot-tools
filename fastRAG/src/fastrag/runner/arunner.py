@@ -1,6 +1,6 @@
-from abc import ABC, abstractmethod
-from dataclasses import dataclass, field
-from typing import get_args
+import asyncio
+from dataclasses import dataclass
+from typing import get_args, override
 
 from rich.panel import Panel
 from rich.progress import (
@@ -14,31 +14,20 @@ from rich.progress import (
 
 from fastrag import Config
 from fastrag.config.config import StepNames
-from fastrag.events import Event
-from fastrag.plugins.base import PluginRegistry
-from fastrag.steps.logs import LogCallback, set_logging_callback
+from fastrag.plugins import PluginRegistry, plugin
+from fastrag.runner.runner import IRunner
+from fastrag.steps.step import IStep
+from fastrag.systems import System
 
 
 @dataclass(frozen=True)
-class IStepRunner(ABC):
-
-    progress: Progress
-    task_id: int
-    _callback: LogCallback = field(init=False, repr=False)
-
-    def __post_init__(self) -> None:
-        set_logging_callback(self)
-
-    @abstractmethod
-    def _log(self, event: Event) -> None: ...
-
-    @abstractmethod
-    def _log_verbose(self, event: Event) -> None: ...
+@plugin(system=System.RUNNER)
+class Runner(IRunner):
 
     def calculate_total(self) -> int:
         return len(self.step)
 
-    @classmethod
+    @override
     def run(cls, config: Config, up_to: str) -> None:
         with Progress(
             TextColumn(
@@ -52,8 +41,10 @@ class IStepRunner(ABC):
             TimeRemainingColumn(),
         ) as progress:
             names = get_args(StepNames)
-            runners: dict[str, IStepRunner] = {
-                step: PluginRegistry.get("step", step)(
+            runners: dict[str, IStep] = {
+                step: PluginRegistry.get_instance(
+                    System.STEP,
+                    step,
                     progress=progress,
                     task_id=idx,
                     step=getattr(config.steps, step),
@@ -67,8 +58,33 @@ class IStepRunner(ABC):
                     total=runners[step].calculate_total(),
                 )
 
-                runner = runners[step]
-                runner.run()
+                async def runner_loop(step: IStep):
+                    if step is None or not step.is_present:
+                        return
+
+                    runners = step.get_tasks()
+                    tasks = [asyncio.create_task(run.__anext__()) for run in runners]
+
+                    while tasks:
+                        done, _ = await asyncio.wait(
+                            tasks, return_when=asyncio.FIRST_COMPLETED
+                        )
+
+                        for d in done:
+                            idx = tasks.index(d)
+
+                            try:
+                                event = d.result()
+                            except StopAsyncIteration:
+                                tasks.pop(idx)
+                                runners.pop(idx)
+                                progress.advance(step.task_id)
+                                continue
+
+                            step.callback(event)
+                            tasks[idx] = asyncio.create_task(runners[idx].__anext__())
+
+                asyncio.run(runner_loop(runners[step]))
 
                 # Manual stop of application after given step
                 if up_to == step_idx + 1:

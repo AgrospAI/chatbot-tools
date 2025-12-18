@@ -9,7 +9,7 @@ from fastrag.config.config import (
     Step,
     Steps,
 )
-from fastrag.config.loaders.yaml import YamlLoader
+from fastrag.config.loaders import IConfigLoader
 
 __all__ = [
     Config,
@@ -21,5 +21,5 @@ __all__ = [
     Parsing,
     Chunking,
     Embedding,
-    YamlLoader,
+    IConfigLoader,
 ]

@@ -1,21 +1,39 @@
-from typing import Callable, Protocol
+from abc import ABC, abstractmethod
+from dataclasses import dataclass, field
+from typing import Callable
 
 from fastrag.constants import get_constants
 from fastrag.events import Event
 
-type LogCallback = Callable[[Event], None]
 
+@dataclass(frozen=True)
+class Loggable(ABC):
 
-class Logger(Protocol):
+    callback: Callable[[Event], None] = field(init=False, repr=False)
 
-    def _log(self, event: Event) -> None: ...
+    def __post_init__(self) -> None:
+        object.__setattr__(
+            self,
+            "callback",
+            self.log_verbose if get_constants().verbose else self.log,
+        )
 
-    def _log_verbose(self, event: Event) -> None: ...
+    @abstractmethod
+    def log(self, event: Event) -> None:
+        """Log the given event. Not verbose.
 
+        Args:
+            event (Event): step event
+        """
 
-def set_logging_callback(obj: Logger) -> None:
-    object.__setattr__(
-        obj,
-        "_callback",
-        obj._log_verbose if get_constants().verbose else obj._log,
-    )
+        raise NotImplementedError
+
+    @abstractmethod
+    def log_verbose(self, event: Event) -> None:
+        """Verbose log the given event.
+
+        Args:
+            event (Event): step event
+        """
+
+        raise NotImplementedError

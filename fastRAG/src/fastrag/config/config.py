@@ -37,11 +37,11 @@ class Benchmarking(Strategy): ...
 
 @dataclass(frozen=True)
 class Steps:
-    fetching: list[Source]
-    parsing: list[Parsing]
-    chunking: list[Chunking]
-    embedding: list[Embedding]
-    benchmarking: list[Benchmarking]
+    fetching: list[Source] | None
+    parsing: list[Parsing] | None
+    chunking: list[Chunking] | None
+    embedding: list[Embedding] | None
+    benchmarking: list[Benchmarking] | None
 
 
 StepNames: TypeAlias = Literal[

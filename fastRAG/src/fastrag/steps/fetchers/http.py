@@ -4,14 +4,16 @@ from typing import AsyncGenerator, override
 from httpx import AsyncClient
 
 from fastrag.constants import get_constants
-from fastrag.fetchers import FetchingEvent
 from fastrag.helpers import URLField
-from fastrag.plugins.base import plugin
+from fastrag.plugins import plugin
+from fastrag.steps.fetchers.events import FetchingEvent
+from fastrag.steps.fetchers.fetcher import IFetcher
+from fastrag.systems import System
 
 
 @dataclass(frozen=True)
-@plugin(key="fetching", supported="URL")
-class HttpFetcher:
+@plugin(system=System.FETCHING, supported="URL")
+class HttpFetcher(IFetcher):
 
     url: URLField = URLField()
 

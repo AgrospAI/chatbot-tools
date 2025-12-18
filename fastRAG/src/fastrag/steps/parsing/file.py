@@ -6,8 +6,10 @@ from typing import AsyncGenerator, ClassVar, override
 from fastrag.cache.filters import MetadataFilter, StepFilter
 from fastrag.constants import get_constants
 from fastrag.helpers.filters import OrFilter
-from fastrag.parsing.events import ParsingEvent
-from fastrag.plugins.base import plugin
+from fastrag.plugins import plugin
+from fastrag.steps.parsing.events import ParsingEvent
+from fastrag.steps.parsing.parsing import IParser
+from fastrag.systems import System
 
 
 def to_markdown(fmt: str, path: Path) -> bytes:
@@ -25,8 +27,8 @@ def to_markdown(fmt: str, path: Path) -> bytes:
 
 
 @dataclass(frozen=True)
-@plugin(key="parsing", supported="FileParser")
-class FileParser:
+@plugin(system=System.PARSING, supported="FileParser")
+class FileParser(IParser):
 
     use: list[str]
 
