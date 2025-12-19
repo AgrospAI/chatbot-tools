@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import AsyncGenerator, Callable, ClassVar, Dict, List, override
+from typing import AsyncGenerator, ClassVar, Dict, override
 
 from fastrag.cache.cache import ICache
 from fastrag.config.config import Source
@@ -19,21 +19,15 @@ class SourceStep(IStep):
     step: list[Source]
 
     @override
-    def get_instances(
-        self,
-        const: List[Callable[[any], Task]],
-        cache: ICache,
-    ) -> List[Task]:
-        return [c(cache=cache, **s.params) for c, s in zip(const, self.step)]
-
-    @override
     async def get_tasks(self, cache: ICache) -> Dict[Task, AsyncGenerator[Event, None]]:
         return {
             inst: [inst.callback()]
-            for inst in self.get_instances(
-                [PluginRegistry.get(System.FETCHING, s.strategy) for s in self.step],
-                cache,
-            )
+            for inst in [
+                PluginRegistry.get_instance(
+                    System.FETCHING, s.strategy, cache=cache, **s.params
+                )
+                for s in self.step
+            ]
         }
 
     @override

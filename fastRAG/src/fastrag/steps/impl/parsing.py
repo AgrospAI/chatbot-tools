@@ -20,14 +20,6 @@ class ParsingStep(IStep):
     description: ClassVar[str] = "PARSE"
 
     @override
-    def get_instances(
-        self,
-        const: List[Callable[[any], Task]],
-        cache: ICache,
-    ) -> List[Task]:
-        return [c(cache=cache) for c in const]
-
-    @override
     async def get_tasks(
         self,
         cache: ICache,
@@ -36,7 +28,7 @@ class ParsingStep(IStep):
         entries = await asyncio.gather(*(cache.get_entries(c.filter) for c in classes))
         for c, entries_ in zip(classes, entries):
             c.entries = entries_
-        instances = self.get_instances(classes, cache)
+        instances = [c(cache=cache) for c in classes]
         return {
             task: [task.callback(uri, entry) for uri, entry in entries_]
             for entries_, task in zip(entries, instances)

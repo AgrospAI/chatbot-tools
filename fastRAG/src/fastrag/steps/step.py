@@ -53,22 +53,6 @@ class IStep(Loggable, ABC):
         return task.completed_callback()
 
     @abstractmethod
-    def get_instances(
-        self, const: List[Callable[[any], Task]], cache: ICache
-    ) -> List[Task]:
-        """Get the list of instances
-
-        Args:
-            const (List[Callable[[any], Task]]): list of constructors
-            cache (ICache): cache instance
-
-        Returns:
-            List[Task]: list of tasks
-        """
-
-        raise NotImplementedError
-
-    @abstractmethod
     async def get_tasks(
         self, cache: ICache
     ) -> Dict[Task, List[AsyncGenerator[Event, None]]]:
