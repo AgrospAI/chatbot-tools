@@ -1,5 +1,6 @@
+import asyncio
 from dataclasses import dataclass
-from typing import AsyncGenerator, ClassVar, Dict, List, override
+from typing import AsyncGenerator, Callable, ClassVar, Dict, List, override
 
 from fastrag.cache.cache import ICache
 from fastrag.config.config import Parsing
@@ -19,14 +20,27 @@ class ParsingStep(IStep):
     description: ClassVar[str] = "PARSE"
 
     @override
-    async def get_tasks(self, cache: ICache) -> Dict[Task, AsyncGenerator[Event, None]]:
-        instances = [
-            PluginRegistry.get_instance(
-                System.PARSING, source.strategy, cache=cache, use=source.use
-            )
-            for source in self.step
-        ]
-        return {inst: inst.callback() for inst in instances}
+    def get_instances(
+        self,
+        const: List[Callable[[any], Task]],
+        cache: ICache,
+    ) -> List[Task]:
+        return [c(cache=cache) for c in const]
+
+    @override
+    async def get_tasks(
+        self,
+        cache: ICache,
+    ) -> Dict[Task, List[AsyncGenerator[Event, None]]]:
+        classes = [PluginRegistry.get(System.PARSING, s.strategy) for s in self.step]
+        entries = await asyncio.gather(*(cache.get_entries(c.filter) for c in classes))
+        for c, entries_ in zip(classes, entries):
+            c.entries = entries_
+        instances = self.get_instances(classes, cache)
+        return {
+            task: [task.callback(uri, entry) for uri, entry in entries_]
+            for entries_, task in zip(entries, instances)
+        }
 
     @override
     def log_verbose(self, event: ParsingEvent) -> None:
@@ -38,16 +52,12 @@ class ParsingStep(IStep):
             case ParsingEvent.Type.EXCEPTION:
                 self.progress.log(f"[red]:x: {event.data}[/red]")
             case _:
-                self.progress.log(f"[red]:?: UNEXPECTED EVENT: {event}[/red]")
+                self.progress.log(f"[red]:?: UNEXPECTED EVENT: {event}[/r   ed]")
 
     @override
     def log_normal(self, event: ParsingEvent) -> None:
         match event.type:
             case ParsingEvent.Type.PROGRESS:
                 ...
-            case ParsingEvent.Type.COMPLETED:
-                self.progress.log(f"[green]:heavy_check_mark: {event.data}[/green]")
-            case ParsingEvent.Type.EXCEPTION:
-                self.progress.log(f"[red]:x: {event.data}[/red]")
             case _:
-                self.progress.log(f"[red]:?: UNEXPECTED EVENT: {event}[/red]")
+                self.log_verbose(event)

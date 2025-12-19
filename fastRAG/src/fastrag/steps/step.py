@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import AsyncGenerator, ClassVar, Dict
+from typing import AsyncGenerator, Callable, ClassVar, Dict, List
 
 from rich.progress import Progress
 
@@ -19,7 +19,7 @@ class IStep(Loggable, ABC):
     progress: Progress
     task_id: int
     description: ClassVar[str] = ""
-    _tasks: ClassVar[Dict[str, Task]] = None
+    _tasks: ClassVar[Dict[Task, List[AsyncGenerator[Event, None]]]] = None
 
     def calculate_total(self) -> int:
         """Calculates the number of tasks to perform by this step
@@ -34,21 +34,11 @@ class IStep(Loggable, ABC):
         """If the step has been loaded / is present in the configuration file"""
         return self.step is not None
 
-    async def tasks(self) -> Dict[str, Task]:
+    async def tasks(self) -> Dict[Task, List[AsyncGenerator[Event, None]]]:
         if self._tasks is None:
             cache = get_constants().cache
             self._tasks = await self.get_tasks(cache)
         return self._tasks
-
-    @abstractmethod
-    async def get_tasks(self, cache: ICache) -> Dict[Task, AsyncGenerator[Event, None]]:
-        """Generate a dict with the tasks to perform
-
-        Returns:
-            Dict[Task, AsyncGenerator[Event, None]]: Task instance - Its callback dictionary
-        """
-
-        raise NotImplementedError
 
     def completed_callback(self, task: Task) -> Event:
         """Callback to call when the task has been completed
@@ -61,3 +51,31 @@ class IStep(Loggable, ABC):
         """
 
         return task.completed_callback()
+
+    @abstractmethod
+    def get_instances(
+        self, const: List[Callable[[any], Task]], cache: ICache
+    ) -> List[Task]:
+        """Get the list of instances
+
+        Args:
+            const (List[Callable[[any], Task]]): list of constructors
+            cache (ICache): cache instance
+
+        Returns:
+            List[Task]: list of tasks
+        """
+
+        raise NotImplementedError
+
+    @abstractmethod
+    async def get_tasks(
+        self, cache: ICache
+    ) -> Dict[Task, List[AsyncGenerator[Event, None]]]:
+        """Generate a dict with the tasks to perform
+
+        Returns:
+            Dict[Task, List[AsyncGenerator[Event, None]]]: Task instance - Its list of callbacks
+        """
+
+        raise NotImplementedError

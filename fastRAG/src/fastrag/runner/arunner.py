@@ -1,6 +1,6 @@
 import asyncio
 from dataclasses import dataclass
-from typing import get_args, override
+from typing import List, get_args, override
 
 from rich.panel import Panel
 from rich.progress import (
@@ -18,6 +18,7 @@ from fastrag.events import Event
 from fastrag.plugins import PluginRegistry, plugin
 from fastrag.runner.runner import IRunner
 from fastrag.steps.step import IStep
+from fastrag.steps.task import Task
 from fastrag.systems import System
 
 
@@ -64,29 +65,22 @@ class Runner(IRunner):
                         return
 
                     run = await step.tasks()
-                    tasks = [asyncio.create_task(r.__anext__()) for r in run.values()]
 
-                    while tasks:
-                        done, _ = await asyncio.wait(
-                            tasks,
-                            return_when=asyncio.FIRST_COMPLETED,
-                        )
-
-                        for d in done:
-                            idx = tasks.index(d)
-                            inst = list(run.keys())[idx]
-
-                            try:
-                                event = d.result()
-                            except StopAsyncIteration:
-                                step.log(step.completed_callback(inst))
-                                progress.advance(step.task_id)
-                                tasks.pop(idx)
-                                run.pop(inst)
-                                continue
-
+                    async def consume_gen(gen):
+                        async for event in gen:
                             step.log(event)
-                            tasks[idx] = asyncio.create_task(run[inst].__anext__())
+
+                    async def run_task(task: Task, gens):
+                        tasks = [asyncio.create_task(consume_gen(gen)) for gen in gens]
+                        await asyncio.gather(*tasks)
+                        step.log(task.completed_callback())
+
+                    await asyncio.gather(
+                        *(
+                            run_task(task, generators)
+                            for task, generators in run.items()
+                        )
+                    )
 
                 asyncio.run(runner_loop(runners[step]))
 

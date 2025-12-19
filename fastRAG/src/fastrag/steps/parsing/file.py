@@ -3,11 +3,11 @@ from functools import partial
 from pathlib import Path
 from typing import AsyncGenerator, ClassVar, override
 
+from fastrag.cache.entry import CacheEntry
 from fastrag.cache.filters import MetadataFilter, StepFilter
 from fastrag.events import Event
-from fastrag.helpers.filters import Filter, OrFilter
+from fastrag.helpers.filters import Filter
 from fastrag.plugins import plugin
-from fastrag.steps.entries import Entries
 from fastrag.steps.parsing.events import ParsingEvent
 from fastrag.steps.task import Task
 from fastrag.systems import System
@@ -29,7 +29,7 @@ def to_markdown(fmt: str, path: Path) -> bytes:
 
 @dataclass(frozen=True)
 @plugin(system=System.PARSING, supported="FileParser")
-class FileParser(Task, Entries):
+class FileParser(Task):
 
     filter: ClassVar[Filter] = StepFilter("fetching") & (
         MetadataFilter(format="docx") | MetadataFilter(format="pdf")
@@ -37,23 +37,26 @@ class FileParser(Task, Entries):
     use: list[str] = field(default_factory=list, hash=False)
 
     @override
-    async def callback(self) -> AsyncGenerator[Event, None]:
-        await self.init_entries()
-        fmt: str = self.entry.metadata["format"]
-        contents = partial(to_markdown, fmt, self.entry.path)
+    async def callback(
+        self,
+        uri: str,
+        entry: CacheEntry,
+    ) -> AsyncGenerator[Event, None]:
+        fmt: str = entry.metadata["format"]
+        contents = partial(to_markdown, fmt, entry.path)
         existed, _ = await self.cache.get_or_create(
-            uri=self.entry.path.resolve().absolute().as_uri(),
+            uri=entry.path.resolve().absolute().as_uri(),
             contents=contents,
             step="parsing",
-            metadata={"source": self.uri, "strategy": FileParser.supported},
+            metadata={"source": uri, "strategy": FileParser.supported},
         )
         yield ParsingEvent(
             ParsingEvent.Type.PROGRESS,
-            ("Cached" if existed else "Parsing") + f" {fmt.upper()} {self.uri}",
+            ("Cached" if existed else "Parsing") + f" {fmt.upper()} {uri}",
         )
 
     @override
     def completed_callback(self) -> Event:
         return ParsingEvent(
-            ParsingEvent.Type.COMPLETED, f"Parsed {len(self.entries)} documents"
+            ParsingEvent.Type.COMPLETED, f"Parsed {len(FileParser.entries)} document(s)"
         )
