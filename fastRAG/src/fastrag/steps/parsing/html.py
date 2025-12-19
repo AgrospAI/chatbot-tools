@@ -1,15 +1,17 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from functools import partial
 from pathlib import Path
-from typing import AsyncGenerator, override
+from typing import AsyncGenerator, ClassVar, override
 
 from html_to_markdown import convert_to_markdown
 
 from fastrag.cache.filters import MetadataFilter, StepFilter
-from fastrag.constants import get_constants
+from fastrag.events import Event
+from fastrag.helpers.filters import Filter
 from fastrag.plugins import plugin
+from fastrag.steps.entries import Entries
 from fastrag.steps.parsing.events import ParsingEvent
-from fastrag.steps.parsing.parsing import IParser
+from fastrag.steps.task import Task
 from fastrag.systems import System
 
 
@@ -20,30 +22,27 @@ def read(path: Path) -> bytes:
 
 @dataclass(frozen=True)
 @plugin(system=System.PARSING, supported="HtmlParser")
-class HtmlParser(IParser):
+class HtmlParser(Task, Entries):
 
-    use: list[str]
+    filter: ClassVar[Filter] = StepFilter("fetching") & MetadataFilter(format="html")
+    use: list[str] = field(default_factory=list, hash=False)
 
     @override
-    async def parse(self) -> AsyncGenerator[ParsingEvent, None]:
-        cache = get_constants().cache
-        filters = StepFilter("fetching") | MetadataFilter(format="html")
-        total = 0
-        for uri, entry in await cache.get_entries(filters):
-            contents = partial(read, entry.path)
-            existed, entry = await cache.get_or_create(
-                uri=entry.path.resolve().as_uri(),
-                contents=contents,
-                step="parsing",
-                metadata={"source": uri, "strategy": HtmlParser.supported},
-            )
-            yield ParsingEvent(
-                ParsingEvent.Type.PROGRESS,
-                ("Cached" if existed else "Parsing") + f" HTML {uri}",
-            )
-
-            total += 1
-
+    async def callback(self) -> AsyncGenerator[ParsingEvent, None]:
+        await self.init_entries()
+        existed, _ = await self.cache.get_or_create(
+            uri=self.entry.path.resolve().as_uri(),
+            contents=partial(read, self.entry.path),
+            step="parsing",
+            metadata={"source": self.uri, "strategy": HtmlParser.supported},
+        )
         yield ParsingEvent(
-            ParsingEvent.Type.COMPLETED, f"Parsed {total} HTML documents"
+            ParsingEvent.Type.PROGRESS,
+            ("Cached" if existed else "Parsing") + f" HTML {self.uri}",
+        )
+
+    @override
+    def completed_callback(self) -> Event:
+        return ParsingEvent(
+            ParsingEvent.Type.COMPLETED, f"Parsed {len(self.entries)} HTML documents"
         )

@@ -1,29 +1,28 @@
 import asyncio
 import re
 import xml.etree.ElementTree as ET
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import AsyncGenerator, override
 
 import httpx
 
-from fastrag.cache.cache import ICache
-from fastrag.constants import get_constants
+from fastrag.events import Event
 from fastrag.helpers import URLField
 from fastrag.plugins import plugin
 from fastrag.steps.fetchers.events import FetchingEvent
-from fastrag.steps.fetchers.fetcher import IFetcher
+from fastrag.steps.task import Task
 from fastrag.systems import System
 
 
 @dataclass(frozen=True)
 @plugin(system=System.FETCHING, supported="SitemapXML")
-class SitemapXMLFetcher(IFetcher):
+class SitemapXMLFetcher(Task):
 
-    regex: list[str] | None
+    regex: list[str] | None = field(compare=False, hash=False)
     url: URLField = URLField()
 
     @override
-    async def fetch(self) -> AsyncGenerator[FetchingEvent, None]:
+    async def callback(self) -> AsyncGenerator[Event, None]:
         # 1. Fetch sitemap
         res = httpx.get(self.url)
         res.raise_for_status()
@@ -40,23 +39,20 @@ class SitemapXMLFetcher(IFetcher):
                 skipped += 1
 
         yield FetchingEvent(
-            type="progress",
+            type=FetchingEvent.Type.PROGRESS,
             data=f"Retrieving {len(urls)} URLs (filtered out {skipped} out of {len(urls) + skipped})",
         )
 
         # 3. Fetch filtered URLs
-        cache = get_constants().cache
         async with httpx.AsyncClient(timeout=10) as client:
-            tasks = [self.fetch_async(client, url, cache) for url in urls]
+            tasks = [self.fetch_async(client, url) for url in urls]
             results = await asyncio.gather(*tasks)
 
         for event in results:
             yield event
 
-        yield FetchingEvent(FetchingEvent.Type.COMPLETED, "Completed sitemap.xml")
-
-    async def fetch_async(self, client, url: str, cache: ICache):
-        if cache.is_present(url):
+    async def fetch_async(self, client, url: str):
+        if self.cache.is_present(url):
             return FetchingEvent(FetchingEvent.Type.PROGRESS, f"Cached {url}")
 
         try:
@@ -64,10 +60,14 @@ class SitemapXMLFetcher(IFetcher):
         except Exception as e:
             return FetchingEvent(FetchingEvent.Type.EXCEPTION, f"ERROR: {e}")
 
-        await cache.create(
+        await self.cache.create(
             url,
             res.text.encode(),
             "fetching",
             {"format": "html", "strategy": SitemapXMLFetcher.supported},
         )
         return FetchingEvent(FetchingEvent.Type.PROGRESS, f"Fetching {url}")
+
+    @override
+    def completed_callback(self) -> Event:
+        return FetchingEvent(FetchingEvent.Type.COMPLETED, "Completed sitemap.xml")

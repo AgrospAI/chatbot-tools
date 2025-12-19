@@ -6,20 +6,20 @@ from fastrag.constants import get_constants
 from fastrag.events import Event
 
 
-@dataclass(frozen=True)
+@dataclass
 class Loggable(ABC):
 
-    callback: Callable[[Event], None] = field(init=False, repr=False)
+    log: Callable[[Event], None] = field(init=False, repr=False)
 
     def __post_init__(self) -> None:
         object.__setattr__(
             self,
-            "callback",
-            self.log_verbose if get_constants().verbose else self.log,
+            "log",
+            self.log_verbose if get_constants().verbose else self.log_normal,
         )
 
     @abstractmethod
-    def log(self, event: Event) -> None:
+    def log_normal(self, event: Event) -> None:
         """Log the given event. Not verbose.
 
         Args:

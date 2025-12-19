@@ -1,15 +1,17 @@
 from dataclasses import dataclass
-from typing import AsyncGenerator, ClassVar, List, override
+from typing import AsyncGenerator, ClassVar, Dict, override
 
+from fastrag.cache.cache import ICache
 from fastrag.config.config import Embedding
 from fastrag.events import Event
 from fastrag.plugins import plugin
 from fastrag.steps.embeddings import EmbeddingEvent
 from fastrag.steps.step import IStep
+from fastrag.steps.task import Task
 from fastrag.systems import System
 
 
-@dataclass(frozen=True)
+@dataclass
 @plugin(system=System.STEP, supported="embedding")
 class EmbeddingStep(IStep):
 
@@ -17,9 +19,8 @@ class EmbeddingStep(IStep):
     description: ClassVar[str] = "EMBED"
 
     @override
-    def get_tasks(self) -> List[AsyncGenerator[Event, None]]:
-        # TODO: Fill with asyncio task calls
-        return []
+    async def get_tasks(self, cache: ICache) -> Dict[Task, AsyncGenerator[Event, None]]:
+        return {}
 
     @override
     def log_verbose(self, event: EmbeddingEvent) -> None:
@@ -34,7 +35,7 @@ class EmbeddingStep(IStep):
                 self.progress.log(f"[red]:?: UNEXPECTED EVENT: {event}[/red]")
 
     @override
-    def log(self, event: EmbeddingEvent) -> None:
+    def log_normal(self, event: EmbeddingEvent) -> None:
         match event.type:
             case EmbeddingEvent.Type.COMPLETED:
                 self.progress.log(f"[green]:heavy_check_mark: {event.data}[/green]")

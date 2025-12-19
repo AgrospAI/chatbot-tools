@@ -1,14 +1,15 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from functools import partial
 from pathlib import Path
 from typing import AsyncGenerator, ClassVar, override
 
 from fastrag.cache.filters import MetadataFilter, StepFilter
-from fastrag.constants import get_constants
-from fastrag.helpers.filters import OrFilter
+from fastrag.events import Event
+from fastrag.helpers.filters import Filter, OrFilter
 from fastrag.plugins import plugin
+from fastrag.steps.entries import Entries
 from fastrag.steps.parsing.events import ParsingEvent
-from fastrag.steps.parsing.parsing import IParser
+from fastrag.steps.task import Task
 from fastrag.systems import System
 
 
@@ -28,35 +29,31 @@ def to_markdown(fmt: str, path: Path) -> bytes:
 
 @dataclass(frozen=True)
 @plugin(system=System.PARSING, supported="FileParser")
-class FileParser(IParser):
+class FileParser(Task, Entries):
 
-    use: list[str]
-
-    supported_extensions: ClassVar[list[str]] = ["docx", "pdf"]
+    filter: ClassVar[Filter] = StepFilter("fetching") & (
+        MetadataFilter(format="docx") | MetadataFilter(format="pdf")
+    )
+    use: list[str] = field(default_factory=list, hash=False)
 
     @override
-    async def parse(self) -> AsyncGenerator[ParsingEvent, None]:
-        cache = get_constants().cache
-        filters = StepFilter("fetching") | OrFilter(
-            *(MetadataFilter(format=f) for f in self.supported_extensions)
+    async def callback(self) -> AsyncGenerator[Event, None]:
+        await self.init_entries()
+        fmt: str = self.entry.metadata["format"]
+        contents = partial(to_markdown, fmt, self.entry.path)
+        existed, _ = await self.cache.get_or_create(
+            uri=self.entry.path.resolve().absolute().as_uri(),
+            contents=contents,
+            step="parsing",
+            metadata={"source": self.uri, "strategy": FileParser.supported},
         )
-        total = 0
-        for uri, entry in await cache.get_entries(filters):
-            fmt: str = entry.metadata["format"]
-            contents = partial(to_markdown, fmt, entry.path)
-            existed, entry = await cache.get_or_create(
-                uri=entry.path.resolve().absolute().as_uri(),
-                contents=contents,
-                step="parsing",
-                metadata={"source": uri, "strategy": FileParser.supported},
-            )
-            yield ParsingEvent(
-                ParsingEvent.Type.PROGRESS,
-                ("Cached" if existed else "Parsing") + f" {fmt.upper()} {uri}",
-            )
-
-            total += 1
-
         yield ParsingEvent(
-            ParsingEvent.Type.COMPLETED, f"Parsed {total} File documents"
+            ParsingEvent.Type.PROGRESS,
+            ("Cached" if existed else "Parsing") + f" {fmt.upper()} {self.uri}",
+        )
+
+    @override
+    def completed_callback(self) -> Event:
+        return ParsingEvent(
+            ParsingEvent.Type.COMPLETED, f"Parsed {len(self.entries)} documents"
         )

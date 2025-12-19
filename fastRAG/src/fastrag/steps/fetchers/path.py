@@ -4,11 +4,11 @@ from typing import AsyncGenerator, override
 
 import humanize
 
-from fastrag.constants import get_constants
+from fastrag.events import Event
 from fastrag.helpers import PathField
 from fastrag.plugins import plugin
 from fastrag.steps.fetchers.events import FetchingEvent
-from fastrag.steps.fetchers.fetcher import IFetcher
+from fastrag.steps.task import Task
 from fastrag.systems import System
 
 
@@ -27,12 +27,12 @@ def list_paths(p: Path) -> list[Path]:
 
 @dataclass(frozen=True)
 @plugin(system=System.FETCHING, supported="Path")
-class PathFetcher(IFetcher):
+class PathFetcher(Task):
 
     path: PathField = PathField()
 
     @override
-    async def fetch(self) -> AsyncGenerator[FetchingEvent, None]:
+    async def callback(self) -> AsyncGenerator[Event, None]:
         yield FetchingEvent(
             FetchingEvent.Type.PROGRESS,
             f"Copying local files ({humanize.naturalsize(self.path.stat().st_size)})",
@@ -40,7 +40,7 @@ class PathFetcher(IFetcher):
 
         try:
             for p in list_paths(self.path):
-                existed, _ = await get_constants().cache.get_or_create(
+                existed, _ = await self.cache.get_or_create(
                     uri=p.resolve().as_uri(),
                     step="fetching",
                     contents=p.read_bytes,
@@ -60,4 +60,6 @@ class PathFetcher(IFetcher):
         except Exception as e:
             yield FetchingEvent(FetchingEvent.Type.EXCEPTION, f"ERROR: {e}")
 
-        yield FetchingEvent(FetchingEvent.Type.COMPLETED, "Completed local path copy")
+    @override
+    def completed_callback(self) -> Event:
+        return FetchingEvent(FetchingEvent.Type.COMPLETED, "Completed local path copy")

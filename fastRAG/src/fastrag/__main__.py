@@ -25,18 +25,23 @@ console = Console()
 def clean(
     sure: Annotated[
         bool,
-        typer.Option("--yes", "-y", prompt="Are you sure you want to continue?"),
-    ] = True,
+        typer.Option(
+            "--yes",
+            "-y",
+            prompt="Are you sure you want to continue?",
+            confirmation_prompt=True,
+        ),
+    ] = False,
 ):
     """Clean the caches"""
 
     if not sure:
-        return
+        raise typer.Abort()
 
     path = Constants.global_cache()
     if not path.exists():
         console.print(f"[bold red]Could not find global cache at {path}[/bold red]")
-        return
+        raise typer.Abort()
 
     with open(Constants.global_cache()) as f:
         lines = f.readlines()

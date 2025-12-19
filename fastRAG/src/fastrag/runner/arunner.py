@@ -14,6 +14,7 @@ from rich.progress import (
 
 from fastrag import Config
 from fastrag.config.config import StepNames
+from fastrag.events import Event
 from fastrag.plugins import PluginRegistry, plugin
 from fastrag.runner.runner import IRunner
 from fastrag.steps.step import IStep
@@ -23,9 +24,6 @@ from fastrag.systems import System
 @dataclass(frozen=True)
 @plugin(system=System.RUNNER)
 class Runner(IRunner):
-
-    def calculate_total(self) -> int:
-        return len(self.step)
 
     @override
     def run(self, config: Config, run_steps: int) -> None:
@@ -65,8 +63,8 @@ class Runner(IRunner):
                     if step is None or not step.is_present:
                         return
 
-                    runners = step.get_tasks()
-                    tasks = [asyncio.create_task(run.__anext__()) for run in runners]
+                    run = await step.tasks()
+                    tasks = [asyncio.create_task(r.__anext__()) for r in run.values()]
 
                     while tasks:
                         done, _ = await asyncio.wait(
@@ -76,17 +74,19 @@ class Runner(IRunner):
 
                         for d in done:
                             idx = tasks.index(d)
+                            inst = list(run.keys())[idx]
 
                             try:
                                 event = d.result()
                             except StopAsyncIteration:
-                                tasks.pop(idx)
-                                runners.pop(idx)
+                                step.log(step.completed_callback(inst))
                                 progress.advance(step.task_id)
+                                tasks.pop(idx)
+                                run.pop(inst)
                                 continue
 
-                            step.callback(event)
-                            tasks[idx] = asyncio.create_task(runners[idx].__anext__())
+                            step.log(event)
+                            tasks[idx] = asyncio.create_task(run[inst].__anext__())
 
                 asyncio.run(runner_loop(runners[step]))
 

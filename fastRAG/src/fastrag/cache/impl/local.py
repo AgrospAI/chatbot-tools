@@ -23,7 +23,7 @@ def is_outdated(time: PosixTimestamp, lifespan: int) -> bool:
 class LocalCache(ICache):
 
     _lock: Lock = field(init=False, repr=False, default_factory=Lock)
-    metadata: Metadata = field(init=False, default_factory=lambda: dict)
+    metadata: Metadata = field(init=False, repr=False, default_factory=lambda: dict)
 
     def __post_init__(self) -> None:
         # Load metadata from file
@@ -41,11 +41,6 @@ class LocalCache(ICache):
         object.__setattr__(self, "metadata", metadata)
 
         self._delete_invalid()
-
-    @override
-    @classmethod
-    def supported(cls) -> Iterable[str]:
-        return ["local"]
 
     @property
     def metadata_path(self) -> Path:

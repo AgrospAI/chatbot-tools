@@ -1,28 +1,27 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import AsyncGenerator, override
 
 from httpx import AsyncClient
 
-from fastrag.constants import get_constants
+from fastrag.events import Event
 from fastrag.helpers import URLField
 from fastrag.plugins import plugin
 from fastrag.steps.fetchers.events import FetchingEvent
-from fastrag.steps.fetchers.fetcher import IFetcher
+from fastrag.steps.task import Task
 from fastrag.systems import System
 
 
 @dataclass(frozen=True)
 @plugin(system=System.FETCHING, supported="URL")
-class HttpFetcher(IFetcher):
+class HttpFetcher(Task):
 
     url: URLField = URLField()
+    _cached: bool = field(init=False, default=False, hash=False, compare=False)
 
     @override
-    async def fetch(self) -> AsyncGenerator[FetchingEvent, None]:
-        cache = get_constants().cache
-
-        if cache.is_present(self.url):
-            yield FetchingEvent(FetchingEvent.Type.COMPLETED, f"Cached {self.url}")
+    async def callback(self) -> AsyncGenerator[Event, None]:
+        if self.cache.is_present(self.url):
+            object.__setattr__(self, "_cached", True)
             return
 
         try:
@@ -32,10 +31,16 @@ class HttpFetcher(IFetcher):
             yield FetchingEvent(FetchingEvent.Type.EXCEPTION, f"ERROR: {e}")
             return
 
-        yield FetchingEvent(FetchingEvent.Type.COMPLETED, f"Fetched {self.url}")
-        await cache.create(
+        await self.cache.create(
             self.url,
             res.text.encode(),
             "fetching",
             {"format": "html", "strategy": HttpFetcher.supported},
+        )
+
+    @override
+    def completed_callback(self) -> Event:
+        return FetchingEvent(
+            FetchingEvent.Type.COMPLETED,
+            f"{'Cached' if self._cached else 'Fetched'} {self.url}",
         )
