@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import AsyncGenerator, Callable, ClassVar, Dict, List
+from typing import AsyncGenerator, Callable, ClassVar, Dict, List, override
 
 from rich.progress import Progress
 
@@ -51,6 +51,26 @@ class IStep(Loggable, ABC):
         """
 
         return task.completed_callback()
+
+    @override
+    def log_verbose(self, event: Event) -> None:
+        match event.type:
+            case Event.Type.PROGRESS:
+                self.progress.log(event.data)
+            case Event.Type.COMPLETED:
+                self.progress.log(f"[green]:heavy_check_mark: {event.data}[/green]")
+            case Event.Type.EXCEPTION:
+                self.progress.log(f"[red]:x: {event.data}[/red]")
+            case _:
+                self.progress.log(f"[red]:?: UNEXPECTED EVENT: {event}[/red]")
+
+    @override
+    def log_normal(self, event: Event) -> None:
+        match event.type:
+            case Event.Type.PROGRESS:
+                ...
+            case _:
+                self.log_verbose(event)
 
     @abstractmethod
     async def get_tasks(

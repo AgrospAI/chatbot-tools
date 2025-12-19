@@ -1,12 +1,11 @@
 import asyncio
 from dataclasses import dataclass
-from typing import AsyncGenerator, Callable, ClassVar, Dict, List, override
+from typing import AsyncGenerator, ClassVar, Dict, List, override
 
 from fastrag.cache.cache import ICache
 from fastrag.config.config import Parsing
 from fastrag.events import Event
 from fastrag.plugins import PluginRegistry, plugin
-from fastrag.steps.parsing.events import ParsingEvent
 from fastrag.steps.step import IStep
 from fastrag.steps.task import Task
 from fastrag.systems import System
@@ -16,8 +15,8 @@ from fastrag.systems import System
 @plugin(system=System.STEP, supported="parsing")
 class ParsingStep(IStep):
 
-    step: list[Parsing]
     description: ClassVar[str] = "PARSE"
+    step: list[Parsing]
 
     @override
     async def get_tasks(
@@ -33,23 +32,3 @@ class ParsingStep(IStep):
             task: [task.callback(uri, entry) for uri, entry in entries_]
             for entries_, task in zip(entries, instances)
         }
-
-    @override
-    def log_verbose(self, event: ParsingEvent) -> None:
-        match event.type:
-            case ParsingEvent.Type.PROGRESS:
-                self.progress.log(event.data)
-            case ParsingEvent.Type.COMPLETED:
-                self.progress.log(f"[green]:heavy_check_mark: {event.data}[/green]")
-            case ParsingEvent.Type.EXCEPTION:
-                self.progress.log(f"[red]:x: {event.data}[/red]")
-            case _:
-                self.progress.log(f"[red]:?: UNEXPECTED EVENT: {event}[/r   ed]")
-
-    @override
-    def log_normal(self, event: ParsingEvent) -> None:
-        match event.type:
-            case ParsingEvent.Type.PROGRESS:
-                ...
-            case _:
-                self.log_verbose(event)
