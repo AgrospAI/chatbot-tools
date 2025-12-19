@@ -1,6 +1,6 @@
 import asyncio
 from dataclasses import dataclass
-from typing import List, get_args, override
+from typing import get_args, override
 
 from rich.panel import Panel
 from rich.progress import (
@@ -12,9 +12,7 @@ from rich.progress import (
     TimeRemainingColumn,
 )
 
-from fastrag import Config
-from fastrag.config.config import StepNames
-from fastrag.events import Event
+from fastrag.config.config import StepNames, Config
 from fastrag.plugins import PluginRegistry, plugin
 from fastrag.runner.runner import IRunner
 from fastrag.steps.step import IStep
