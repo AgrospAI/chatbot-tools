@@ -74,6 +74,7 @@ class Runner(IRunner):
                         tasks = [asyncio.create_task(consume_gen(gen)) for gen in gens]
                         await asyncio.gather(*tasks)
                         step.log(task.completed_callback())
+                        progress.advance(task_id=step.task_id)
 
                     await asyncio.gather(
                         *(
