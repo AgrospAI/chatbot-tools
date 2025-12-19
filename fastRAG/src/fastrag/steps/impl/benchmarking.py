@@ -37,6 +37,8 @@ class BenchmarkingStep(IStep):
     @override
     def log_normal(self, event: BenchmarkingEvent) -> None:
         match event.type:
+            case BenchmarkingEvent.Type.PROGRESS:
+                ...
             case BenchmarkingEvent.Type.COMPLETED:
                 self.progress.log(f"[green]:heavy_check_mark: {event.data}[/green]")
             case BenchmarkingEvent.Type.EXCEPTION:

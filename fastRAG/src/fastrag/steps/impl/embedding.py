@@ -37,6 +37,8 @@ class EmbeddingStep(IStep):
     @override
     def log_normal(self, event: EmbeddingEvent) -> None:
         match event.type:
+            case EmbeddingEvent.Type.PROGRESS:
+                ...
             case EmbeddingEvent.Type.COMPLETED:
                 self.progress.log(f"[green]:heavy_check_mark: {event.data}[/green]")
             case EmbeddingEvent.Type.EXCEPTION:

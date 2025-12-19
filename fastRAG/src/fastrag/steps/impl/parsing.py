@@ -43,6 +43,8 @@ class ParsingStep(IStep):
     @override
     def log_normal(self, event: ParsingEvent) -> None:
         match event.type:
+            case ParsingEvent.Type.PROGRESS:
+                ...
             case ParsingEvent.Type.COMPLETED:
                 self.progress.log(f"[green]:heavy_check_mark: {event.data}[/green]")
             case ParsingEvent.Type.EXCEPTION:

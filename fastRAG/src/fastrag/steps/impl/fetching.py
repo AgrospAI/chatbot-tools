@@ -43,6 +43,8 @@ class SourceStep(IStep):
     @override
     def log_normal(self, event: FetchingEvent) -> None:
         match event.type:
+            case FetchingEvent.Type.PROGRESS:
+                ...
             case FetchingEvent.Type.COMPLETED:
                 self.progress.log(f"[green]:heavy_check_mark: {event.data}[/green]")
             case FetchingEvent.Type.EXCEPTION:

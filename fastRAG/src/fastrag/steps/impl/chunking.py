@@ -37,6 +37,8 @@ class ChunkingStep(IStep):
     @override
     def log_normal(self, event: ChunkingEvent) -> None:
         match event.type:
+            case ChunkingEvent.Type.PROGRESS:
+                ...
             case ChunkingEvent.Type.COMPLETED:
                 self.progress.log(f"[green]:heavy_check_mark: {event.data}[/green]")
             case ChunkingEvent.Type.EXCEPTION:
