@@ -1,0 +1,13 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "local-chatbot",
+  "description": "A button bottom-right chatbot component that can be integrated into web applications.",
+  "files": [
+    {
+      "path": "src/registry/new-york/chatbot/components/local-chatbot.tsx",
+      "content": "import { useEffect, useState } from \"react\"\n\nimport type { ChatbotProps } from \"@/registry/new-york/chatbot/components/chatbot\"\nimport Chatbot from \"./chatbot\"\nimport { db, settings } from \"@/registry/new-york/chatbot/lib/db\"\nimport { useLiveQuery } from \"dexie-react-hooks\"\n\ntype Props = Omit<ChatbotProps, \"messages\" | \"setMessages\" | \"newChat\">\n\nexport default function LocalChatbot({\n  endpoint = \"http://localhost:8000/ask\",\n  strings,\n  icon,\n}: Props) {\n  const [currentChatId, setCurrentChatId] = useState<string | null>(null)\n\n  useEffect(() => {\n    ;(async () => {\n      let storedChatId = await settings.get(\"currentChatId\")\n\n      if (!storedChatId) {\n        storedChatId = crypto.randomUUID()\n        await db.chats.add({ id: storedChatId, messages: [] })\n        await settings.set(\"currentChatId\", storedChatId)\n      }\n\n      setCurrentChatId(storedChatId)\n      console.log(\"Current Chat ID:\", storedChatId)\n    })()\n  }, [])\n\n  const messages =\n    useLiveQuery(async () => {\n      if (!currentChatId) return []\n      const chat = await db.chats.get(currentChatId)\n      return chat?.messages ?? []\n    }, [currentChatId]) ?? []\n\n  const setMessages: React.Dispatch<\n    React.SetStateAction<Message[]>\n  > = value => {\n    if (!currentChatId) return\n    ;(async () => {\n      const chat = await db.chats.get(currentChatId)\n      const prev = chat?.messages ?? []\n\n      const next = typeof value === \"function\" ? value(prev) : value\n\n      await db.chats.update(currentChatId, { messages: next })\n    })()\n  }\n\n  const newChat = async () => {\n    await db.chats.clear()\n\n    const newChatId = crypto.randomUUID()\n    await db.chats.add({ id: newChatId, messages: [] })\n    await settings.set(\"currentChatId\", newChatId)\n    setCurrentChatId(newChatId)\n  }\n  return (\n    <Chatbot\n      endpoint={endpoint}\n      strings={strings}\n      icon={icon}\n      messages={messages}\n      setMessages={setMessages}\n      newChat={newChat}\n    />\n  )\n}\n",
+      "type": "registry:ui"
+    }
+  ],
+  "type": "registry:component"
+}

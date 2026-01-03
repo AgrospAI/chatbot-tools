@@ -1,0 +1,29 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry.json",
+  "name": "acme",
+  "homepage": "https://acme.com",
+  "items": [
+    {
+      "name": "chatbot",
+      "type": "registry:component",
+      "description": "A customizable chatbot component.",
+      "files": [
+        {
+          "path": "src/registry/new-york/chatbot/components/chatbot.tsx",
+          "type": "registry:ui"
+        }
+      ]
+    },
+    {
+      "name": "local-chatbot",
+      "type": "registry:component",
+      "description": "A button bottom-right chatbot component that can be integrated into web applications.",
+      "files": [
+        {
+          "path": "src/registry/new-york/chatbot/components/local-chatbot.tsx",
+          "type": "registry:ui"
+        }
+      ]
+    }
+  ]
+}
