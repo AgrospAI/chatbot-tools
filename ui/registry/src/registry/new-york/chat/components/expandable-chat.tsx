@@ -5,7 +5,13 @@ import { cn } from "@/lib/utils"
 import { useLockBodyScroll } from "@/registry/new-york/chat/hooks/useLockBodyScroll"
 import useMediaQuery from "@/registry/new-york/chat/hooks/useMediaQuery"
 import { BotMessageSquare, Expand, Minimize, X } from "lucide-react"
-import React, { createContext, useContext, useRef, useState } from "react"
+import React, {
+  createContext,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+} from "react"
 import { createPortal } from "react-dom"
 
 interface ExpandableChatProps extends React.HTMLAttributes<HTMLDivElement> {
@@ -36,6 +42,7 @@ const ExpandableChat: React.FC<ExpandableChatProps> = ({
 }) => {
   const [isOpen, setIsOpen] = useState(false)
   const chatRef = useRef<HTMLDivElement>(null)
+  const [portalTarget, setPortalTarget] = useState<HTMLElement | null>(null)
 
   const toggleChat = () => setIsOpen(!isOpen)
 
@@ -46,6 +53,13 @@ const ExpandableChat: React.FC<ExpandableChatProps> = ({
   const isFullscreen = isOpen && (userIsFullscreen || isSmallScreen)
 
   useLockBodyScroll(isOpen)
+
+  useEffect(() => {
+    // Defer portal target resolution to the client to avoid SSR document access
+    setPortalTarget(document.body)
+  }, [])
+
+  if (!portalTarget) return null
 
   return createPortal(
     <ChatContext.Provider
@@ -90,7 +104,7 @@ const ExpandableChat: React.FC<ExpandableChatProps> = ({
         )}
       </div>
     </ChatContext.Provider>,
-    document.body,
+    portalTarget,
   )
 }
 
