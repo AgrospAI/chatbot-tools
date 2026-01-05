@@ -61,7 +61,7 @@
       "dependencies": [
         "lucide-react",
         "react-markdown",
-        "react-gfm",
+        "remark-gfm",
         "react-syntax-highlighter"
       ],
       "files": [
