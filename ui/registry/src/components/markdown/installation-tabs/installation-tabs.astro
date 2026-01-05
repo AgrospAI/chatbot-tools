@@ -6,7 +6,7 @@ import type {
     RegistryFileType,
     RegistryItemSchema,
 } from "@/types/shadcn-registry"
-import { SERVER_URL } from "@/data/env"
+import { REGISTRY_BASE_URL } from "@/data/env"
 import { ManualInstallCodeCard } from "@/components/manual-install-code-card"
 
 type RegistryItem =
@@ -43,7 +43,7 @@ const registryDependencies = module.registryDependencies
             const name = dep.split("/").pop()?.split(".")[0]?.replace("-", " ")
             return {
                 name,
-                href: `${SERVER_URL}/components/${name}`,
+                href: `${REGISTRY_BASE_URL}/components/${name}`,
             }
         } else {
             // This is a shadcn/ui dependency.
@@ -87,7 +87,7 @@ function getFileLocationFromType(type: RegistryFileType) {
         <CliCommandCode
             slot="cliSteps"
             action="run"
-            command={`shadcn@latest add https://agrospai.github.io/chatbot-tools/r/${registryItem}.json`}
+            command={`shadcn@latest add ${REGISTRY_BASE_URL}r/${registryItem}.json`}
         />
         <div class="flex flex-col gap-8">
             {

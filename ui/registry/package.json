@@ -9,6 +9,7 @@
     "preview": "astro preview",
     "astro": "astro",
     "registry:build": "shadcn build",
+    "registry:build-dev": "node ./scripts/registry-build-dev.mjs",
     "lint": "eslint --fix .",
     "format": "prettier --write ."
   },

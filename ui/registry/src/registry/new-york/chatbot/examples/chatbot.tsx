@@ -1,5 +1,5 @@
 import { MessageCircleQuestionMark } from "lucide-react"
-import Chatbot from "../components/chatbot"
+import Chatbot, { type Message } from "@/registry/new-york/chatbot/components/chatbot";
 import { useState } from "react"
 
 const title = "Chatbot Assistant"
@@ -10,7 +10,7 @@ const promptSuggestions = [
   "Explain quantum computing in simple terms.",
 ]
 
-const icon = <MessageCircleQuestionMark className="size-7" />
+const icon = <MessageCircleQuestionMark className="size-6" />
 
 export default function Default() {
 

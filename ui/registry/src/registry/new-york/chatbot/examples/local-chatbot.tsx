@@ -1,17 +1,13 @@
-import LocalChatbot from "@/registry/new-york/chatbot/components/local-chatbot"
-import SvgFastragIcon from "@/registry/new-york/chatbot/components/FastragIcon"
+import LocalChatbot from "@/registry/new-york/chatbot/components/local-chatbot";
 
-const title = "Chatbot Assistant"
+const title = "Chatbot Assistant";
 const promptSuggestions = [
   "What's the weather like today?",
   "Tell me a joke.",
   "How do I bake a chocolate cake?",
   "Explain quantum computing in simple terms.",
-]
-
-const icon = <SvgFastragIcon className="size-12" />
-
+];
 
 export default function Default() {
-  return <LocalChatbot strings={{ title, promptSuggestions }} icon={icon} />
+  return <LocalChatbot strings={{ title, promptSuggestions }} />;
 }
