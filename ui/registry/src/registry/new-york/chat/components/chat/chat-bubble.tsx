@@ -1,7 +1,7 @@
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
 import { Button, buttonVariants } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
-import MessageLoading from "@/registry/new-york/chat/components/message-loading"
+import MessageLoading from "@/registry/new-york/chat/components/chat/message-loading"
 import { cva, type VariantProps } from "class-variance-authority"
 import * as React from "react"
 

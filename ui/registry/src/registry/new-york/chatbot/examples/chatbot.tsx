@@ -1,6 +1,6 @@
 import Chatbot, {
   type Message,
-} from "@/registry/new-york/chatbot/components/chatbot"
+} from "@/registry/new-york/chatbot/components/chatbot/chatbot"
 import { MessageCircleQuestionMark } from "lucide-react"
 import { useState } from "react"
 

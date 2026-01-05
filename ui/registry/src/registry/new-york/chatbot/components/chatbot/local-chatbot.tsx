@@ -3,9 +3,9 @@ import { useEffect, useState } from "react"
 import type {
   ChatbotProps,
   Message,
-} from "@/registry/new-york/chatbot/components/chatbot"
-import Chatbot from "@/registry/new-york/chatbot/components/chatbot"
-import { db, settings } from "@/registry/new-york/chatbot/lib/db"
+} from "@/registry/new-york/chatbot/components/chatbot/chatbot"
+import Chatbot from "@/registry/new-york/chatbot/components/chatbot/chatbot"
+import { db, settings } from "@/registry/new-york/chatbot/lib/chatbot/db"
 import { useLiveQuery } from "dexie-react-hooks"
 
 type Props = Omit<ChatbotProps, "messages" | "setMessages" | "newChat">

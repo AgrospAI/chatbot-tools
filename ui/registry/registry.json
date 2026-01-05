@@ -12,33 +12,28 @@
       "dependencies": ["class-variance-authority", "lucide-react"],
       "files": [
         {
-          "path": "src/registry/new-york/chat/components/autosize-textarea.tsx",
+          "path": "src/registry/new-york/chat/components/chat/autosize-textarea.tsx",
           "type": "registry:ui"
         },
         {
-          "path": "src/registry/new-york/chat/components/chat-bubble.tsx",
-          "type": "registry:component",
-          "target": "~/components/chat/chat-bubble.tsx"
+          "path": "src/registry/new-york/chat/components/chat/chat-bubble.tsx",
+          "type": "registry:component"
         },
         {
-          "path": "src/registry/new-york/chat/components/chat-input.tsx",
-          "type": "registry:component",
-          "target": "~/components/chat/chat-input.tsx"
+          "path": "src/registry/new-york/chat/components/chat/chat-input.tsx",
+          "type": "registry:component"
         },
         {
-          "path": "src/registry/new-york/chat/components/chat-message-list.tsx",
-          "type": "registry:component",
-          "target": "~/components/chat/chat-message-list.tsx"
+          "path": "src/registry/new-york/chat/components/chat/chat-message-list.tsx",
+          "type": "registry:component"
         },
         {
-          "path": "src/registry/new-york/chat/components/expandable-chat.tsx",
-          "type": "registry:component",
-          "target": "~/components/chat/expandable-chat.tsx"
+          "path": "src/registry/new-york/chat/components/chat/expandable-chat.tsx",
+          "type": "registry:component"
         },
         {
-          "path": "src/registry/new-york/chat/components/message-loading.tsx",
-          "type": "registry:component",
-          "target": "~/components/chat/message-loading.tsx"
+          "path": "src/registry/new-york/chat/components/chat/message-loading.tsx",
+          "type": "registry:component"
         },
         {
           "path": "src/registry/new-york/chat/hooks/useAutoScroll.ts",
@@ -71,24 +66,20 @@
       ],
       "files": [
         {
-          "path": "src/registry/new-york/chatbot/components/chatbot.tsx",
-          "type": "registry:component",
-          "target": "~/components/chatbot/chatbot.tsx"
+          "path": "src/registry/new-york/chatbot/components/chatbot/chatbot.tsx",
+          "type": "registry:component"
         },
         {
-          "path": "src/registry/new-york/chatbot/components/prompt-suggestions.tsx",
-          "type": "registry:component",
-          "target": "~/components/chatbot/prompt-suggestions.tsx"
+          "path": "src/registry/new-york/chatbot/components/chatbot/prompt-suggestions.tsx",
+          "type": "registry:component"
         },
         {
-          "path": "src/registry/new-york/chatbot/components/markdown/markdown.tsx",
-          "type": "registry:component",
-          "target": "~/components/chatbot/markdown/markdown.tsx"
+          "path": "src/registry/new-york/chatbot/components/chatbot/markdown/markdown.tsx",
+          "type": "registry:component"
         },
         {
-          "path": "src/registry/new-york/chatbot/components/markdown/markdown.module.css",
-          "type": "registry:component",
-          "target": "~/components/chatbot/markdown/markdown.module.css"
+          "path": "src/registry/new-york/chatbot/components/chatbot/markdown/markdown.module.css",
+          "type": "registry:component"
         }
       ]
     },
@@ -99,11 +90,11 @@
       "description": "A button bottom-right chatbot component that can be integrated into web applications.",
       "files": [
         {
-          "path": "src/registry/new-york/chatbot/components/local-chatbot.tsx",
+          "path": "src/registry/new-york/chatbot/components/chatbot/local-chatbot.tsx",
           "type": "registry:component"
         },
         {
-          "path": "src/registry/new-york/chatbot/lib/db.ts",
+          "path": "src/registry/new-york/chatbot/lib/chatbot/db.ts",
           "type": "registry:lib"
         }
       ],

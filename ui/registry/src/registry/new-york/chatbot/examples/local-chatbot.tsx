@@ -1,4 +1,4 @@
-import LocalChatbot from "@/registry/new-york/chatbot/components/local-chatbot"
+import LocalChatbot from "@/registry/new-york/chatbot/components/chatbot/local-chatbot"
 
 const title = "Chatbot Assistant"
 const promptSuggestions = [

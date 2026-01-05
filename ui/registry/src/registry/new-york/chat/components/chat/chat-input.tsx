@@ -2,7 +2,7 @@ import { cn } from "@/lib/utils"
 import {
   AutosizeTextarea,
   type AutosizeTextAreaRef,
-} from "@/registry/new-york/chat/components/autosize-textarea"
+} from "@/registry/new-york/chat/components/chat/autosize-textarea"
 import * as React from "react"
 
 type ChatInputProps = React.TextareaHTMLAttributes<HTMLTextAreaElement>

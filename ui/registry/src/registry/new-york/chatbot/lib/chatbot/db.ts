@@ -1,4 +1,4 @@
-import type { Message } from "@/registry/new-york/chatbot/components/chatbot"
+import type { Message } from "@/registry/new-york/chatbot/components/chatbot/chatbot"
 import { Dexie, type EntityTable } from "dexie"
 
 interface Chat {

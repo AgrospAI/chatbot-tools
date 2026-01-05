@@ -2,17 +2,17 @@ import { Button } from "@/components/ui/button"
 import {
   ChatBubble,
   ChatBubbleMessage,
-} from "@/registry/new-york/chat/components/chat-bubble"
-import { ChatInput } from "@/registry/new-york/chat/components/chat-input"
-import { ChatMessageList } from "@/registry/new-york/chat/components/chat-message-list"
+} from "@/registry/new-york/chat/components/chat/chat-bubble"
+import { ChatInput } from "@/registry/new-york/chat/components/chat/chat-input"
+import { ChatMessageList } from "@/registry/new-york/chat/components/chat/chat-message-list"
 import {
   ExpandableChat,
   ExpandableChatBody,
   ExpandableChatFooter,
   ExpandableChatHeader,
-} from "@/registry/new-york/chat/components/expandable-chat"
-import Markdown from "@/registry/new-york/chatbot/components/markdown/markdown"
-import PromptSuggestions from "@/registry/new-york/chatbot/components/prompt-suggestions"
+} from "@/registry/new-york/chat/components/chat/expandable-chat"
+import Markdown from "@/registry/new-york/chatbot/components/chatbot/markdown/markdown"
+import PromptSuggestions from "@/registry/new-york/chatbot/components/chatbot/prompt-suggestions"
 import { Send, Trash } from "lucide-react"
 import { useState } from "react"
 
