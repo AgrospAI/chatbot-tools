@@ -1,38 +1,38 @@
-import { useMemo, useState, useEffect } from "react"
+import { useMemo, useSyncExternalStore } from "react"
+
+function getMediaQueryList(query: string) {
+  if (
+    typeof window === "undefined" ||
+    typeof window.matchMedia !== "function"
+  ) {
+    return null
+  }
+  return window.matchMedia(query)
+}
 
 export function useMediaQuery(query: string) {
-  const normalizedQuery = query.startsWith("@media")
-    ? query.substring("@media".length, query.length)
-    : query
+  const normalizedQuery = useMemo(
+    () =>
+      query.startsWith("@media")
+        ? query.substring("@media".length, query.length)
+        : query,
+    [query],
+  )
 
-  const mediaQueryList = useMemo(() => {
-    if (
-      typeof window === "undefined" ||
-      typeof window.matchMedia !== "function"
-    ) {
-      return null
-    }
-    return window.matchMedia(normalizedQuery)
-  }, [normalizedQuery])
+  const subscribe = (onStoreChange: () => void) => {
+    const mediaQueryList = getMediaQueryList(normalizedQuery)
+    if (!mediaQueryList) return () => {}
 
-  const [matches, setMatches] = useState(mediaQueryList?.matches ?? false)
+    // Keep state in sync with native media query changes.
+    const handler = () => onStoreChange()
+    mediaQueryList.addEventListener("change", handler)
+    return () => mediaQueryList.removeEventListener("change", handler)
+  }
 
-  useEffect(() => {
-    if (!mediaQueryList) return
+  const getSnapshot = () => getMediaQueryList(normalizedQuery)?.matches ?? false
+  const getServerSnapshot = () => false
 
-    const handleChange = (e: MediaQueryListEvent) => {
-      setMatches(e.matches)
-    }
-
-    setMatches(mediaQueryList.matches)
-    mediaQueryList.addEventListener("change", handleChange)
-
-    return () => {
-      mediaQueryList.removeEventListener("change", handleChange)
-    }
-  }, [mediaQueryList])
-
-  return matches
+  return useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot)
 }
 
 export default useMediaQuery
