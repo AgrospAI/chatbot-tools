@@ -5,7 +5,7 @@
   "items": [
     {
       "name": "chat",
-      "type": "registry:block",
+      "type": "registry:component",
       "title": "Chat",
       "description": "A customizable chat component.",
       "registryDependencies": ["button", "avatar"],
@@ -51,7 +51,7 @@
     },
     {
       "name": "chatbot",
-      "type": "registry:block",
+      "type": "registry:component",
       "title": "Chatbot",
       "description": "A customizable chatbot component.",
       "registryDependencies": [
@@ -79,13 +79,13 @@
         },
         {
           "path": "src/registry/new-york/chatbot/components/markdown/markdown.module.css",
-          "type": "registry:style"
+          "type": "registry:component"
         }
       ]
     },
     {
       "name": "local-chatbot",
-      "type": "registry:block",
+      "type": "registry:component",
       "title": "Local Chatbot",
       "description": "A button bottom-right chatbot component that can be integrated into web applications.",
       "files": [

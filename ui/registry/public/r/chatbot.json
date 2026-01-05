@@ -32,8 +32,8 @@
     {
       "path": "src/registry/new-york/chatbot/components/markdown/markdown.module.css",
       "content": ".markdown ul {\n  display: flex;\n  flex-direction: column;\n  margin-top: 0.25rem;\n  margin-bottom: 0.25rem;\n  list-style-type: disc;\n  padding-left: 1rem;\n}\n.markdown ol {\n  margin-top: 0.25rem;\n  margin-bottom: 0.75rem;\n  list-style-type: decimal;\n  padding-left: 1rem;\n}\n.markdown a {\n  color: #3b82f6; /* Tailwind's blue-500 */\n}\n.markdown pre {\n  margin: 0;\n  border: 0;\n  background-color: var(--background);\n  padding: 0;\n}\n.markdown p {\n  margin-bottom: 0.75rem;\n}\n.markdown h1 {\n  margin-bottom: 1rem;\n  font-size: 1.25rem;\n  line-height: 1.25;\n}\n.markdown h2 {\n  margin-bottom: 1.5rem;\n  font-size: 1.125rem;\n  line-height: 1.25;\n}\n.markdown h3 {\n  margin-bottom: 1rem;\n  font-size: 1rem;\n  font-weight: bold;\n  line-height: 1.25;\n}\n.markdown h4 {\n  margin-bottom: 1rem;\n  font-size: 1rem;\n  line-height: 1.25;\n}\n.markdown h5 {\n  margin-bottom: 0.5rem;\n  font-size: 0.875rem;\n  line-height: 1.25;\n}\n.markdown h6 {\n  margin-bottom: 0.5rem;\n  font-size: 0.75rem;\n  line-height: 1.25;\n}\n.markdown hr {\n  margin: 0;\n}\n",
-      "type": "registry:style"
+      "type": "registry:component"
     }
   ],
-  "type": "registry:block"
+  "type": "registry:component"
 }

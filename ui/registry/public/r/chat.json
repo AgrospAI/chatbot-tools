@@ -58,5 +58,5 @@
       "type": "registry:hook"
     }
   ],
-  "type": "registry:block"
+  "type": "registry:component"
 }
