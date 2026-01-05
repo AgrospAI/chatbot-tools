@@ -16,7 +16,20 @@ import { Send, Trash } from "lucide-react"
 import { useState } from "react"
 import PromptSuggestions from "@/registry/new-york/chatbot/components/prompt-suggestions"
 
-type ChatStrings = {
+export type Message = UserMessage | BotMessage
+
+export interface UserMessage {
+  role: "user"
+  message: string
+}
+export interface BotMessage {
+  role: "bot"
+  message: string
+  pending: boolean
+  sources: string[]
+}
+
+export type ChatStrings = {
   title: string
   promptSuggestions: string[]
   placeholder: string
