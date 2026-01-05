@@ -1,7 +1,7 @@
 // @ts-check
+import starlight from "@astrojs/starlight"
 import tailwindcss from "@tailwindcss/vite"
 import { defineConfig } from "astro/config"
-import starlight from "@astrojs/starlight"
 
 import react from "@astrojs/react"
 import { pluginLineNumbers } from "@expressive-code/plugin-line-numbers"

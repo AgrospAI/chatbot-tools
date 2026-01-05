@@ -1,9 +1,9 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
+import { cn } from "@/lib/utils"
 import { useLockBodyScroll } from "@/registry/new-york/chat/hooks/useLockBodyScroll"
 import useMediaQuery from "@/registry/new-york/chat/hooks/useMediaQuery"
-import { cn } from "@/lib/utils"
 import { BotMessageSquare, Expand, Minimize, X } from "lucide-react"
 import React, { createContext, useContext, useRef, useState } from "react"
 import { createPortal } from "react-dom"

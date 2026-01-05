@@ -2,34 +2,34 @@
 import { Code } from "@astrojs/starlight/components"
 import fs from "node:fs/promises"
 import {
-    type Demo,
-    CodePreviewInternal,
+  type Demo,
+  CodePreviewInternal,
 } from "@/components/markdown/code-preview/_code-preview-internal"
 
 type Props = { demo: Demo }
 
 const { demo } = Astro.props
 const fileContents = await fs.readFile(
-    `./src/registry/new-york/${demo}.tsx`,
-    "utf-8",
+  `./src/registry/new-york/${demo}.tsx`,
+  "utf-8",
 )
 ---
 
 <div>
-    <CodePreviewInternal
-        demo={demo}
-        client:only="react"
-        preview="slot"
-        code="slot"
-    >
-        <Fragment slot="preview">
-            <slot name="preview" />
-        </Fragment>
-        <Code
-            slot="code"
-            code={fileContents}
-            lang="tsx"
-            class="h-full rounded-none [&>figure.frame]:h-full [&>figure.frame>pre]:h-full"
-        />
-    </CodePreviewInternal>
+  <CodePreviewInternal
+    demo={demo}
+    client:only="react"
+    preview="slot"
+    code="slot"
+  >
+    <Fragment slot="preview">
+      <slot name="preview" />
+    </Fragment>
+    <Code
+      slot="code"
+      code={fileContents}
+      lang="tsx"
+      class="h-full rounded-none [&>figure.frame]:h-full [&>figure.frame>pre]:h-full"
+    />
+  </CodePreviewInternal>
 </div>

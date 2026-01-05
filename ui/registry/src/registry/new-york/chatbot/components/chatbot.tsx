@@ -1,4 +1,3 @@
-import Markdown from "@/registry/new-york/chatbot/components/markdown/markdown"
 import { Button } from "@/components/ui/button"
 import {
   ChatBubble,
@@ -12,9 +11,10 @@ import {
   ExpandableChatFooter,
   ExpandableChatHeader,
 } from "@/registry/new-york/chat/components/expandable-chat"
+import Markdown from "@/registry/new-york/chatbot/components/markdown/markdown"
+import PromptSuggestions from "@/registry/new-york/chatbot/components/prompt-suggestions"
 import { Send, Trash } from "lucide-react"
 import { useState } from "react"
-import PromptSuggestions from "@/registry/new-york/chatbot/components/prompt-suggestions"
 
 export type Message = UserMessage | BotMessage
 

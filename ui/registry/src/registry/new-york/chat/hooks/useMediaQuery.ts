@@ -1,38 +1,38 @@
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState, useEffect } from "react"
 
 export function useMediaQuery(query: string) {
   const normalizedQuery = query.startsWith("@media")
     ? query.substring("@media".length, query.length)
-    : query;
+    : query
 
   const mediaQueryList = useMemo(() => {
     if (
       typeof window === "undefined" ||
       typeof window.matchMedia !== "function"
     ) {
-      return null;
+      return null
     }
-    return window.matchMedia(normalizedQuery);
-  }, [normalizedQuery]);
+    return window.matchMedia(normalizedQuery)
+  }, [normalizedQuery])
 
-  const [matches, setMatches] = useState(mediaQueryList?.matches ?? false);
+  const [matches, setMatches] = useState(mediaQueryList?.matches ?? false)
 
   useEffect(() => {
-    if (!mediaQueryList) return;
+    if (!mediaQueryList) return
 
     const handleChange = (e: MediaQueryListEvent) => {
-      setMatches(e.matches);
-    };
+      setMatches(e.matches)
+    }
 
-    setMatches(mediaQueryList.matches);
-    mediaQueryList.addEventListener("change", handleChange);
+    setMatches(mediaQueryList.matches)
+    mediaQueryList.addEventListener("change", handleChange)
 
     return () => {
-      mediaQueryList.removeEventListener("change", handleChange);
-    };
-  }, [mediaQueryList]);
+      mediaQueryList.removeEventListener("change", handleChange)
+    }
+  }, [mediaQueryList])
 
-  return matches;
+  return matches
 }
 
-export default useMediaQuery;
+export default useMediaQuery

@@ -1,8 +1,8 @@
 import { Card, CardContent } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Loader2Icon } from "lucide-react"
-import type { ComponentType } from "react"
 import { lazy, Suspense, type ReactNode } from "react"
+import type { ComponentType } from "react"
 
 type DemoComponent = ComponentType<Record<string, never>>
 
@@ -70,7 +70,9 @@ export function CodePreviewInternal({ demo, preview, code }: Props) {
             value="preview"
             className="flex h-full items-center justify-center p-4"
           >
-            <Suspense fallback={<Loader2Icon className="size-16 animate-spin" />}>
+            <Suspense
+              fallback={<Loader2Icon className="size-16 animate-spin" />}
+            >
               {preview}
               <Component />
             </Suspense>

@@ -1,10 +1,10 @@
-import { useState, type ReactNode } from "react"
-import { Card, CardContent } from "./ui/card"
-import { CodeIcon } from "lucide-react"
-import { Button } from "./ui/button"
-import { TypeScriptIcon } from "./icons/typescript-icon"
 import { CSSIcon } from "./icons/css-icon"
+import { TypeScriptIcon } from "./icons/typescript-icon"
+import { Button } from "./ui/button"
+import { Card, CardContent } from "./ui/card"
 import { cn } from "@/lib/utils"
+import { CodeIcon } from "lucide-react"
+import { useState, type ReactNode } from "react"
 
 export function ManualInstallCodeCard({
   filePath,

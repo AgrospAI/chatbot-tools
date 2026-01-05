@@ -1,10 +1,10 @@
+import styles from "./markdown.module.css"
 import { cn } from "@/lib/utils"
 import ReactMarkdown from "react-markdown"
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter"
 import darkStyle from "react-syntax-highlighter/dist/esm/styles/prism/one-dark"
 import lightStyle from "react-syntax-highlighter/dist/esm/styles/prism/one-light"
 import remarkGfm from "remark-gfm"
-import styles from "./markdown.module.css"
 
 interface Props {
   theme?: "light" | "dark"

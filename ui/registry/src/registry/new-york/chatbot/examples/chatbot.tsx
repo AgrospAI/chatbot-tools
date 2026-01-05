@@ -1,5 +1,7 @@
+import Chatbot, {
+  type Message,
+} from "@/registry/new-york/chatbot/components/chatbot"
 import { MessageCircleQuestionMark } from "lucide-react"
-import Chatbot, { type Message } from "@/registry/new-york/chatbot/components/chatbot";
 import { useState } from "react"
 
 const title = "Chatbot Assistant"
@@ -13,19 +15,26 @@ const promptSuggestions = [
 const icon = <MessageCircleQuestionMark className="size-6" />
 
 export default function Default() {
-
   const [messages, setMessages] = useState<Message[]>([
     {
       role: "bot",
       message: "Hello! I'm your Chatbot Assistant. How can I help you today?",
       pending: false,
       sources: [],
-    }
+    },
   ])
 
   const clearMessages = async () => {
     setMessages([])
   }
 
-  return <Chatbot strings={{ title, promptSuggestions }} messages={messages} setMessages={setMessages} icon={icon} newChat={clearMessages} />
+  return (
+    <Chatbot
+      strings={{ title, promptSuggestions }}
+      messages={messages}
+      setMessages={setMessages}
+      icon={icon}
+      newChat={clearMessages}
+    />
+  )
 }

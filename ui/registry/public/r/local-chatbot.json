@@ -3,10 +3,7 @@
   "name": "local-chatbot",
   "title": "Local Chatbot",
   "description": "A button bottom-right chatbot component that can be integrated into web applications.",
-  "dependencies": [
-    "dexie",
-    "dexie-react-hooks"
-  ],
+  "dependencies": ["dexie", "dexie-react-hooks"],
   "registryDependencies": [
     "https://agrospai.github.io/chatbot-tools/r/chatbot.json"
   ],

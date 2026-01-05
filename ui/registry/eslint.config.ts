@@ -1,14 +1,14 @@
 import js from "@eslint/js"
-import markdown from "@eslint/markdown"
 import json from "@eslint/json"
-import globals from "globals"
-import tseslint from "typescript-eslint"
-import react from "eslint-plugin-react"
-import astro from "eslint-plugin-astro"
+import markdown from "@eslint/markdown"
 import astroParser from "astro-eslint-parser"
 import prettier from "eslint-config-prettier"
+import astro from "eslint-plugin-astro"
+import react from "eslint-plugin-react"
 import reactHooks from "eslint-plugin-react-hooks"
 import { globalIgnores } from "eslint/config"
+import globals from "globals"
+import tseslint from "typescript-eslint"
 
 export default tseslint.config([
   globalIgnores([

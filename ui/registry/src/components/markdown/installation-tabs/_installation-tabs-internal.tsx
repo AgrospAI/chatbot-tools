@@ -1,6 +1,6 @@
-import { type ReactNode } from "react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useLocalStorage } from "@/hooks/useLocalStorage"
+import { type ReactNode } from "react"
 
 export function InstallationTabsInternal({
   children,

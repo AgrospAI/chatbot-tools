@@ -1,5 +1,5 @@
-import { Dexie, type EntityTable } from "dexie"
 import type { Message } from "@/registry/new-york/chatbot/components/chatbot"
+import { Dexie, type EntityTable } from "dexie"
 
 interface Chat {
   id: string
@@ -14,7 +14,6 @@ interface Setting {
 interface ChatSettings {
   currentChatId: string | null
 }
-
 
 export const db = new Dexie("ChatsDatabase") as Dexie & {
   chats: EntityTable<Chat, "id">
