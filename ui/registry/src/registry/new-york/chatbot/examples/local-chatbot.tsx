@@ -1,5 +1,5 @@
 import LocalChatbot from "@/registry/new-york/chatbot/components/local-chatbot"
-import SvgFastragIcon from "../components/icons/FastragIcon"
+import SvgFastragIcon from "@/registry/new-york/chatbot/components/FastragIcon"
 
 const title = "Chatbot Assistant"
 const promptSuggestions = [

@@ -13,27 +13,32 @@
       "files": [
         {
           "path": "src/registry/new-york/chat/components/autosize-textarea.tsx",
-          "type": "registry:component"
+          "type": "registry:ui"
         },
         {
           "path": "src/registry/new-york/chat/components/chat-bubble.tsx",
-          "type": "registry:component"
+          "type": "registry:component",
+          "target": "~/components/chat/"
         },
         {
           "path": "src/registry/new-york/chat/components/chat-input.tsx",
-          "type": "registry:component"
+          "type": "registry:component",
+          "target": "~/components/chat/"
         },
         {
           "path": "src/registry/new-york/chat/components/chat-message-list.tsx",
-          "type": "registry:component"
+          "type": "registry:component",
+          "target": "~/components/chat/"
         },
         {
           "path": "src/registry/new-york/chat/components/expandable-chat.tsx",
-          "type": "registry:component"
+          "type": "registry:component",
+          "target": "~/components/chat/"
         },
         {
           "path": "src/registry/new-york/chat/components/message-loading.tsx",
-          "type": "registry:component"
+          "type": "registry:component",
+          "target": "~/components/chat/"
         },
         {
           "path": "src/registry/new-york/chat/hooks/useAutoScroll.ts",
@@ -67,19 +72,23 @@
       "files": [
         {
           "path": "src/registry/new-york/chatbot/components/chatbot.tsx",
-          "type": "registry:component"
+          "type": "registry:component",
+          "target": "~/components/chat/bot/"
         },
         {
           "path": "src/registry/new-york/chatbot/components/prompt-suggestions.tsx",
-          "type": "registry:component"
+          "type": "registry:component",
+          "target": "~/components/chat/bot/"
         },
         {
           "path": "src/registry/new-york/chatbot/components/markdown/markdown.tsx",
-          "type": "registry:component"
+          "type": "registry:component",
+          "target": "~/components/chat/bot/markdown/"
         },
         {
           "path": "src/registry/new-york/chatbot/components/markdown/markdown.module.css",
-          "type": "registry:component"
+          "type": "registry:component",
+          "target": "~/components/chat/bot/markdown/"
         }
       ]
     },
@@ -91,11 +100,13 @@
       "files": [
         {
           "path": "src/registry/new-york/chatbot/components/local-chatbot.tsx",
-          "type": "registry:component"
+          "type": "registry:component",
+          "target": "~/components/chat/bot/"
         },
         {
-          "path": "src/registry/new-york/chatbot/components/icons/FastragIcon.tsx",
-          "type": "registry:ui"
+          "path": "src/registry/new-york/chatbot/components/FastragIcon.tsx",
+          "type": "registry:component",
+          "target": "~/components/chat/bot/"
         }
       ],
       "dependencies": ["dexie", "dexie-react-hooks"],
