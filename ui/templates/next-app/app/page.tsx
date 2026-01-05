@@ -1,6 +1,6 @@
 "use client";
 import { ComponentExample } from "@/components/component-example";
-import LocalChatbot from "@/components/local-chatbot";
+import LocalChatbot from "@/components/chatbot/local-chatbot";
 
 export default function Page() {
     return (

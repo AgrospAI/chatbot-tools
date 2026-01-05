@@ -5,7 +5,7 @@ import type {
   Message,
 } from "@/components/chatbot/chatbot"
 import Chatbot from "@/components/chatbot/chatbot"
-import { db, settings } from "@/lib/db"
+import { db, settings } from "@/lib/chatbot/db"
 import { useLiveQuery } from "dexie-react-hooks"
 
 type Props = Omit<ChatbotProps, "messages" | "setMessages" | "newChat">
