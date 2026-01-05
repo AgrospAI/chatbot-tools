@@ -1,0 +1,18 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+@import "@fontsource-variable/figtree";
+
+@custom-variant dark (&:is(.dark *));
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply font-sans bg-background text-foreground;
+  }
+  html {
+    @apply font-sans;
+  }
+}
