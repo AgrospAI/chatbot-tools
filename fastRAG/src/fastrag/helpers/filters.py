@@ -38,6 +38,8 @@ class AndFilter(Filter[T]):
 
     @override
     def apply(self, entry: T) -> bool:
+        if not self.filters:
+            return False
         return all(f.apply(entry) for f in self.filters)
 
     def __and__(self, other: Filter):
@@ -54,6 +56,8 @@ class OrFilter(Filter[T]):
 
     @override
     def apply(self, entry: T) -> bool:
+        if not self.filters:
+            return True
         return any(f.apply(entry) for f in self.filters)
 
     def __and__(self, other: Filter):

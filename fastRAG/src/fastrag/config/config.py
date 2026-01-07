@@ -18,9 +18,7 @@ class Source(Strategy): ...
 
 
 @dataclass(frozen=True)
-class Parsing:
-    strategy: str
-    use: list[str]
+class Parsing(Strategy): ...
 
 
 @dataclass(frozen=True)

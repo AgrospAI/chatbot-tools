@@ -35,7 +35,9 @@ def read(path: Path, base_url: str) -> bytes:
 class HtmlParser(Task):
 
     filter: ClassVar[Filter] = StepFilter("fetching") & MetadataFilter(format="html")
-    use: list[str] = field(default_factory=list, hash=False)
+    use: list[str] = field(default_factory=list, compare=False)
+
+    _parsed: int = field(default=0)
 
     @override
     async def callback(
@@ -45,10 +47,11 @@ class HtmlParser(Task):
     ) -> AsyncGenerator[ParsingEvent, None]:
         existed, _ = await self.cache.get_or_create(
             uri=entry.path.resolve().as_uri(),
-            contents=partial(read, entry.path, entry.metadata["source"]),
+            contents=partial(read, entry.path, uri),
             step="parsing",
             metadata={"source": uri, "strategy": HtmlParser.supported},
         )
+        object.__setattr__(self, "_parsed", self._parsed + 1)
         yield ParsingEvent(
             ParsingEvent.Type.PROGRESS,
             ("Cached" if existed else "Parsing") + f" HTML {uri}",
@@ -58,5 +61,5 @@ class HtmlParser(Task):
     def completed_callback(self) -> Event:
         return ParsingEvent(
             ParsingEvent.Type.COMPLETED,
-            f"Parsed {len(HtmlParser.entries)} HTML documents with HtmlParser",
+            f"Parsed {self._parsed} HTML documents with HtmlParser",
         )

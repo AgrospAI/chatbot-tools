@@ -3,6 +3,7 @@ from datetime import datetime
 from importlib.metadata import PackageNotFoundError
 from importlib.metadata import version as v
 from typing import TypeAlias
+from urllib.parse import urlparse, urlunparse
 
 
 def version(package_name: str) -> str:
@@ -46,3 +47,30 @@ PosixTimestamp: TypeAlias = float
 
 def timestamp() -> PosixTimestamp:
     return datetime.now().timestamp()
+
+
+def normalize_url(url: str) -> str:
+    # Parse the URL into components
+    parsed = urlparse(url)
+
+    # Normalize path: ensure it ends with a single trailing slash
+    path = parsed.path
+    if not path.endswith("/"):
+        path += "/"
+
+    # Remove duplicate slashes
+    while "//" in path:
+        path = path.replace("//", "/")
+
+    # Reconstruct the URL
+    normalized = urlunparse(
+        (
+            parsed.scheme.lower(),  # normalize scheme
+            parsed.netloc.lower(),  # normalize host
+            path,
+            "",  # params
+            "",  # query
+            "",  # fragment
+        )
+    )
+    return normalized

@@ -36,6 +36,8 @@ class FileParser(Task):
     )
     use: list[str] = field(default_factory=list, hash=False)
 
+    _parsed: int = field(default=0)
+
     @override
     async def callback(
         self,
@@ -50,6 +52,7 @@ class FileParser(Task):
             step="parsing",
             metadata={"source": uri, "strategy": FileParser.supported},
         )
+        object.__setattr__(self, "_parsed", self._parsed + 1)
         yield ParsingEvent(
             ParsingEvent.Type.PROGRESS,
             ("Cached" if existed else "Parsing") + f" {fmt.upper()} {uri}",
@@ -59,5 +62,5 @@ class FileParser(Task):
     def completed_callback(self) -> Event:
         return ParsingEvent(
             ParsingEvent.Type.COMPLETED,
-            f"Parsed {len(FileParser.entries)} document(s) with FileParser",
+            f"Parsed {self._parsed} document(s) with FileParser",
         )

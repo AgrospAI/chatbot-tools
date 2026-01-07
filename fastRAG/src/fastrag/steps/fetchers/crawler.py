@@ -9,6 +9,7 @@ from httpx import AsyncClient
 
 from fastrag.events import Event
 from fastrag.helpers.url_field import URLField
+from fastrag.helpers.utils import normalize_url
 from fastrag.plugins import PluginRegistry, plugin
 from fastrag.steps.fetchers.events import FetchingEvent
 from fastrag.steps.fetchers.rate_limiting.rate_limiter import RateLimiter
@@ -48,7 +49,7 @@ class CrawlerFetcher(Task):
 
         queue: asyncio.Queue[tuple[str, int]] = asyncio.Queue()
         event_queue: asyncio.Queue[Event] = asyncio.Queue()
-        await queue.put((self.url, 0))
+        await queue.put((normalize_url(self.url), 0))
 
         async with AsyncClient(
             timeout=5,
@@ -88,7 +89,7 @@ class CrawlerFetcher(Task):
                     if parsed.scheme not in ("http", "https"):
                         continue
 
-                    next_url = parsed._replace(fragment="").geturl()
+                    next_url = normalize_url(next_url)
                     if is_same_domain(base_url, next_url):
                         await queue.put((next_url, depth + 1))
 
@@ -153,7 +154,6 @@ class CrawlerFetcher(Task):
                                 "fetching",
                                 {
                                     "format": "html",
-                                    "source": url,
                                     "strategy": CrawlerFetcher.supported,
                                     "depth": depth,
                                 },

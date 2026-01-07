@@ -11,9 +11,9 @@ steps:
     #     url: https://agrospai.udl.cat/sitemap.xml
     #     regex:
     #       - https?://[^/]+/docs/
-    # - strategy: URL
-    #   params:
-    #     url: https://agrospai.udl.cat
+    - strategy: URL
+      params:
+        url: https://x.com
     - strategy: Crawling
       params:
         url: https://agrospai.udl.cat
@@ -22,12 +22,14 @@ steps:
         delay: 0
   parsing:
     - strategy: HtmlParser
-      use:
-        - Sitemap
-        - URL
-    - strategy: FileParser
-      use:
-        - Path
+      params:
+        use:
+          - Sitemap
+          - Crawling
+    # - strategy: FileParser
+    #   params:
+    #     use:
+    #       - Path
   chunking:
     - strategy: RecursiveTextSplitter
       params:
