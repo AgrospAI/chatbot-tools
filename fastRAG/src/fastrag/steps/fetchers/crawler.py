@@ -153,6 +153,7 @@ class CrawlerFetcher(Task):
                                 "fetching",
                                 {
                                     "format": "html",
+                                    "source": url,
                                     "strategy": CrawlerFetcher.supported,
                                     "depth": depth,
                                 },

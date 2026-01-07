@@ -13,7 +13,7 @@ steps:
     #       - https?://[^/]+/docs/
     # - strategy: URL
     #   params:
-    #     url: https://agrospai.udl.cat+
+    #     url: https://agrospai.udl.cat
     - strategy: Crawling
       params:
         url: https://agrospai.udl.cat

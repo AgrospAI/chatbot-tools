@@ -2,7 +2,9 @@ from dataclasses import dataclass, field
 from functools import partial
 from pathlib import Path
 from typing import AsyncGenerator, ClassVar, override
+from urllib.parse import urljoin
 
+from bs4 import BeautifulSoup
 from html_to_markdown import convert_to_markdown
 
 from fastrag.cache.entry import CacheEntry
@@ -15,8 +17,16 @@ from fastrag.steps.task import Task
 from fastrag.systems import System
 
 
-def read(path: Path) -> bytes:
-    md = convert_to_markdown(path.read_text())
+def read(path: Path, base_url: str) -> bytes:
+    html = path.read_text()
+    soup = BeautifulSoup(html, "html.parser")
+
+    for tag in soup.find_all(["a", "img"]):
+        attr = "href" if tag.name == "a" else "src"
+        if attr in tag.attrs:
+            tag[attr] = urljoin(base_url, tag[attr])
+
+    md = convert_to_markdown(str(soup))
     return md.encode()
 
 
@@ -35,7 +45,7 @@ class HtmlParser(Task):
     ) -> AsyncGenerator[ParsingEvent, None]:
         existed, _ = await self.cache.get_or_create(
             uri=entry.path.resolve().as_uri(),
-            contents=partial(read, entry.path),
+            contents=partial(read, entry.path, entry.metadata["source"]),
             step="parsing",
             metadata={"source": uri, "strategy": HtmlParser.supported},
         )
