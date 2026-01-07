@@ -88,11 +88,13 @@ def run(
 
     # Load plugins before config
     load_plugins(plugins)
-    PluginRegistry.get_instance(System.RUNNER).run(load_config(config, verbose), step)
+    PluginRegistry.get_instance(System.RUNNER, "async").run(
+        load_config(config, verbose), step
+    )
 
 
 def load_config(path: Path, verbose: bool) -> Config:
-    config = PluginRegistry.get_instance(System.CACHE_LOADER, path.suffix).load(path)
+    config = PluginRegistry.get_instance(System.CONFIG_LOADER, path.suffix).load(path)
     init_constants(config, verbose)
     console.print(
         Panel(

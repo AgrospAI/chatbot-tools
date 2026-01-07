@@ -30,7 +30,7 @@ def expand_env_vars(obj):
         return obj
 
 
-@plugin(system=System.CACHE_LOADER, supported=[".yaml", ".yml"])
+@plugin(system=System.CONFIG_LOADER, supported=[".yaml", ".yml"])
 class YamlLoader:
 
     def load(self, config: Path) -> Config:

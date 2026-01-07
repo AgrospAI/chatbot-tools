@@ -12,7 +12,7 @@ from rich.progress import (
     TimeRemainingColumn,
 )
 
-from fastrag.config.config import StepNames, Config
+from fastrag.config.config import Config, StepNames
 from fastrag.plugins import PluginRegistry, plugin
 from fastrag.runner.runner import IRunner
 from fastrag.steps.step import IStep
@@ -21,7 +21,7 @@ from fastrag.systems import System
 
 
 @dataclass(frozen=True)
-@plugin(system=System.RUNNER)
+@plugin(system=System.RUNNER, supported="async")
 class Runner(IRunner):
 
     @override

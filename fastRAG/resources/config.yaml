@@ -3,17 +3,22 @@ cache:
   lifespan: 1d
 steps:
   fetching:
-    - strategy: Path
-      params:
-        path: ./resources/test/
-    - strategy: SitemapXML
-      params:
-        url: https://agrospai.udl.cat/sitemap.xml
-        regex:
-          - https?://[^/]+/docs/
-    - strategy: URL
+    # - strategy: Path
+    #   params:
+    #     path: ./resources/test/
+    # - strategy: SitemapXML
+    #   params:
+    #     url: https://agrospai.udl.cat/sitemap.xml
+    #     regex:
+    #       - https?://[^/]+/docs/
+    # - strategy: URL
+    #   params:
+    #     url: https://agrospai.udl.cat+
+    - strategy: Crawling
       params:
         url: https://agrospai.udl.cat
+        workers: 5
+        depth: 2
   parsing:
     - strategy: HtmlParser
       use:

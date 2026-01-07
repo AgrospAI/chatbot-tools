@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass, field
+from functools import cached_property
 from pathlib import Path
 from urllib.parse import unquote, urlparse
 
@@ -28,3 +29,7 @@ class CacheEntry:
         parsed = urlparse(d["path"])
         d["path"] = Path(unquote(parsed.path))
         return CacheEntry(**d)
+
+    @cached_property
+    def content(self) -> bytes:
+        return self.path.read_bytes()

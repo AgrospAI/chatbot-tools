@@ -3,7 +3,7 @@ from enum import StrEnum, auto
 
 class System(StrEnum):
     CACHE = auto()
-    CACHE_LOADER = auto()
+    CONFIG_LOADER = auto()
     RUNNER = auto()
     STEP = auto()
     FETCHING = auto()
