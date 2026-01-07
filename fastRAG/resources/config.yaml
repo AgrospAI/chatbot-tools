@@ -18,8 +18,8 @@ steps:
       params:
         url: https://agrospai.udl.cat
         workers: 5
-        depth: 2
-        # delay: 1
+        depth: 1
+        delay: 0
   parsing:
     - strategy: HtmlParser
       use:

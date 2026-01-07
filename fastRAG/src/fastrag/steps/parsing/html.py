@@ -48,5 +48,5 @@ class HtmlParser(Task):
     def completed_callback(self) -> Event:
         return ParsingEvent(
             ParsingEvent.Type.COMPLETED,
-            f"Parsed {len(HtmlParser.entries)} HTML documents",
+            f"Parsed {len(HtmlParser.entries)} HTML documents with HtmlParser",
         )

@@ -54,6 +54,7 @@ class CrawlerFetcher(Task):
             timeout=5,
             follow_redirects=True,
             headers={"User-Agent": CrawlerFetcher.UserAgent},
+            cookies={},
         ) as client:
 
             async def get_robot_parser():
@@ -185,5 +186,5 @@ class CrawlerFetcher(Task):
     def completed_callback(self) -> Event:
         return FetchingEvent(
             FetchingEvent.Type.COMPLETED,
-            f"From {self.url}, crawled {len(self._visited)} sites ({self._cached} cached)",
+            f"From {self.url}, crawled {len(self._visited)} sites ({self._cached} cached) with CrawlerFetcher",
         )

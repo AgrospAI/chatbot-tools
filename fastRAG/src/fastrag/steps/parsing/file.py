@@ -58,5 +58,6 @@ class FileParser(Task):
     @override
     def completed_callback(self) -> Event:
         return ParsingEvent(
-            ParsingEvent.Type.COMPLETED, f"Parsed {len(FileParser.entries)} document(s)"
+            ParsingEvent.Type.COMPLETED,
+            f"Parsed {len(FileParser.entries)} document(s) with FileParser",
         )
