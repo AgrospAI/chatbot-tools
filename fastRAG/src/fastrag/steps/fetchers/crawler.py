@@ -1,15 +1,17 @@
 import asyncio
-from dataclasses import dataclass, field
-from typing import AsyncGenerator, override
+from dataclasses import InitVar, dataclass, field
+from typing import AsyncGenerator, ClassVar, override
 from urllib.parse import urljoin, urlparse
+from urllib.robotparser import RobotFileParser
 
 from bs4 import BeautifulSoup
 from httpx import AsyncClient
 
 from fastrag.events import Event
 from fastrag.helpers.url_field import URLField
-from fastrag.plugins import plugin
+from fastrag.plugins import PluginRegistry, plugin
 from fastrag.steps.fetchers.events import FetchingEvent
+from fastrag.steps.fetchers.rate_limiting.rate_limiter import RateLimiter
 from fastrag.steps.task import Task
 from fastrag.systems import System
 
@@ -25,9 +27,20 @@ class CrawlerFetcher(Task):
     url: URLField = URLField()
     depth: int = field(default=5)
     workers: int = field(default=5)
+    delay: InitVar[float] = field(default=0.1)
 
     _visited: set[str] = field(init=False, compare=False, default_factory=set)
     _cached: int = field(init=False, compare=False, default=0)
+    _rate_limiter: RateLimiter | None = field(compare=False, default=None)
+
+    UserAgent: ClassVar[str] = "CrawlerFetcher/1.0"
+
+    def __post_init__(self, delay: float) -> None:
+        object.__setattr__(
+            self,
+            "_rate_limiter",
+            PluginRegistry.get_instance(System.RATE_LIMITING, "domain", delay=delay),
+        )
 
     @override
     async def callback(self) -> AsyncGenerator[Event, None]:
@@ -40,7 +53,24 @@ class CrawlerFetcher(Task):
         async with AsyncClient(
             timeout=5,
             follow_redirects=True,
+            headers={"User-Agent": CrawlerFetcher.UserAgent},
         ) as client:
+
+            async def get_robot_parser():
+                rp = RobotFileParser()
+                robots_url = urljoin(self.url, "/robots.txt")
+                try:
+                    res = await client.get(robots_url)
+                    if res.status_code == 200:
+                        rp.parse(res.text.splitlines())
+                    else:
+                        rp.parse([])
+                except Exception:
+                    rp.parse([])
+                rp.user_agent = CrawlerFetcher.UserAgent
+                return rp
+
+            rp = await get_robot_parser()
 
             async def parse_and_enqueue(
                 *,
@@ -73,6 +103,13 @@ class CrawlerFetcher(Task):
                             continue
 
                         self._visited.add(url)
+                        if not rp.can_fetch(CrawlerFetcher.UserAgent, url):
+                            await event_queue.put(
+                                FetchingEvent.Type.EXCEPTION,
+                                f"Blocked by robots.txt: {url}",
+                            )
+                            continue
+
                         if self.cache.is_present(url):
                             object.__setattr__(self, "_cached", self._cached + 1)
 
@@ -93,6 +130,7 @@ class CrawlerFetcher(Task):
                                 )
                             )
 
+                            await self._rate_limiter.wait(url)
                             res = await client.get(url)
                             res.raise_for_status()
 
