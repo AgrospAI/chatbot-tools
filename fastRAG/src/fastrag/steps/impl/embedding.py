@@ -1,19 +1,22 @@
 from dataclasses import dataclass
-from typing import Iterable, override
+from typing import AsyncGenerator, ClassVar, Dict, override
 
+from fastrag.cache.cache import ICache
 from fastrag.config.config import Embedding
-from fastrag.steps.steps import StepRunner
+from fastrag.events import Event
+from fastrag.plugins import plugin
+from fastrag.steps.step import IStep
+from fastrag.steps.task import Task
+from fastrag.systems import System
 
 
-@dataclass(frozen=True)
-class EmbeddingStep(StepRunner):
+@dataclass
+@plugin(system=System.STEP, supported="embedding")
+class EmbeddingStep(IStep):
 
+    description: ClassVar[str] = "EMBED"
     step: list[Embedding]
 
     @override
-    @classmethod
-    def supported(cls) -> Iterable[str]:
-        return ["embedding"]
-
-    @override
-    async def run_step(self) -> None: ...
+    async def get_tasks(self, cache: ICache) -> Dict[Task, AsyncGenerator[Event, None]]:
+        return {}

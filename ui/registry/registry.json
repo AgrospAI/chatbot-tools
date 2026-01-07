@@ -1,0 +1,107 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry.json",
+  "name": "fastrag-ui",
+  "homepage": "https://agrospai.github.io/chatbot-tools/",
+  "items": [
+    {
+      "name": "chat",
+      "type": "registry:component",
+      "title": "Chat",
+      "description": "A customizable chat component.",
+      "registryDependencies": ["button", "avatar"],
+      "dependencies": ["class-variance-authority", "lucide-react"],
+      "files": [
+        {
+          "path": "src/registry/new-york/chat/components/chat/autosize-textarea.tsx",
+          "type": "registry:ui"
+        },
+        {
+          "path": "src/registry/new-york/chat/components/chat/chat-bubble.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "src/registry/new-york/chat/components/chat/chat-input.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "src/registry/new-york/chat/components/chat/chat-message-list.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "src/registry/new-york/chat/components/chat/expandable-chat.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "src/registry/new-york/chat/components/chat/message-loading.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "src/registry/new-york/chat/hooks/useAutoScroll.ts",
+          "type": "registry:hook"
+        },
+        {
+          "path": "src/registry/new-york/chat/hooks/useLockBodyScroll.ts",
+          "type": "registry:hook"
+        },
+        {
+          "path": "src/registry/new-york/chat/hooks/useMediaQuery.ts",
+          "type": "registry:hook"
+        }
+      ]
+    },
+    {
+      "name": "chatbot",
+      "type": "registry:component",
+      "title": "Chatbot",
+      "description": "A customizable chatbot component.",
+      "registryDependencies": [
+        "button",
+        "https://agrospai.github.io/chatbot-tools/r/chat.json"
+      ],
+      "dependencies": [
+        "lucide-react",
+        "react-markdown",
+        "remark-gfm",
+        "react-syntax-highlighter"
+      ],
+      "files": [
+        {
+          "path": "src/registry/new-york/chatbot/components/chatbot/chatbot.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "src/registry/new-york/chatbot/components/chatbot/prompt-suggestions.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "src/registry/new-york/chatbot/components/chatbot/markdown/markdown.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "src/registry/new-york/chatbot/components/chatbot/markdown/markdown.module.css",
+          "type": "registry:component"
+        }
+      ]
+    },
+    {
+      "name": "local-chatbot",
+      "type": "registry:component",
+      "title": "Local Chatbot",
+      "description": "A button bottom-right chatbot component that can be integrated into web applications.",
+      "files": [
+        {
+          "path": "src/registry/new-york/chatbot/components/chatbot/local-chatbot.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "src/registry/new-york/chatbot/lib/chatbot/db.ts",
+          "type": "registry:lib"
+        }
+      ],
+      "dependencies": ["dexie", "dexie-react-hooks"],
+      "registryDependencies": [
+        "https://agrospai.github.io/chatbot-tools/r/chatbot.json"
+      ]
+    }
+  ]
+}

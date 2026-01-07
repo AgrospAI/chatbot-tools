@@ -1,27 +1,20 @@
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import TextIO
 
 from fastrag.config.config import Config
-from fastrag.plugins.base import PluginFactory
 
 
-class ConfigLoader(PluginFactory, ABC):
+class IConfigLoader(ABC):
+    """Base abstract class for config loader plugins to extend"""
 
     @abstractmethod
-    def load(self, fp: TextIO) -> Config: ...
+    def load(self, config: Path) -> Config:
+        """Loads a configuration object from the given file path.
 
-    @classmethod
-    def from_settings(cls, settings: Path) -> Config:
-        if not settings.exists():
-            raise ValueError(f"Could not find config file at {settings.absolute()}")
+        Args:
+            config (Path): configuration file path
 
-        ext = settings.suffix
-        loader = ConfigLoader.get_supported_instance(ext)
-        if not loader:
-            raise ValueError(
-                f"Could not find a loader for the settings extension {ext}"
-            )
-
-        with open(settings, "r") as f:
-            return loader.load(loader, f)
+        Returns:
+            Config: configuration instance
+        """
+        raise NotImplementedError

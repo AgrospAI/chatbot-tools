@@ -1,19 +1,25 @@
 cache:
   path: ./.fastrag
-  time: 5m
+  lifespan: 1d
 steps:
-  sources:
+  fetching:
+    # - strategy: Path
+    #   params:
+    #     path: ./resources/test/
+    # - strategy: SitemapXML
+    #   params:
+    #     url: https://agrospai.udl.cat/sitemap.xml
+    #     regex:
+    #       - https?://[^/]+/docs/
     # - strategy: URL
     #   params:
-    #     url: https://chatgpt.com/
-    - strategy: Path
+    #     url: https://agrospai.udl.cat+
+    - strategy: Crawling
       params:
-        path: ./resources/test/sample.json
-    - strategy: SitemapXML
-      params:
-        url: https://agrospai.udl.cat/sitemap.xml
-        regex:
-          - https?://[^/]+/docs/
+        url: https://agrospai.udl.cat
+        workers: 5
+        depth: 1
+        delay: 0
   parsing:
     - strategy: HtmlParser
       use:

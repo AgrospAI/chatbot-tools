@@ -1,0 +1,23 @@
+---
+title: Chatbot
+description: A button bottom-right chatbot component that can be integrated into web applications.
+---
+
+import CodePreview from "@/components/markdown/code-preview/code-preview.astro"
+import Installation from "@/components/markdown/installation-tabs/installation-tabs.astro"
+
+<CodePreview demo="chatbot/examples/chatbot">
+  <p slot="preview">
+    Open the chatbot by clicking the button at the bottom right corner.
+  </p>
+</CodePreview>
+
+## Installation
+
+<Installation registryItem="chatbot" />
+
+## Usage
+
+```tsx
+import { Chatbot } from "@chatbot-tools/chatbot"
+```
