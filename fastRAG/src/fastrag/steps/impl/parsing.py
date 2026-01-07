@@ -1,4 +1,3 @@
-import asyncio
 from dataclasses import dataclass
 from typing import AsyncGenerator, ClassVar, Dict, List, override
 
@@ -40,11 +39,3 @@ class ParsingStep(IStep):
             tasks[instance] = [instance.callback(uri, entry) for uri, entry in entries]
 
         return tasks
-
-        # classes = [PluginRegistry.get(System.PARSING, s.strategy) for s in self.step]
-        # entries = await asyncio.gather(*(cache.get_entries(c.filter) for c in classes))
-        # instances = [c(cache=cache, **self.step) for c in classes]
-        # return {
-        #     task: [task.callback(uri, entry) for uri, entry in entries_]
-        #     for entries_, task in zip(entries, instances)
-        # }
