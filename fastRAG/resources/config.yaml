@@ -11,14 +11,14 @@ steps:
     #     url: https://agrospai.udl.cat/sitemap.xml
     #     regex:
     #       - https?://[^/]+/docs/
-    - strategy: URL
-      params:
-        url: https://x.com
+    # - strategy: URL
+    #   params:
+    #     url: https://x.com
     - strategy: Crawling
       params:
         url: https://agrospai.udl.cat
         workers: 5
-        depth: 1
+        depth: 3
         delay: 0
   parsing:
     - strategy: HtmlParser

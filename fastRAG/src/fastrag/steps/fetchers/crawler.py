@@ -160,7 +160,7 @@ class CrawlerFetcher(Task):
                             )
                         await parse_and_enqueue(html=html, base_url=url, depth=depth)
                     except Exception as e:
-                        event_queue(
+                        await event_queue.put(
                             FetchingEvent(FetchingEvent.Type.EXCEPTION, f"{url}: {e}")
                         )
                     finally:

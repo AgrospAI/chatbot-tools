@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import AsyncGenerator, Callable, ClassVar, Dict, List, override
+from typing import AsyncGenerator, ClassVar, Dict, List, override
 
 from rich.progress import Progress
 
@@ -18,7 +18,7 @@ class IStep(Loggable, ABC):
     step: Step
     progress: Progress
     task_id: int
-    description: ClassVar[str] = ""
+    description: ClassVar[str] = "UNKNOWN STEP"
     _tasks: ClassVar[Dict[Task, List[AsyncGenerator[Event, None]]]] = None
 
     def calculate_total(self) -> int:
