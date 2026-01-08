@@ -4,3 +4,5 @@ dist
 
 .fastrag
 .DS_Store
+
+.env

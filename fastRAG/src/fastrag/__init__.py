@@ -9,16 +9,21 @@ from fastrag.config import (
     Config,
     Embedding,
     IConfigLoader,
+    LLM,
     Parsing,
     Source,
     Step,
     Steps,
+    VectorStore,
 )
 from fastrag.constants import Constants, get_constants, init_constants
+from fastrag.embeddings import IEmbeddings
 from fastrag.helpers import PathField, URLField, version
+from fastrag.llms import ILLM
 from fastrag.plugins import PluginRegistry, import_path, plugin
 from fastrag.runner.runner import IRunner
 from fastrag.steps import IStep
+from fastrag.stores import IVectorStore
 
 PACKAGE_DIR = Path(fastrag.__file__).parent.parent.parent
 RESOURCES_DIR = PACKAGE_DIR / "resources"
@@ -37,6 +42,8 @@ __all__ = [
     Parsing,
     Chunking,
     Embedding,
+    VectorStore,
+    LLM,
     Steps,
     Step,
     PathField,
@@ -48,4 +55,7 @@ __all__ = [
     IStep,
     IConfigLoader,
     IRunner,
+    IEmbeddings,
+    IVectorStore,
+    ILLM,
 ]

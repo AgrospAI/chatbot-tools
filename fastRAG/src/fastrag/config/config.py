@@ -30,6 +30,14 @@ class Embedding(Strategy): ...
 
 
 @dataclass(frozen=True)
+class VectorStore(Strategy): ...
+
+
+@dataclass(frozen=True)
+class LLM(Strategy): ...
+
+
+@dataclass(frozen=True)
 class Benchmarking(Strategy): ...
 
 
@@ -74,3 +82,5 @@ class Cache:
 class Config:
     cache: Cache
     steps: Steps
+    vectorstore: VectorStore | None = None
+    llm: LLM | None = None

@@ -14,6 +14,10 @@ class System(StrEnum):
     EMBEDDING = auto()
     BENCHMARKING = auto()
 
+    # Infrastructure
+    VECTOR_STORE = auto()
+    LLM = auto()
+
     # Helpers / Others
     CONFIG_LOADER = auto()
     RATE_LIMITING = auto()
