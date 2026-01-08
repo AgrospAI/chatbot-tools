@@ -36,11 +36,17 @@ jobs:
       - name: Set up Python
         run: uv python install
 
+      - name: Debug Environment
+        run: |
+          pwd
+          ls -a
+          uvx bump-my-version show current_version --config-file .bumpversion.toml
+
       - name: Bump version
         id: bump
         working-directory: .
         run: |
-          uvx bump-my-version bump patch --allow-dirty
+          uvx bump-my-version bump patch --allow-dirty --config-file .bumpversion.toml
 
           # Capture the version using uvx as well
           NEW_VERSION=$(uvx bump-my-version show current_version)
