@@ -14,7 +14,6 @@ from fastrag.systems import System
 @dataclass(frozen=True)
 @plugin(system=System.FETCHING, supported="URL")
 class HttpFetcher(Task):
-
     url: URLField = URLField()
     _cached: bool = field(init=False, default=False, hash=False, compare=False)
 

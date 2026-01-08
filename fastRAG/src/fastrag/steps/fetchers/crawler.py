@@ -24,7 +24,6 @@ def is_same_domain(url_a: str, url_b: str) -> bool:
 @dataclass(frozen=True)
 @plugin(system=System.FETCHING, supported="Crawling")
 class CrawlerFetcher(Task):
-
     url: URLField = URLField()
     depth: int = field(default=5)
     workers: int = field(default=5)
@@ -187,5 +186,8 @@ class CrawlerFetcher(Task):
     def completed_callback(self) -> Event:
         return FetchingEvent(
             FetchingEvent.Type.COMPLETED,
-            f"From {self.url}, crawled {len(self._visited)} sites ({self._cached} cached) with CrawlerFetcher",
+            (
+                f"From {self.url}, crawled {len(self._visited)} sites "
+                f"({self._cached} cached) with CrawlerFetcher"
+            ),
         )

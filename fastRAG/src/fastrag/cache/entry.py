@@ -11,7 +11,6 @@ from fastrag.helpers.utils import PosixTimestamp, timestamp
 
 @dataclass(frozen=True)
 class CacheEntry:
-
     content_hash: str
     step: StepNames
     path: Path

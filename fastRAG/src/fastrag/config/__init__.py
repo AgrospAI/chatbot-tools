@@ -1,10 +1,10 @@
 from fastrag.config.config import (
+    LLM,
     Benchmarking,
     Cache,
     Chunking,
     Config,
     Embedding,
-    LLM,
     Parsing,
     Source,
     Step,

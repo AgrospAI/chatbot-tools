@@ -33,3 +33,13 @@ build-backend = "uv_build"
 
 [dependency-groups]
 dev = ["mypy>=1.19.0", "ruff>=0.14.7"]
+
+[tool.ruff]
+line-length = 96
+
+[tool.ruff.lint]
+# Add the `line-too-long` rule to the enforced rule set.
+extend-select = ["E501", "I"]
+
+[tool.ruff.format]
+quote-style = "double"

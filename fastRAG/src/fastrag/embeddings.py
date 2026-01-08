@@ -24,7 +24,7 @@ class IEmbeddings(ABC):
 @plugin(system=System.EMBEDDING, supported=["OpenAI-Simple", "openai", "openai-simple"])
 class SelfHostedEmbeddings(IEmbeddings):
     """Self-hosted OpenAI-compatible embedding model"""
-    
+
     def __init__(self, url: str, api_key: str, model: str):
         self.api_url = url
         self.api_key = api_key

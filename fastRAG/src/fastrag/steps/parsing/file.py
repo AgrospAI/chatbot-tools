@@ -30,7 +30,6 @@ def to_markdown(fmt: str, path: Path) -> bytes:
 @dataclass(frozen=True)
 @plugin(system=System.PARSING, supported="FileParser")
 class FileParser(Task):
-
     filter: ClassVar[Filter] = StepFilter("fetching") & (
         MetadataFilter(format="docx") | MetadataFilter(format="pdf")
     )

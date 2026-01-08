@@ -28,7 +28,6 @@ def list_paths(p: Path) -> list[Path]:
 @dataclass(frozen=True)
 @plugin(system=System.FETCHING, supported="Path")
 class PathFetcher(Task):
-
     path: PathField = PathField()
 
     @override

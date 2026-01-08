@@ -12,10 +12,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
-from fastrag import Config, init_constants, ILLM
-from fastrag.settings import DEFAULT_CONFIG
+from fastrag import ILLM, Config, init_constants
 from fastrag.config.env import load_env_file
 from fastrag.plugins import PluginRegistry, import_path
+from fastrag.settings import DEFAULT_CONFIG
 from fastrag.stores.store import IVectorStore
 from fastrag.systems import System
 
@@ -28,40 +28,34 @@ config: Config = None
 def init_serve(app_config: Config) -> None:
     """Initialize the serve module with configuration"""
     global config, vector_store, llm
-    
+
     config = app_config
-    
+
     if config.vectorstore is None:
         raise ValueError("Vector store configuration is required for serve command")
-    
+
     if config.llm is None:
         raise ValueError("LLM configuration is required for serve command")
-    
+
     # Get the embedding model instance
     if not config.steps.embedding:
         raise ValueError("Embedding configuration is required for vector store")
-    
+
     embedding_config = config.steps.embedding[0]
     embedding_model = PluginRegistry.get_instance(
-        System.EMBEDDING,
-        embedding_config.strategy,
-        **embedding_config.params
+        System.EMBEDDING, embedding_config.strategy, **embedding_config.params
     )
-    
+
     # Initialize vector store with embedding model
     vector_store = PluginRegistry.get_instance(
         System.VECTOR_STORE,
         config.vectorstore.strategy,
         embedding_model=embedding_model,
-        **config.vectorstore.params
+        **config.vectorstore.params,
     )
-    
+
     # Initialize LLM
-    llm = PluginRegistry.get_instance(
-        System.LLM,
-        config.llm.strategy,
-        **config.llm.params
-    )
+    llm = PluginRegistry.get_instance(System.LLM, config.llm.strategy, **config.llm.params)
 
 
 @asynccontextmanager
@@ -102,7 +96,10 @@ def build_prompt(context: str, question: str) -> str:
     return f"""
     You are a helpful assistant and expert in data spaces.
 
-    Always use inline references in the form [<NUMBER OF DOCUMENT>](ref:<NUMBER OF DOCUMENT>) ONLY if you use information from a document. For example, if you use the information from Document[3], you should write [3](ref:3) at the end of the sentence where you used that information.
+    Always use inline references in the form [<NUMBER OF DOCUMENT>](ref:<NUMBER OF DOCUMENT>)
+    ONLY if you use information from a document. For example, if you use the information from
+    Document[3], you should write [3](ref:3) at the end of the sentence where you used that
+    information.
     Give a precise, accurate and structured answer without repeating the question.
     
     These are the documents:
@@ -152,39 +149,27 @@ def create_app() -> FastAPI:
         # Get the embedding for the query
         embedding_config = config.steps.embedding[0]
         embedding_model = PluginRegistry.get_instance(
-            System.EMBEDDING,
-            embedding_config.strategy,
-            **embedding_config.params
+            System.EMBEDDING, embedding_config.strategy, **embedding_config.params
         )
 
         query_embedding = embedding_model.embed_query(req.question)
 
         # Search for similar documents
         results = await vector_store.similarity_search(
-            query=req.question,
-            query_embedding=query_embedding,
-            k=5
+            query=req.question, query_embedding=query_embedding, k=5
         )
 
-        context_parts = [
-            f"Document[{i}]: {doc.page_content}" for i, doc in enumerate(results)
-        ]
+        context_parts = [f"Document[{i}]: {doc.page_content}" for i, doc in enumerate(results)]
         context = "\n\n".join(context_parts)
 
         sources_metadata = [doc.metadata.get("source") for doc in results]
 
         async def generate():
-            yield f"data: {json.dumps({
-                'type': 'sources',
-                'data': sources_metadata
-            })}\n\n"
+            yield f"data: {json.dumps({'type': 'sources', 'data': sources_metadata})}\n\n"
 
             prompt = build_prompt(context, req.question)
             async for token in llm.stream(prompt):
-                yield f"data: {json.dumps({
-                    'type': 'token',
-                    'data': token
-                })}\n\n"
+                yield f"data: {json.dumps({'type': 'token', 'data': token})}\n\n"
 
         return StreamingResponse(
             content=generate(),

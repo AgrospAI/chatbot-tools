@@ -13,7 +13,6 @@ from fastrag.systems import System
 @dataclass
 @plugin(system=System.STEP, supported="benchmarking")
 class BenchmarkingStep(IStep):
-
     step: list[Benchmarking]
     description: ClassVar[str] = "BENCH"
 

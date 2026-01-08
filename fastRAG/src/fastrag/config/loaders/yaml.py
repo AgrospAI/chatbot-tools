@@ -32,7 +32,6 @@ def expand_env_vars(obj):
 
 @plugin(system=System.CONFIG_LOADER, supported=[".yaml", ".yml"])
 class YamlLoader:
-
     def load(self, config: Path) -> Config:
         return from_dict(
             Config,

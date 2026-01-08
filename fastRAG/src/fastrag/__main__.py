@@ -9,16 +9,15 @@ from rich.panel import Panel
 from rich.pretty import Pretty
 
 from fastrag import (
-    Constants,
     Config,
+    Constants,
     init_constants,
     version,
 )
 from fastrag.config.env import load_env_file
 from fastrag.plugins import PluginRegistry, import_path
-from fastrag.systems import System
-
 from fastrag.settings import DEFAULT_CONFIG
+from fastrag.systems import System
 
 app = typer.Typer(help="CLI RAG generator", add_completion=False)
 console = Console()
@@ -142,7 +141,7 @@ def run(
 
     console.print(
         Panel.fit(
-            f"[bold cyan]fastrag[/bold cyan] [green]v{version("fastrag")}[/green]",
+            f"[bold cyan]fastrag[/bold cyan] [green]v{version('fastrag')}[/green]",
             border_style="cyan",
         ),
         justify="center",
@@ -152,9 +151,7 @@ def run(
 
     # Load plugins before config
     load_plugins(plugins)
-    PluginRegistry.get_instance(System.RUNNER, "async").run(
-        load_config(config, verbose), step
-    )
+    PluginRegistry.get_instance(System.RUNNER, "async").run(load_config(config, verbose), step)
 
 
 def load_config(path: Path, verbose: bool) -> Config:
@@ -179,7 +176,6 @@ def load_config(path: Path, verbose: bool) -> Config:
 
 
 def load_plugins(plugins: Path) -> None:
-
     if plugins is not None:
         import_path(plugins)
 

@@ -1,15 +1,12 @@
-from pathlib import Path
-
-import fastrag
 from fastrag.cache import ICache
 from fastrag.config import (
+    LLM,
     Benchmarking,
     Cache,
     Chunking,
     Config,
     Embedding,
     IConfigLoader,
-    LLM,
     Parsing,
     Source,
     Step,
@@ -24,7 +21,6 @@ from fastrag.plugins import PluginRegistry, import_path, plugin
 from fastrag.runner.runner import IRunner
 from fastrag.steps import IStep
 from fastrag.stores import IVectorStore
-
 
 __all__ = [
     plugin,

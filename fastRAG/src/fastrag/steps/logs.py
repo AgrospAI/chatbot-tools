@@ -8,7 +8,6 @@ from fastrag.events import Event
 
 @dataclass
 class Loggable(ABC):
-
     log: Callable[[Event], None] = field(init=False, repr=False)
 
     def __post_init__(self) -> None:
