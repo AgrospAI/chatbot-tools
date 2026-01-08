@@ -59,3 +59,15 @@ include = ["fastrag"]
 [tool.hatch.build.targets.wheel]
 packages = ["fastrag"]
 include = ["fastrag"]
+
+[tool.bumpversion]
+current_version = "0.1.0"
+allow_dirty = true
+
+[[tool.bumpversion.files]]
+filename = "pyproject.toml"
+search = 'version = "{current_version}"'
+replace = 'version = "{new_version}"'
+
+[[tool.bumpversion.files]]
+filename = "fastrag/__init__.py"
