@@ -1,6 +1,6 @@
 [project]
 name = "fastrag"
-version = "0.1.1"
+version = "0.1.2"
 description = "CLI tool to manage the lifecycle of a RAG"
 readme = "README.md"
 authors = [
@@ -61,7 +61,7 @@ packages = ["fastrag"]
 include = ["fastrag"]
 
 [tool.bumpversion]
-current_version = "0.1.1"
+current_version = "0.1.2"
 allow_dirty = true
 
 [[tool.bumpversion.files]]
