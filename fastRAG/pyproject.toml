@@ -38,9 +38,11 @@ dev = ["ruff>=0.14.7"]
 Homepage = "https://github.com/AgrospAI/chatbot-tools"
 Issues = "https://github.com/AgrospAI/chatbot-tools/issues"
 
+[tool.uv.sources]
+fastrag = { workspace = true }
 
 [tool.hatch.build.targets.sdist]
-include = ["fastRAG"]
+include = ["fastrag"]
 
 [tool.hatch.build.targets.wheel]
-include = ["fastRAG"]
+include = ["fastrag"]
