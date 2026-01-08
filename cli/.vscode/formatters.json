@@ -1,0 +1,4 @@
+{
+  "yaml": "prettier --parser yaml",
+  "markdown": "prettier --parser markdown"
+}

@@ -1,0 +1,70 @@
+[project]
+name = "fastrag-cli"
+version = "0.1.3"
+description = "CLI tool to manage the lifecycle of a RAG"
+readme = "README.md"
+authors = [
+    { name = "AgrospAI", email = "agrospai@udl.cat" },
+    { name = "Christian López García", email = "christian.lopez@udl.cat" },
+    { name = "Zihan Chen", email = "zihan.chen@udl.cat" },
+    { name = "Jordi García Ventura", email = "jordi.garciaventura@udl.cat" },
+]
+requires-python = ">=3.13"
+dependencies = [
+    "beautifulsoup4>=4.14.3",
+    "dacite>=1.9.2",
+    "fastapi>=0.128.0",
+    "html-to-markdown>=2.14.11",
+    "httpx>=0.28.1",
+    "humanize>=4.14.0",
+    "langchain-milvus>=0.3.3",
+    "langchain-openai>=1.1.7",
+    "pymupdf-layout>=1.26.6",
+    "pymupdf4llm>=0.2.7",
+    "pypandoc>=1.16.2",
+    "pyyaml>=6.0.3",
+    "requests>=2.32.5",
+    "rich>=14.2.0",
+    "typer>=0.20.0",
+    "uvicorn>=0.40.0",
+]
+
+[project.scripts]
+fastrag = "fastrag:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[dependency-groups]
+dev = ["ruff>=0.14.7"]
+
+[tool.ruff]
+line-length = 96
+
+[tool.ruff.lint]
+# Add the `line-too-long` rule to the enforced rule set.
+extend-select = ["E501", "I"]
+
+[tool.ruff.format]
+quote-style = "double"
+
+[project.urls]
+Homepage = "https://github.com/AgrospAI/chatbot-tools"
+Issues = "https://github.com/AgrospAI/chatbot-tools/issues"
+
+[tool.hatch.build.targets.sdist]
+include = ["fastrag"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["fastrag"]
+include = ["fastrag"]
+
+[tool.bumpversion]
+current_version = "0.1.3"
+allow_dirty = true
+
+[[tool.bumpversion.files]]
+filename = "pyproject.toml"
+search = 'version = "{current_version}"'
+replace = 'version = "{new_version}"'
