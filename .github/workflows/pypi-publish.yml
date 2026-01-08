@@ -24,6 +24,9 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Change dir
+        run: cd fastRAG
+
       - name: Setup and Install uv
         uses: astral-sh/setup-uv@v5
         with:
