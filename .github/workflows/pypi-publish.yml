@@ -56,6 +56,10 @@ jobs:
           git push
           git push --tags
 
+      - name: Clean previous builds
+        run: |
+          rm -rf cli/dist
+
       - name: Make build
         run: |
           uv sync
