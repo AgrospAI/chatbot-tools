@@ -36,12 +36,6 @@ jobs:
       - name: Set up Python
         run: uv python install
 
-      - name: Debug Environment
-        run: |
-          pwd
-          ls -a
-          uvx bump-my-version show current_version
-
       - name: Bump version
         id: bump
         run: |
@@ -57,7 +51,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add pyproject.toml .bumpversion.toml
+          git add pyproject.toml
           git commit -m "Bump version to ${{ steps.bump.outputs.new_version }}"
           git tag v${{ steps.bump.outputs.new_version }}
           git push
