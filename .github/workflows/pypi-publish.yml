@@ -36,19 +36,14 @@ jobs:
       - name: Set up Python
         run: uv python install
 
-      - name: Create and activate virtual environment
-        run: |
-          uv venv
-          uv pip install bump-my-version
-
       - name: Bump version
         id: bump
         working-directory: .
         run: |
-          uv run bump-my-version bump patch --allow-dirty
+          uvx bump-my-version bump patch --allow-dirty
 
-          # Capture the version
-          NEW_VERSION=$(uv run bump-my-version show current_version)
+          # Capture the version using uvx as well
+          NEW_VERSION=$(uvx bump-my-version show current_version)
           echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
 
       - name: Commit and push new version
