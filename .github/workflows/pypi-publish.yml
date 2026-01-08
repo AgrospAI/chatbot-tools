@@ -44,7 +44,6 @@ jobs:
 
       - name: Bump version
         id: bump
-        working-directory: .
         run: |
           uvx bump-my-version bump patch
 
