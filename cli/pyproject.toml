@@ -1,5 +1,5 @@
 [project]
-name = "fastrag"
+name = "fastrag-cli"
 version = "0.1.2"
 description = "CLI tool to manage the lifecycle of a RAG"
 readme = "README.md"
