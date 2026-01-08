@@ -55,7 +55,7 @@ def serve(
     """
     console.print(
         Panel.fit(
-            f"[bold cyan]fastrag serve[/bold cyan] [green]v{version('fastrag')}[/green]",
+            f"[bold cyan]fastrag serve[/bold cyan] [green]v{version('fastrag-cli')}[/green]",
             border_style="cyan",
         ),
         justify="center",
@@ -141,7 +141,7 @@ def run(
 
     console.print(
         Panel.fit(
-            f"[bold cyan]fastrag[/bold cyan] [green]v{version('fastrag')}[/green]",
+            f"[bold cyan]fastrag[/bold cyan] [green]v{version('fastrag-cli')}[/green]",
             border_style="cyan",
         ),
         justify="center",
@@ -151,7 +151,9 @@ def run(
 
     # Load plugins before config
     load_plugins(plugins)
-    PluginRegistry.get_instance(System.RUNNER, "async").run(load_config(config, verbose), step)
+    PluginRegistry.get_instance(System.RUNNER, "async").run(
+        load_config(config, verbose), step
+    )
 
 
 def load_config(path: Path, verbose: bool) -> Config:
