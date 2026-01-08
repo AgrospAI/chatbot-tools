@@ -18,4 +18,15 @@ class ChunkingStep(IStep):
 
     @override
     async def get_tasks(self, cache: ICache) -> Dict[Task, AsyncGenerator[Event, None]]:
-        return {}
+        tasks = {}
+        for s in self.step:
+            instance = PluginRegistry.get_instance(
+                System.CHUNKING, s.strategy, cache=cache, **s.params
+            )
+            entries = await cache.get_entries(
+                instance.filter
+            )
+
+            tasks[instance] = [instance.callback(uri, entry) for uri, entry in entries]
+
+        return tasks
