@@ -64,6 +64,7 @@ jobs:
       - name: pypi-publish
         uses: pypa/gh-action-pypi-publish@v1.12.3
         with:
+          packages-dir: cli/dist
           password: ${{ secrets.pypi_token }}
           skip-existing: false
           verbose: true
