@@ -12,7 +12,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
-from fastrag import Config, DEFAULT_CONFIG, init_constants, ILLM
+from fastrag import Config, init_constants, ILLM
+from fastrag.settings import DEFAULT_CONFIG
 from fastrag.config.env import load_env_file
 from fastrag.plugins import PluginRegistry, import_path
 from fastrag.stores.store import IVectorStore

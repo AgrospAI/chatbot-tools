@@ -9,15 +9,16 @@ from rich.panel import Panel
 from rich.pretty import Pretty
 
 from fastrag import (
-    DEFAULT_CONFIG,
-    Config,
     Constants,
+    Config,
     init_constants,
     version,
 )
 from fastrag.config.env import load_env_file
 from fastrag.plugins import PluginRegistry, import_path
 from fastrag.systems import System
+
+from fastrag.settings import DEFAULT_CONFIG
 
 app = typer.Typer(help="CLI RAG generator", add_completion=False)
 console = Console()
@@ -65,10 +66,10 @@ def serve(
 
     # Load plugins before config
     load_plugins(plugins)
-    
+
     # Load configuration
     cfg = load_config(config, verbose)
-    
+
     # Import and initialize serve module
     from fastrag.serve import init_serve, start_server
 
@@ -159,7 +160,7 @@ def run(
 def load_config(path: Path, verbose: bool) -> Config:
     # Load environment variables from .env file before loading config
     load_env_file()
-    
+
     config = PluginRegistry.get_instance(System.CONFIG_LOADER, path.suffix).load(path)
     init_constants(config, verbose)
     console.print(
