@@ -46,10 +46,10 @@ jobs:
         id: bump
         working-directory: .
         run: |
-          uvx bump-my-version bump patch --allow-dirty --config-file .bumpversion.toml
+          uvx bump-my-version --config-file .bumpversion.toml bump patch --allow-dirty
 
           # Capture the version using uvx as well
-          NEW_VERSION=$(uvx bump-my-version show current_version)
+          NEW_VERSION=$(uvx bump-my-version show current_version --config-file .bumpversion.toml)
           echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
 
       - name: Commit and push new version
