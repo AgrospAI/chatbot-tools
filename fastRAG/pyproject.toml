@@ -1,9 +1,14 @@
 [project]
 name = "fastrag"
 version = "0.1.0"
-description = ""
+description = "CLI tool to manage the lifecycle of a RAG"
 readme = "README.md"
-authors = [{ name = "AgrospAI", email = "agrospai@udl.cat" }]
+authors = [
+    { name = "AgrospAI", email = "agrospai@udl.cat" },
+    { name = "Christian López García", email = "christian.lopez@udl.cat" },
+    { name = "Zihan Chen", email = "zihan.chen@udl.cat" },
+    { name = "Jordi García Ventura", email = "jordi.garcia@udl.cat" },
+]
 requires-python = ">=3.13"
 dependencies = [
     "beautifulsoup4>=4.14.3",
@@ -27,4 +32,15 @@ requires = ["uv_build>=0.8.19,<0.9.0"]
 build-backend = "uv_build"
 
 [dependency-groups]
-dev = ["mypy>=1.19.0", "ruff>=0.14.7"]
+dev = ["ruff>=0.14.7"]
+
+[project.urls]
+Homepage = "https://github.com/AgrospAI/chatbot-tools"
+Issues = "https://github.com/AgrospAI/chatbot-tools/issues"
+
+
+[tool.hatch.build.targets.sdist]
+include = ["fastRAG"]
+
+[tool.hatch.build.targets.wheel]
+include = ["fastRAG"]

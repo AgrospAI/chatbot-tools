@@ -20,7 +20,7 @@ from fastrag.plugins import PluginRegistry, import_path, plugin
 from fastrag.runner.runner import IRunner
 from fastrag.steps import IStep
 
-PACKAGE_DIR = Path(fastrag.__file__).parent.parent.parent
+PACKAGE_DIR = Path(fastrag.__file__).parent.parent
 RESOURCES_DIR = PACKAGE_DIR / "resources"
 DEFAULT_CONFIG = RESOURCES_DIR / "config.yaml"
 
