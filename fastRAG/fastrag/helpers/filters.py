@@ -33,7 +33,6 @@ class Filter(Generic[T], ABC):
 
 @dataclass
 class AndFilter(Filter[T]):
-
     filters: list[Filter[T]]
 
     @override
@@ -51,7 +50,6 @@ class AndFilter(Filter[T]):
 
 @dataclass
 class OrFilter(Filter[T]):
-
     filters: list[Filter[T]]
 
     @override

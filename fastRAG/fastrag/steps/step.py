@@ -14,7 +14,6 @@ from fastrag.steps.task import Task
 
 @dataclass
 class IStep(Loggable, ABC):
-
     step: Step
     progress: Progress
     task_id: int
@@ -73,9 +72,7 @@ class IStep(Loggable, ABC):
                 self.log_verbose(event)
 
     @abstractmethod
-    async def get_tasks(
-        self, cache: ICache
-    ) -> Dict[Task, List[AsyncGenerator[Event, None]]]:
+    async def get_tasks(self, cache: ICache) -> Dict[Task, List[AsyncGenerator[Event, None]]]:
         """Generate a dict with the tasks to perform
 
         Returns:

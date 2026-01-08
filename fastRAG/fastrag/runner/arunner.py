@@ -23,13 +23,10 @@ from fastrag.systems import System
 @dataclass(frozen=True)
 @plugin(system=System.RUNNER, supported="async")
 class Runner(IRunner):
-
     @override
     def run(self, config: Config, run_steps: int) -> None:
         with Progress(
-            TextColumn(
-                "[progress.percentage]{task.description} {task.percentage:>3.0f}%"
-            ),
+            TextColumn("[progress.percentage]{task.description} {task.percentage:>3.0f}%"),
             BarColumn(),
             MofNCompleteColumn(),
             TextColumn("•"),
@@ -37,9 +34,7 @@ class Runner(IRunner):
             TextColumn("•"),
             TimeRemainingColumn(),
         ) as progress:
-            names = [
-                step for step in get_args(StepNames) if getattr(config.steps, step)
-            ]
+            names = [step for step in get_args(StepNames) if getattr(config.steps, step)]
 
             runners: dict[str, IStep] = {
                 step: PluginRegistry.get_instance(
@@ -75,10 +70,7 @@ class Runner(IRunner):
                         progress.advance(task_id=step.task_id)
 
                     await asyncio.gather(
-                        *(
-                            run_task(task, generators)
-                            for task, generators in run.items()
-                        )
+                        *(run_task(task, generators) for task, generators in run.items())
                     )
 
                 asyncio.run(runner_loop(runners[step]))
@@ -87,7 +79,8 @@ class Runner(IRunner):
                 if run_steps == step_idx + 1:
                     progress.print(
                         Panel.fit(
-                            f"Stopping execution after step [bold yellow]{step.capitalize()}[/bold yellow]",
+                            f"Stopping execution after step "
+                            f"[bold yellow]{step.capitalize()}[/bold yellow]",
                             border_style="red",
                         ),
                         justify="center",

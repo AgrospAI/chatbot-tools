@@ -13,7 +13,6 @@ from fastrag.systems import System
 @dataclass
 @plugin(system=System.STEP, supported="fetching")
 class SourceStep(IStep):
-
     description: ClassVar[str] = "FETCH"
     step: list[Source]
 

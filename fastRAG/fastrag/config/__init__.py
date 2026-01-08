@@ -1,4 +1,5 @@
 from fastrag.config.config import (
+    LLM,
     Benchmarking,
     Cache,
     Chunking,
@@ -8,6 +9,7 @@ from fastrag.config.config import (
     Source,
     Step,
     Steps,
+    VectorStore,
 )
 from fastrag.config.loaders import IConfigLoader
 
@@ -21,5 +23,7 @@ __all__ = [
     Parsing,
     Chunking,
     Embedding,
+    VectorStore,
+    LLM,
     IConfigLoader,
 ]

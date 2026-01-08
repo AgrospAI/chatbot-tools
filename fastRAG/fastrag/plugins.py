@@ -29,7 +29,6 @@ def import_path(base: Path) -> None:
 
 
 class PluginRegistry:
-
     _registry: dict[System, Dict[str, List[Type]]] = {}
 
     @classmethod

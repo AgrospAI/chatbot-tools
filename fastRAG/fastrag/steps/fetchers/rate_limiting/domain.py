@@ -1,6 +1,6 @@
 import asyncio
-from dataclasses import dataclass, field
 import time
+from dataclasses import dataclass, field
 from urllib.parse import urlparse
 
 from fastrag.plugins import plugin

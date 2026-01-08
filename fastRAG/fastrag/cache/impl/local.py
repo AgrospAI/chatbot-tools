@@ -21,7 +21,6 @@ def is_outdated(time: PosixTimestamp, lifespan: int) -> bool:
 @dataclass(frozen=True)
 @plugin(system=System.CACHE, supported="local")
 class LocalCache(ICache):
-
     _lock: Lock = field(init=False, repr=False, default_factory=Lock)
     metadata: Metadata = field(init=False, repr=False, default_factory=lambda: dict)
 

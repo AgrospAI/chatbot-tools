@@ -15,7 +15,6 @@ from fastrag.systems import System
 @dataclass
 @plugin(system=System.STEP, supported="parsing")
 class ParsingStep(IStep):
-
     description: ClassVar[str] = "PARSE"
     step: list[Parsing]
 
@@ -31,9 +30,7 @@ class ParsingStep(IStep):
             )
             entries = await cache.get_entries(
                 instance.filter
-                & OrFilter(
-                    [MetadataFilter(strategy=strat) for strat in s.params["use"]]
-                )
+                & OrFilter([MetadataFilter(strategy=strat) for strat in s.params["use"]])
             )
 
             tasks[instance] = [instance.callback(uri, entry) for uri, entry in entries]

@@ -1,6 +1,24 @@
 cache:
   path: ./.fastrag
   lifespan: 1d
+
+vectorstore:
+  strategy: milvus
+  params:
+    host: milvus.agrospai.udl.cat
+    port: 19530
+    collection_name: docs_chatbot
+    user: ${MILVUS_USER}
+    password: ${MILVUS_PASSWORD}
+
+llm:
+  strategy: openai
+  params:
+    api_key: ${CHAT_API_KEY}
+    base_url: https://chat.agrospai.udl.cat/api
+    model_name: gpt-oss:latest
+    temperature: 0.0
+
 steps:
   fetching:
     # - strategy: Path
@@ -26,10 +44,10 @@ steps:
         use:
           - Sitemap
           - Crawling
-    # - strategy: FileParser
-    #   params:
-    #     use:
-    #       - Path
+  # - strategy: FileParser
+  #   params:
+  #     use:
+  #       - Path
   chunking:
     - strategy: RecursiveTextSplitter
       params:
@@ -38,8 +56,8 @@ steps:
     - strategy: OpenAI-Simple
       params:
         model: nomic-embed-text:latest
-        api_key: ${API_KEY}
-        url: https://chat.agrospai.udl.cat/api/
+        api_key: ${CHAT_API_KEY}
+        url: https://chat.agrospai.udl.cat/api/embeddings
   benchmarking:
     - strategy: ...
       params:

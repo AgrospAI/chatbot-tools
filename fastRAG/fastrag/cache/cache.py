@@ -10,7 +10,6 @@ from fastrag.config.config import StepNames
 
 @dataclass(frozen=True)
 class ICache(ABC):
-
     base: Path
     lifespan: int
 

@@ -6,7 +6,6 @@ from enum import StrEnum, auto
 
 @dataclass(frozen=True)
 class Event:
-
     class Type(StrEnum):
         COMPLETED = auto()
         EXCEPTION = auto()

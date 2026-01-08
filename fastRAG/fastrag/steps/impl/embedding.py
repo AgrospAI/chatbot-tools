@@ -13,7 +13,6 @@ from fastrag.systems import System
 @dataclass
 @plugin(system=System.STEP, supported="embedding")
 class EmbeddingStep(IStep):
-
     description: ClassVar[str] = "EMBED"
     step: list[Embedding]
 

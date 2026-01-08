@@ -8,7 +8,6 @@ from fastrag.helpers.filters import Filter
 
 @dataclass
 class StepFilter(Filter[CacheEntry]):
-
     step: StepNames
 
     @override
@@ -18,7 +17,6 @@ class StepFilter(Filter[CacheEntry]):
 
 @dataclass(kw_only=True, slots=True)
 class MetadataFilter(Filter[CacheEntry]):
-
     criteria: dict[str, any] = field(init=False)
 
     def __init__(self, **kwargs) -> None:

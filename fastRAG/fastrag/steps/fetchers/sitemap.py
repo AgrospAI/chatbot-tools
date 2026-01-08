@@ -17,7 +17,6 @@ from fastrag.systems import System
 @dataclass(frozen=True)
 @plugin(system=System.FETCHING, supported="SitemapXML")
 class SitemapXMLFetcher(Task):
-
     regex: list[str] | None = field(compare=False, hash=False)
     url: URLField = URLField()
 
@@ -40,7 +39,10 @@ class SitemapXMLFetcher(Task):
 
         yield FetchingEvent(
             type=FetchingEvent.Type.PROGRESS,
-            data=f"Retrieving {len(urls)} URLs (filtered out {skipped} out of {len(urls) + skipped})",
+            data=(
+                f"Retrieving {len(urls)} URLs "
+                f"(filtered out {skipped} out of {len(urls) + skipped})"
+            ),
         )
 
         # 3. Fetch filtered URLs

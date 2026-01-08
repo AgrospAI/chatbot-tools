@@ -13,7 +13,6 @@ from fastrag.systems import System
 @dataclass
 @plugin(system=System.STEP, supported="chunking")
 class ChunkingStep(IStep):
-
     description: ClassVar[str] = "CHUNK"
     step: list[Chunking]
 

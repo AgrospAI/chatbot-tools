@@ -33,7 +33,6 @@ def read(path: Path, base_url: str) -> bytes:
 @dataclass(frozen=True)
 @plugin(system=System.PARSING, supported="HtmlParser")
 class HtmlParser(Task):
-
     filter: ClassVar[Filter] = StepFilter("fetching") & MetadataFilter(format="html")
     use: list[str] = field(default_factory=list, compare=False)
 

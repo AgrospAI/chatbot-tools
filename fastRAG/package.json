@@ -1,0 +1,17 @@
+{
+  "name": "fastrag",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "format": "prettier --write ."
+  },
+  "keywords": [],
+  "author": "",
+  "license": "MIT",
+  "packageManager": "pnpm@11.0.0-dev.1005",
+  "type": "module",
+  "dependencies": {
+    "prettier": "^3.7.4"
+  }
+}

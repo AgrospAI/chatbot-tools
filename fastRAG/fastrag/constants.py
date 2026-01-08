@@ -10,7 +10,6 @@ from fastrag.systems import System
 
 @dataclass(frozen=True)
 class Constants:
-
     config: InitVar[Config]
 
     verbose: bool = field()
@@ -65,7 +64,5 @@ def init_constants(config: Config, is_verbose: bool) -> None:
 
 def get_constants() -> Constants:
     if _constants is None:
-        raise RuntimeError(
-            "Constants not initialized. Call init_constants(config) first."
-        )
+        raise RuntimeError("Constants not initialized. Call init_constants(config) first.")
     return _constants
