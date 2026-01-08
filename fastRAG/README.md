@@ -3,5 +3,5 @@
 ## Usage
 
 ```bash
-uv run ./src/fastrag
+uv run -m fastrag
 ```
