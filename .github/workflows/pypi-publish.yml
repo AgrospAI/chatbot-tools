@@ -19,13 +19,14 @@ jobs:
   release-build:
     runs-on: ubuntu-latest
 
+    defaults:
+      run:
+        working-directory: ./fastRAG
+
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-
-      - name: Change dir
-        run: cd fastRAG
 
       - name: Setup and Install uv
         uses: astral-sh/setup-uv@v5
@@ -35,19 +36,20 @@ jobs:
       - name: Set up Python
         run: uv python install
 
-      - name: Create and activate virtual environment
+      - name: Debug Environment
         run: |
-          uv venv
-          source .venv/bin/activate
-          uv pip install bump-my-version
+          pwd
+          ls -a
+          uvx bump-my-version show current_version --config-file .bumpversion.toml
 
       - name: Bump version
         id: bump
         working-directory: .
         run: |
-          source .venv/bin/activate
-          bump-my-version bump patch --allow-dirty
-          NEW_VERSION=$(bump-my-version show current_version)
+          uvx bump-my-version bump patch --allow-dirty --config-file .bumpversion.toml
+
+          # Capture the version using uvx as well
+          NEW_VERSION=$(uvx bump-my-version show current_version)
           echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
 
       - name: Commit and push new version
