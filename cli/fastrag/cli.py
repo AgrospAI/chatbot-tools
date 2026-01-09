@@ -3,22 +3,25 @@ import shutil
 from pathlib import Path
 from typing import Annotated
 
+import humanize
 import typer
 from rich.console import Console
 from rich.panel import Panel
 from rich.pretty import Pretty
 
 from fastrag import (
+    DEFAULT_CONFIG,
     Config,
     Constants,
+    IConfigLoader,
+    IRunner,
+    PluginRegistry,
+    import_plugins,
     init_constants,
+    inject,
+    load_env_file,
     version,
 )
-from fastrag.config.env import load_env_file
-from fastrag.config.loaders.loader import IConfigLoader
-from fastrag.plugins import PluginRegistry, import_plugins, inject
-from fastrag.runner.runner import IRunner
-from fastrag.settings import DEFAULT_CONFIG
 
 app = typer.Typer(help="FastRAG CLI", add_completion=False)
 console = Console()
@@ -109,8 +112,12 @@ def clean(
 
     with open(Constants.global_cache()) as f:
         lines = f.readlines()
+        size = 0
         for path in lines:
+            size += sum(p.stat().st_size for p in Path(path).rglob("*") if p.is_file())
             shutil.rmtree(path)
+
+        console.print(f"[bold green] Deleted {humanize.naturalsize(size)}[/bold green]")
 
         Constants.global_cache().unlink()
 
