@@ -1,4 +1,5 @@
 cache:
+  strategy: local
   path: ./.fastrag
   lifespan: 1d
 
@@ -29,9 +30,9 @@ steps:
     #     url: https://agrospai.udl.cat/sitemap.xml
     #     regex:
     #       - https?://[^/]+/docs/
-    # - strategy: URL
-    #   params:
-    #     url: https://x.com
+    - strategy: URL
+      params:
+        url: https://x.com
     - strategy: Crawling
       params:
         url: https://agrospai.udl.cat

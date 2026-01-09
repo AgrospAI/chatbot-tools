@@ -161,7 +161,9 @@ def run(
 
     # Load plugins before config
     load_plugins(plugins)
-    inject(IRunner, "async").run(load_config(config, verbose), step)
+    config: Config = load_config(config, verbose)
+
+    inject(IRunner, config.steps.strategy).run(config, step)
 
 
 def load_config(path: Path, verbose: bool) -> Config:
