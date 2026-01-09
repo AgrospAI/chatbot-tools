@@ -11,10 +11,8 @@ from fastrag.cache.entry import CacheEntry
 from fastrag.cache.filters import MetadataFilter, StepFilter
 from fastrag.events import Event
 from fastrag.helpers.filters import Filter
-from fastrag.plugins import plugin
 from fastrag.steps.parsing.events import ParsingEvent
 from fastrag.steps.task import Task
-from fastrag.systems import System
 
 
 def read(path: Path, base_url: str) -> bytes:
@@ -31,9 +29,10 @@ def read(path: Path, base_url: str) -> bytes:
 
 
 @dataclass(frozen=True)
-@plugin(system=System.PARSING, supported="HtmlParser")
 class HtmlParser(Task):
+    supported: ClassVar[str] = "HtmlParser"
     filter: ClassVar[Filter] = StepFilter("fetching") & MetadataFilter(format="html")
+
     use: list[str] = field(default_factory=list, compare=False)
 
     _parsed: int = field(default=0)

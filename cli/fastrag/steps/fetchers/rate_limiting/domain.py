@@ -1,16 +1,16 @@
 import asyncio
 import time
 from dataclasses import dataclass, field
+from typing import ClassVar
 from urllib.parse import urlparse
 
-from fastrag.plugins import plugin
-from fastrag.steps.fetchers.rate_limiting.rate_limiter import RateLimiter
-from fastrag.systems import System
+from fastrag.steps.fetchers.rate_limiting.rate_limiter import IRateLimiter
 
 
 @dataclass(frozen=True)
-@plugin(system=System.RATE_LIMITING, supported="domain")
-class DomainRateLimiter(RateLimiter):
+class DomainRateLimiter(IRateLimiter):
+    supported: ClassVar[str] = "domain"
+
     locks: dict[str, asyncio.Lock] = field(default_factory=dict)
     timestamps: dict[str, float] = field(default_factory=dict)
 

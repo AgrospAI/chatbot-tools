@@ -1,6 +1,8 @@
 from abc import ABC, abstractmethod
 from typing import Any, List
 
+from fastrag.plugins import PluginBase
+
 
 class Document:
     """Simple document representation"""
@@ -10,7 +12,7 @@ class Document:
         self.metadata = metadata or {}
 
 
-class IVectorStore(ABC):
+class IVectorStore(PluginBase, ABC):
     """Abstract interface for vector store operations"""
 
     @abstractmethod

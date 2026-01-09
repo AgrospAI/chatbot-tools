@@ -1,19 +1,18 @@
 from dataclasses import dataclass, field
-from typing import AsyncGenerator, override
+from typing import AsyncGenerator, ClassVar, override
 
 from httpx import AsyncClient
 
 from fastrag.events import Event
 from fastrag.helpers import URLField
-from fastrag.plugins import plugin
 from fastrag.steps.fetchers.events import FetchingEvent
 from fastrag.steps.task import Task
-from fastrag.systems import System
 
 
 @dataclass(frozen=True)
-@plugin(system=System.FETCHING, supported="URL")
 class HttpFetcher(Task):
+    supported: ClassVar[str] = "URL"
+
     url: URLField = URLField()
     _cached: bool = field(init=False, default=False, hash=False, compare=False)
 

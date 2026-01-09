@@ -4,8 +4,7 @@ from pathlib import Path
 from typing import ClassVar
 
 from fastrag import Config, ICache
-from fastrag.plugins import PluginRegistry
-from fastrag.systems import System
+from fastrag.plugins import inject
 
 
 @dataclass(frozen=True)
@@ -21,8 +20,8 @@ class Constants:
     def __post_init__(self, config: Config) -> None:
         for k, v in {
             "base": config.cache.path,
-            "cache": PluginRegistry.get_instance(
-                System.CACHE,
+            "cache": inject(
+                ICache,
                 "local",
                 base=config.cache.path,
                 lifespan=config.cache.lifespan,

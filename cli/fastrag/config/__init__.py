@@ -11,6 +11,7 @@ from fastrag.config.config import (
     Steps,
     VectorStore,
 )
+from fastrag.config.env import load_env_file
 from fastrag.config.loaders import IConfigLoader
 
 __all__ = [
@@ -26,4 +27,5 @@ __all__ = [
     VectorStore,
     LLM,
     IConfigLoader,
+    load_env_file,
 ]

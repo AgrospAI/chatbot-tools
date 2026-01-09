@@ -3,13 +3,11 @@ import json
 from asyncio import Lock
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Callable, Iterable, get_args, override
+from typing import Callable, ClassVar, Iterable, get_args, override
 
 from fastrag.cache.cache import CacheEntry, ICache, StepNames
 from fastrag.helpers import PosixTimestamp, timestamp
 from fastrag.helpers.filters import Filter
-from fastrag.plugins import plugin
-from fastrag.systems import System
 
 type Metadata = dict[str, CacheEntry]
 
@@ -19,8 +17,9 @@ def is_outdated(time: PosixTimestamp, lifespan: int) -> bool:
 
 
 @dataclass(frozen=True)
-@plugin(system=System.CACHE, supported="local")
 class LocalCache(ICache):
+    supported: ClassVar[str] = "local"
+
     _lock: Lock = field(init=False, repr=False, default_factory=Lock)
     metadata: Metadata = field(init=False, repr=False, default_factory=lambda: dict)
 

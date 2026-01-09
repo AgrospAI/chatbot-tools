@@ -10,11 +10,10 @@ from httpx import AsyncClient
 from fastrag.events import Event
 from fastrag.helpers.url_field import URLField
 from fastrag.helpers.utils import normalize_url
-from fastrag.plugins import PluginRegistry, plugin
+from fastrag.plugins import inject
 from fastrag.steps.fetchers.events import FetchingEvent
-from fastrag.steps.fetchers.rate_limiting.rate_limiter import RateLimiter
+from fastrag.steps.fetchers.rate_limiting.rate_limiter import IRateLimiter
 from fastrag.steps.task import Task
-from fastrag.systems import System
 
 
 def is_same_domain(url_a: str, url_b: str) -> bool:
@@ -22,8 +21,9 @@ def is_same_domain(url_a: str, url_b: str) -> bool:
 
 
 @dataclass(frozen=True)
-@plugin(system=System.FETCHING, supported="Crawling")
 class CrawlerFetcher(Task):
+    supported: ClassVar[str] = "Crawling"
+
     url: URLField = URLField()
     depth: int = field(default=5)
     workers: int = field(default=5)
@@ -31,7 +31,7 @@ class CrawlerFetcher(Task):
 
     _visited: set[str] = field(init=False, compare=False, default_factory=set)
     _cached: int = field(init=False, compare=False, default=0)
-    _rate_limiter: RateLimiter | None = field(compare=False, default=None)
+    _rate_limiter: IRateLimiter | None = field(compare=False, default=None)
 
     UserAgent: ClassVar[str] = "CrawlerFetcher/1.0"
 
@@ -39,7 +39,7 @@ class CrawlerFetcher(Task):
         object.__setattr__(
             self,
             "_rate_limiter",
-            PluginRegistry.get_instance(System.RATE_LIMITING, "domain", delay=delay),
+            inject(IRateLimiter, "domain", delay=delay),
         )
 
     @override

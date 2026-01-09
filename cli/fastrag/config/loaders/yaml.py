@@ -1,13 +1,13 @@
 import os
 from pathlib import Path
+from typing import override
 
 import yaml
 from dacite import Config as Conf
 from dacite import from_dict
 
 from fastrag.config.config import Config
-from fastrag.plugins import plugin
-from fastrag.systems import System
+from fastrag.config.loaders.loader import IConfigLoader
 
 
 def expand_env_vars(obj):
@@ -30,8 +30,10 @@ def expand_env_vars(obj):
         return obj
 
 
-@plugin(system=System.CONFIG_LOADER, supported=[".yaml", ".yml"])
-class YamlLoader:
+class YamlLoader(IConfigLoader):
+    supported: list[str] = [".yaml", ".yml"]
+
+    @override
     def load(self, config: Path) -> Config:
         return from_dict(
             Config,
