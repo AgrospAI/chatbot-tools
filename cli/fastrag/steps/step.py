@@ -8,12 +8,13 @@ from fastrag.cache.cache import ICache
 from fastrag.config.config import Step
 from fastrag.constants import get_constants
 from fastrag.events import Event
+from fastrag.plugins import PluginBase
 from fastrag.steps.logs import Loggable
 from fastrag.steps.task import Task
 
 
 @dataclass
-class IStep(Loggable, ABC):
+class IStep(Loggable, PluginBase, ABC):
     step: Step
     progress: Progress
     task_id: int

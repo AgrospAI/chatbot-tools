@@ -1,16 +1,15 @@
 from dataclasses import dataclass
-from typing import List, override
+from typing import ClassVar, List, override
 
 from fastrag.embeddings import IEmbeddings
-from fastrag.plugins import plugin
 from fastrag.stores.store import Document, IVectorStore
-from fastrag.systems import System
 
 
 @dataclass
-@plugin(system=System.VECTOR_STORE, supported="milvus")
 class MilvusVectorStore(IVectorStore):
     """Milvus vector store implementation"""
+
+    supported: ClassVar[str] = "milvus"
 
     host: str
     port: int

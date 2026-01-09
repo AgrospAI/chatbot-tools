@@ -1,15 +1,14 @@
 from dataclasses import dataclass
-from typing import AsyncGenerator, override
+from typing import AsyncGenerator, ClassVar, override
 
 from fastrag.llms.llm import ILLM
-from fastrag.plugins import plugin
-from fastrag.systems import System
 
 
 @dataclass
-@plugin(system=System.LLM, supported="openai")
 class OpenAILLM(ILLM):
     """OpenAI-compatible LLM implementation"""
+
+    supported: ClassVar[str] = "openai"
 
     api_key: str
     base_url: str

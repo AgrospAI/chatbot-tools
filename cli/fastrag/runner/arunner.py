@@ -1,6 +1,6 @@
 import asyncio
 from dataclasses import dataclass
-from typing import get_args, override
+from typing import ClassVar, get_args, override
 
 from rich.panel import Panel
 from rich.progress import (
@@ -13,16 +13,16 @@ from rich.progress import (
 )
 
 from fastrag.config.config import Config, StepNames
-from fastrag.plugins import PluginRegistry, plugin
+from fastrag.plugins import PluginRegistry, inject
 from fastrag.runner.runner import IRunner
 from fastrag.steps.step import IStep
 from fastrag.steps.task import Task
-from fastrag.systems import System
 
 
 @dataclass(frozen=True)
-@plugin(system=System.RUNNER, supported="async")
 class Runner(IRunner):
+    supported: ClassVar[str] = "async"
+
     @override
     def run(self, config: Config, run_steps: int) -> None:
         with Progress(
@@ -37,8 +37,8 @@ class Runner(IRunner):
             names = [step for step in get_args(StepNames) if getattr(config.steps, step)]
 
             runners: dict[str, IStep] = {
-                step: PluginRegistry.get_instance(
-                    System.STEP,
+                step: inject(
+                    IStep,
                     step,
                     progress=progress,
                     task_id=idx,

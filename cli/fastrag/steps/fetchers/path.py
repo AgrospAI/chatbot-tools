@@ -1,15 +1,13 @@
 from dataclasses import dataclass
 from pathlib import Path
-from typing import AsyncGenerator, override
+from typing import AsyncGenerator, ClassVar, override
 
 import humanize
 
 from fastrag.events import Event
 from fastrag.helpers import PathField
-from fastrag.plugins import plugin
 from fastrag.steps.fetchers.events import FetchingEvent
 from fastrag.steps.task import Task
-from fastrag.systems import System
 
 
 def get_uri(p: Path) -> str:
@@ -26,8 +24,9 @@ def list_paths(p: Path) -> list[Path]:
 
 
 @dataclass(frozen=True)
-@plugin(system=System.FETCHING, supported="Path")
 class PathFetcher(Task):
+    supported: ClassVar[str] = "Path"
+
     path: PathField = PathField()
 
     @override

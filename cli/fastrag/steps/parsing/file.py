@@ -7,10 +7,8 @@ from fastrag.cache.entry import CacheEntry
 from fastrag.cache.filters import MetadataFilter, StepFilter
 from fastrag.events import Event
 from fastrag.helpers.filters import Filter
-from fastrag.plugins import plugin
 from fastrag.steps.parsing.events import ParsingEvent
 from fastrag.steps.task import Task
-from fastrag.systems import System
 
 
 def to_markdown(fmt: str, path: Path) -> bytes:
@@ -28,8 +26,8 @@ def to_markdown(fmt: str, path: Path) -> bytes:
 
 
 @dataclass(frozen=True)
-@plugin(system=System.PARSING, supported="FileParser")
 class FileParser(Task):
+    supported: ClassVar[str] = "FileParser"
     filter: ClassVar[Filter] = StepFilter("fetching") & (
         MetadataFilter(format="docx") | MetadataFilter(format="pdf")
     )

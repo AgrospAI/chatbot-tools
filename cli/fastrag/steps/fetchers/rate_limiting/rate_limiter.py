@@ -1,9 +1,11 @@
 from abc import abstractmethod
 from dataclasses import dataclass
 
+from fastrag.plugins import PluginBase
+
 
 @dataclass(frozen=True)
-class RateLimiter:
+class IRateLimiter(PluginBase):
     delay: float = 1.0  # seconds between requests
 
     @abstractmethod

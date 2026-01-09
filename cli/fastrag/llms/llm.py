@@ -1,8 +1,10 @@
 from abc import ABC, abstractmethod
 from typing import AsyncGenerator
 
+from fastrag.plugins import PluginBase
 
-class ILLM(ABC):
+
+class ILLM(PluginBase, ABC):
     """Abstract interface for Large Language Models"""
 
     @abstractmethod

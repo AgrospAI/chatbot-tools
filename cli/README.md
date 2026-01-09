@@ -57,3 +57,7 @@ To generate the [automatic documentation](USAGE.md)
 typer ./fastrag/__main__.py utils docs > USAGE.md
 ```
 
+## Architecture
+
+Being able to expand the workflow execution capabilities means to understand how it works, 
+

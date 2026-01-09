@@ -15,9 +15,10 @@ from fastrag import (
     version,
 )
 from fastrag.config.env import load_env_file
-from fastrag.plugins import PluginRegistry, import_path
+from fastrag.config.loaders.loader import IConfigLoader
+from fastrag.plugins import PluginRegistry, import_plugins, inject
+from fastrag.runner.runner import IRunner
 from fastrag.settings import DEFAULT_CONFIG
-from fastrag.systems import System
 
 app = typer.Typer(help="FastRAG CLI", add_completion=False)
 console = Console()
@@ -153,16 +154,14 @@ def run(
 
     # Load plugins before config
     load_plugins(plugins)
-    PluginRegistry.get_instance(System.RUNNER, "async").run(
-        load_config(config, verbose), step
-    )
+    inject(IRunner, "async").run(load_config(config, verbose), step)
 
 
 def load_config(path: Path, verbose: bool) -> Config:
     # Load environment variables from .env file before loading config
     load_env_file()
 
-    config = PluginRegistry.get_instance(System.CONFIG_LOADER, path.suffix).load(path)
+    config = inject(IConfigLoader, path.suffix).load(path)
     init_constants(config, verbose)
     console.print(
         Panel(
@@ -181,7 +180,7 @@ def load_config(path: Path, verbose: bool) -> Config:
 
 def load_plugins(plugins: Path) -> None:
     if plugins is not None:
-        import_path(plugins)
+        import_plugins(plugins)
 
     console.print(
         Panel(

@@ -1,5 +1,8 @@
 import os
 
+from fastrag.config.loaders.loader import IConfigLoader
+from fastrag.embeddings import IEmbeddings
+
 os.environ["GRPC_DNS_RESOLVER"] = "native"
 
 import json
@@ -14,10 +17,9 @@ from pydantic import BaseModel
 
 from fastrag import ILLM, Config, init_constants
 from fastrag.config.env import load_env_file
-from fastrag.plugins import PluginRegistry, import_path
+from fastrag.plugins import import_plugins, inject
 from fastrag.settings import DEFAULT_CONFIG
 from fastrag.stores.store import IVectorStore
-from fastrag.systems import System
 
 # Global references to configured components
 vector_store: IVectorStore = None
@@ -42,20 +44,18 @@ def init_serve(app_config: Config) -> None:
         raise ValueError("Embedding configuration is required for vector store")
 
     embedding_config = config.steps.embedding[0]
-    embedding_model = PluginRegistry.get_instance(
-        System.EMBEDDING, embedding_config.strategy, **embedding_config.params
-    )
+    embedding_model = inject(IEmbeddings, embedding_config.strategy, **embedding_config.params)
 
     # Initialize vector store with embedding model
-    vector_store = PluginRegistry.get_instance(
-        System.VECTOR_STORE,
+    vector_store = inject(
+        IVectorStore,
         config.vectorstore.strategy,
         embedding_model=embedding_model,
         **config.vectorstore.params,
     )
 
     # Initialize LLM
-    llm = PluginRegistry.get_instance(System.LLM, config.llm.strategy, **config.llm.params)
+    llm = inject(ILLM, config.llm.strategy, **config.llm.params)
 
 
 @asynccontextmanager
@@ -126,14 +126,14 @@ def create_app() -> FastAPI:
     # Load plugins (optional)
     plugins_dir = os.environ.get("FASTRAG_PLUGINS_DIR")
     if plugins_dir:
-        import_path(Path(plugins_dir))
+        import_plugins(Path(plugins_dir))
 
     # Resolve config path
     cfg_path_str = os.environ.get("FASTRAG_CONFIG_PATH")
     cfg_path = Path(cfg_path_str) if cfg_path_str else DEFAULT_CONFIG
 
     # Load configuration via registry loader
-    loader = PluginRegistry.get_instance(System.CONFIG_LOADER, cfg_path.suffix)
+    loader = inject(IConfigLoader, cfg_path.suffix)
     cfg: Config = loader.load(cfg_path)
 
     # Initialize constants and serve components
@@ -148,8 +148,8 @@ def create_app() -> FastAPI:
 
         # Get the embedding for the query
         embedding_config = config.steps.embedding[0]
-        embedding_model = PluginRegistry.get_instance(
-            System.EMBEDDING, embedding_config.strategy, **embedding_config.params
+        embedding_model = inject(
+            IEmbeddings, embedding_config.strategy, **embedding_config.params
         )
 
         query_embedding = embedding_model.embed_query(req.question)

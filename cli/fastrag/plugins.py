@@ -1,15 +1,15 @@
 import importlib
+from abc import ABC
 from pathlib import Path
-from typing import Dict, List, Type
+from typing import Type, TypeVar
 
-from fastrag.systems import System
+T = TypeVar("T")
 
 
-def import_path(base: Path) -> None:
+def import_plugins(base: Path) -> None:
     if not base.is_dir():
         raise ValueError(f"{base} is not a valid directory")
 
-    imported_modules = {}
     for file_path in base.rglob("*.py"):  # recursive, includes subdirectories
         if file_path.name == "__init__.py":
             continue  # skip package __init__ files
@@ -23,30 +23,34 @@ def import_path(base: Path) -> None:
         module = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(module)
 
-        imported_modules[module_name] = module
-
-    return imported_modules
-
 
 class PluginRegistry:
-    _registry: dict[System, Dict[str, List[Type]]] = {}
+    _registry: dict[type, dict[str, list[type]]] = {}
 
     @classmethod
-    def register(cls, plugin_cls: Type, system: System, supported: List[str] | str):
+    def register(cls, plugin: type, interface: type, supported: list[str] | str):
+        if not issubclass(plugin, interface):
+            raise TypeError(f"{plugin.__name__} does not implement {interface.__name__}")
+
+        if isinstance(supported, str):
+            supported = [supported]
+
+        iface_registry = cls._registry.setdefault(interface, {})
         for sup in supported:
-            cls._registry.setdefault(system, {}).setdefault(sup, []).append(plugin_cls)
-        return plugin_cls
+            iface_registry.setdefault(sup, []).append(plugin)
+
+        return plugin
 
     @classmethod
-    def get(cls, system: System, sup: str = "") -> Type | None:
-        plugins = cls._registry.get(system, {}).get(sup, [])
+    def get(cls, interface: type, sup: str = "") -> type | None:
+        plugins = cls._registry.get(interface, {}).get(sup, [])
         if not plugins:
-            raise ValueError(f"Could not find '{system}' '{sup}' pair")
+            raise ValueError(f"Could not find '{interface}' '{sup}' pair")
         return plugins[-1]
 
     @classmethod
-    def get_instance(cls, system: System, sup: str = "", *args, **kwargs) -> any:
-        return cls.get(system, sup)(*args, **kwargs)
+    def get_instance(cls, interface: type, sup: str = "", *args, **kwargs) -> any:
+        return cls.get(interface, sup)(*args, **kwargs)
 
     @classmethod
     def representation(cls) -> dict:
@@ -56,13 +60,21 @@ class PluginRegistry:
         }
 
 
-def plugin(*, system: System, supported: str | List[str] = ""):
-    normalized = [*supported] if isinstance(supported, list) else [supported]
+class PluginBase(ABC):
+    supported: list[str] | str = []
 
-    def decorator(cls: Type) -> None:
-        cls.system = system
-        cls.supported = supported
+    def __init_subclass__(cls, **kwargs):
+        super().__init_subclass__(**kwargs)
 
-        return PluginRegistry.register(cls, system=system, supported=normalized)
+        if not hasattr(cls, "supported"):
+            raise ValueError("Missing `supported` value in Plugin %s" % cls)
 
-    return decorator
+        for base in cls.__mro__:
+            if base is PluginBase:
+                continue
+            if issubclass(base, PluginBase):
+                PluginRegistry.register(cls, base, cls.supported)
+
+
+def inject(interface: T, supported: list[str] | str, *args, **kwargs) -> T | Type[T]:
+    return PluginRegistry.get_instance(interface, supported, *args, **kwargs)

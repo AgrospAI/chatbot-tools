@@ -1,4 +1,4 @@
 from fastrag.steps.fetchers.rate_limiting.domain import DomainRateLimiter
-from fastrag.steps.fetchers.rate_limiting.rate_limiter import RateLimiter
+from fastrag.steps.fetchers.rate_limiting.rate_limiter import IRateLimiter
 
-__all__ = [RateLimiter, DomainRateLimiter]
+__all__ = [IRateLimiter, DomainRateLimiter]

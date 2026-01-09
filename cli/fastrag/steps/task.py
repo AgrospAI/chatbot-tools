@@ -5,10 +5,11 @@ from typing import AsyncGenerator
 from fastrag.cache.cache import ICache
 from fastrag.cache.entry import CacheEntry
 from fastrag.events import Event
+from fastrag.plugins import PluginBase
 
 
 @dataclass(frozen=True)
-class Task(ABC):
+class Task(PluginBase, ABC):
     cache: ICache = field(compare=False, hash=False)
 
     @abstractmethod
