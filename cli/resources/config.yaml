@@ -50,9 +50,10 @@ steps:
   #     use:
   #       - Path
   chunking:
-    - strategy: RecursiveTextSplitter
+    - strategy: ParentChild
       params:
         chunk_size: 500
+        embedding_model: all-MiniLM-L6-v2
   embedding:
     - strategy: OpenAI-Simple
       params:
