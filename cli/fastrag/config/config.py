@@ -49,6 +49,7 @@ class Steps:
     embedding: list[Embedding] | None
     benchmarking: list[Benchmarking] | None
 
+    strategy: str = "async"
     asdict = asdict
 
 
@@ -66,6 +67,7 @@ Step = list[T]
 @dataclass(frozen=True)
 class Cache:
     path: Path
+    strategy: str
     _lifespan: int = field(init=False)
 
     lifespan: InitVar[str]

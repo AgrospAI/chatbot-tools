@@ -22,7 +22,7 @@ class Constants:
             "base": config.cache.path,
             "cache": inject(
                 ICache,
-                "local",
+                config.cache.strategy,
                 base=config.cache.path,
                 lifespan=config.cache.lifespan,
             ),

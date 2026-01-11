@@ -15,7 +15,7 @@ from fastrag.steps.parsing.events import ParsingEvent
 from fastrag.steps.task import Task
 
 
-def read(path: Path, base_url: str) -> bytes:
+def parse_to_md(path: Path, base_url: str) -> bytes:
     html = path.read_text()
     soup = BeautifulSoup(html, "html.parser")
 
@@ -33,7 +33,7 @@ class HtmlParser(Task):
     supported: ClassVar[str] = "HtmlParser"
     filter: ClassVar[Filter] = StepFilter("fetching") & MetadataFilter(format="html")
 
-    use: list[str] = field(default_factory=list, compare=False)
+    use: list[str] = field(default_factory=list, hash=False)
 
     _parsed: int = field(default=0)
 
@@ -45,7 +45,7 @@ class HtmlParser(Task):
     ) -> AsyncGenerator[ParsingEvent, None]:
         existed, _ = await self.cache.get_or_create(
             uri=entry.path.resolve().as_uri(),
-            contents=partial(read, entry.path, uri),
+            contents=partial(parse_to_md, entry.path, uri),
             step="parsing",
             metadata={"source": uri, "strategy": HtmlParser.supported},
         )
