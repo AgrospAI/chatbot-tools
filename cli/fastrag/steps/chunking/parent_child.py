@@ -1,22 +1,22 @@
+import json
 from dataclasses import dataclass, field
 from functools import partial
 from typing import AsyncGenerator, ClassVar, override
-import json
 
 from fastrag.cache.entry import CacheEntry
-from fastrag.cache.filters import StepFilter
+from fastrag.cache.filters import MetadataFilter
 from fastrag.events import Event
 from fastrag.helpers.filters import Filter
+from fastrag.steps.chunking.chunker_logic import chunker_logic
 from fastrag.steps.chunking.events import ChunkingEvent
 from fastrag.steps.task import Task
 
-from fastrag.steps.chunking.chunker_logic import chunker_logic
 
 @dataclass(frozen=True)
 class ParentChildChunker(Task):
     supported: ClassVar[str] = "ParentChild"
-    filter: ClassVar[Filter] = StepFilter("parsing")
-    
+    filter: ClassVar[Filter] = MetadataFilter(step="parsing")
+
     chunk_size: int = 500
     embedding_model: str = "all-MiniLM-L6-v2"
 
@@ -28,7 +28,6 @@ class ParentChildChunker(Task):
         uri: str,
         entry: CacheEntry,
     ) -> AsyncGenerator[ChunkingEvent, None]:
-        
         markdown_text = entry.path.read_text(encoding="utf-8")
 
         process_func = partial(chunker_logic, markdown_text, uri, self.embedding_model)
@@ -41,14 +40,13 @@ class ParentChildChunker(Task):
         )
 
         chunks_data = json.loads(result_entry.path.read_text())
-        
+
         new_count = self._chunked + len(chunks_data)
-        object.__setattr__(self, '_chunked', new_count)
+        object.__setattr__(self, "_chunked", new_count)
 
         status = "Cached" if existed else "Generated"
         yield ChunkingEvent(
-            ChunkingEvent.Type.PROGRESS,
-            f"{status} {len(chunks_data)} chunks for {uri}"
+            ChunkingEvent.Type.PROGRESS, f"{status} {len(chunks_data)} chunks for {uri}"
         )
 
     @override
