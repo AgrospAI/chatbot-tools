@@ -11,7 +11,6 @@ from fastrag.cache.entry import CacheEntry
 from fastrag.cache.filters import MetadataFilter
 from fastrag.events import Event
 from fastrag.helpers.filters import Filter
-from fastrag.steps.parsing.events import ParsingEvent
 from fastrag.steps.task import Task
 
 
@@ -41,21 +40,25 @@ class HtmlParser(Task):
         self,
         uri: str,
         entry: CacheEntry,
-    ) -> AsyncGenerator[ParsingEvent, None]:
+    ) -> AsyncGenerator[Event, None]:
         existed, _ = await self.cache.get_or_create(
             uri=entry.path.resolve().as_uri(),
             contents=partial(parse_to_md, entry.path, uri),
-            metadata={"source": uri, "strategy": HtmlParser.supported},
+            metadata={
+                "source": uri,
+                "strategy": HtmlParser.supported,
+                "step": "parsing",
+            },
         )
         object.__setattr__(self, "_parsed", self._parsed + 1)
-        yield ParsingEvent(
-            ParsingEvent.Type.PROGRESS,
+        yield Event(
+            Event.Type.PROGRESS,
             ("Cached" if existed else "Parsing") + f" HTML {uri}",
         )
 
     @override
     def completed_callback(self) -> Event:
-        return ParsingEvent(
-            ParsingEvent.Type.COMPLETED,
+        return Event(
+            Event.Type.COMPLETED,
             f"Parsed {self._parsed} HTML documents with HtmlParser",
         )

@@ -1,7 +1,7 @@
 import importlib
 from abc import ABC
 from pathlib import Path
-from typing import Type, TypeVar
+from typing import TypeVar
 
 T = TypeVar("T")
 
@@ -76,5 +76,5 @@ class PluginBase(ABC):
                 PluginRegistry.register(cls, base, cls.supported)
 
 
-def inject(interface: T, supported: list[str] | str, *args, **kwargs) -> T | Type[T]:
+def inject(interface: T, supported: list[str] | str, *args, **kwargs) -> T:
     return PluginRegistry.get_instance(interface, supported, *args, **kwargs)

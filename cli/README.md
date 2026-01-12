@@ -112,7 +112,7 @@ class HttpFetcher(Task):
             async with AsyncClient(timeout=10) as client:
                 res = await client.get(self.url)
         except Exception as e:
-            yield FetchingEvent(FetchingEvent.Type.EXCEPTION, f"ERROR: {e}")
+            yield Event(Event.Type.EXCEPTION, f"ERROR: {e}")
             return
 
         await self.cache.create(
@@ -124,8 +124,8 @@ class HttpFetcher(Task):
 
     @override
     def completed_callback(self) -> Event:
-        return FetchingEvent(
-            FetchingEvent.Type.COMPLETED,
+        return Event(
+            Event.Type.COMPLETED,
             f"{'Cached' if self._cached else 'Fetched'} {self.url}",
         )
 ```
@@ -186,7 +186,7 @@ As shown in the type hinting, the method is expected to *yield* events, we provi
 async def callback(self) -> AsyncGenerator[Event, None]:
     ...
     except Exception as e:
-        yield FetchingEvent(FetchingEvent.Type.EXCEPTION, f"ERROR: {e}")
+        yield Event(Event.Type.EXCEPTION, f"ERROR: {e}")
         return
 ```
 
@@ -195,8 +195,8 @@ Once the main purpose of this `Task` is finished, we must also define a `complet
 ```python
 @override
 def completed_callback(self) -> Event:
-    return FetchingEvent(
-        FetchingEvent.Type.COMPLETED,
+    return Event(
+        Event.Type.COMPLETED,
         f"{'Cached' if self._cached else 'Fetched'} {self.url}",
     )
 ```
@@ -244,7 +244,7 @@ class HtmlParser(Task):
         self,
         uri: str,
         entry: CacheEntry,
-    ) -> AsyncGenerator[ParsingEvent, None]:
+    ) -> AsyncGenerator[Event, None]:
         ...
 ```
 
@@ -256,7 +256,7 @@ async def callback(
     self,
     uri: str,
     entry: CacheEntry,
-) -> AsyncGenerator[ParsingEvent, None]:
+) -> AsyncGenerator[Event, None]:
     ...
 ```
 

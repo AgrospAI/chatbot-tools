@@ -1,32 +1,23 @@
 from dataclasses import dataclass
-from typing import AsyncGenerator, ClassVar, Dict, List, override
+from typing import AsyncGenerator, ClassVar, override
 
 from fastrag.cache.cache import ICache
-from fastrag.config.config import Chunking
 from fastrag.events import Event
+from fastrag.plugins import inject
 from fastrag.steps.step import IStep
 from fastrag.steps.task import Task
-from fastrag.plugins import PluginRegistry, inject
-
 
 
 @dataclass
 class ChunkingStep(IStep):
-    description: ClassVar[str] = "CHUNK"
     supported: ClassVar[str] = "chunking"
-
-    step: list[Chunking]
+    description: ClassVar[str] = "CHUNK"
 
     @override
     async def get_tasks(
         self, cache: ICache
-    ) -> Dict[Task, List[AsyncGenerator[Event, None]]]:
-        tasks = {}
+    ) -> AsyncGenerator[tuple[Task, list[AsyncGenerator[Event, None]]], None]:
         for s in self.step:
             instance = inject(Task, s.strategy, cache=cache, **s.params)
-            entries = await cache.get_entries(
-                instance.filter
-            )
-            tasks[instance] = [instance.callback(uri, entry) for uri, entry in entries]
-
-        return tasks
+            entries = await cache.get_entries(instance.filter)
+            yield (instance, [instance.callback(uri, entry) for uri, entry in entries])

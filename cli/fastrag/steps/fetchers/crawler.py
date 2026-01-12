@@ -11,7 +11,6 @@ from fastrag.events import Event
 from fastrag.helpers.url_field import URLField
 from fastrag.helpers.utils import normalize_url
 from fastrag.plugins import inject
-from fastrag.steps.fetchers.events import FetchingEvent
 from fastrag.steps.fetchers.rate_limiting.rate_limiter import IRateLimiter
 from fastrag.steps.task import Task
 
@@ -106,7 +105,7 @@ class CrawlerFetcher(Task):
                         self._visited.add(url)
                         if not rp.can_fetch(CrawlerFetcher.UserAgent, url):
                             await event_queue.put(
-                                FetchingEvent.Type.EXCEPTION,
+                                Event.Type.EXCEPTION,
                                 f"Blocked by robots.txt: {url}",
                             )
                             continue
@@ -118,15 +117,15 @@ class CrawlerFetcher(Task):
                             html = cached.content.decode()
 
                             await event_queue.put(
-                                FetchingEvent(
-                                    FetchingEvent.Type.PROGRESS,
+                                Event(
+                                    Event.Type.PROGRESS,
                                     f"Parsing cached {url}",
                                 )
                             )
                         else:
                             await event_queue.put(
-                                FetchingEvent(
-                                    FetchingEvent.Type.PROGRESS,
+                                Event(
+                                    Event.Type.PROGRESS,
                                     f"Fetching {url}",
                                 )
                             )
@@ -138,8 +137,8 @@ class CrawlerFetcher(Task):
                             content_type = res.headers.get("Content-Type", "")
                             if "text/html" not in content_type:
                                 await event_queue.put(
-                                    FetchingEvent(
-                                        FetchingEvent.Type.EXCEPTION,
+                                    Event(
+                                        Event.Type.EXCEPTION,
                                         f"Unsupported content type: ({url}) {content_type}",
                                     )
                                 )
@@ -159,9 +158,7 @@ class CrawlerFetcher(Task):
                             )
                         await parse_and_enqueue(html=html, base_url=url, depth=depth)
                     except Exception as e:
-                        await event_queue.put(
-                            FetchingEvent(FetchingEvent.Type.EXCEPTION, f"{url}: {e}")
-                        )
+                        await event_queue.put(Event(Event.Type.EXCEPTION, f"{url}: {e}"))
                     finally:
                         queue.task_done()
 
@@ -184,8 +181,8 @@ class CrawlerFetcher(Task):
 
     @override
     def completed_callback(self) -> Event:
-        return FetchingEvent(
-            FetchingEvent.Type.COMPLETED,
+        return Event(
+            Event.Type.COMPLETED,
             (
                 f"From {self.url}, crawled {len(self._visited)} sites "
                 f"({self._cached} cached) with CrawlerFetcher"

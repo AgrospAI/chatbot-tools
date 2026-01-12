@@ -113,6 +113,8 @@ def clean(
     if not sure:
         raise typer.Abort()
 
+    console.quiet = True
+
     # Load plugins before config
     load_plugins(plugins)
     config: Config = load_config(config)
@@ -121,6 +123,8 @@ def clean(
         ICache, config.resources.cache.strategy, lifespan=config.resources.cache.lifespan
     )
     size = cache.clean()
+
+    console.quiet = False
 
     console.print(f"[bold green] Deleted {humanize.naturalsize(size)}[/bold green]")
 
@@ -131,14 +135,6 @@ def run(
         Path,
         typer.Argument(help="Path to the config file."),
     ] = DEFAULT_CONFIG,
-    step: Annotated[
-        int,
-        typer.Option(
-            "--step",
-            "-s",
-            help="What step to execute up to",
-        ),
-    ] = -1,
     plugins: Annotated[
         Path | None,
         typer.Option("--plugins", "-p", help="Path to the plugins directory."),
@@ -166,16 +162,23 @@ def run(
     # Load plugins before config
     load_plugins(plugins)
     config: Config = load_config(config)
-    cache: ICache = inject(
-        ICache, config.resources.cache.strategy, lifespan=config.resources.cache.lifespan
+    cache = inject(
+        ICache,
+        config.resources.cache.strategy,
+        lifespan=config.resources.cache.lifespan,
     )
 
     ran = inject(IRunner, config.resources.sources.strategy).run(
-        config.resources.sources.steps, cache, step
+        config.resources.sources.steps,
+        cache,
     )
     ran = inject(IRunner, config.experiments.strategy).run(
-        config.experiments.steps, cache, step, starting_step_number=ran
+        config.experiments.steps,
+        cache,
+        starting_step_number=ran,
     )
+
+    console.print(f"[bold green]:heavy_check_mark: Completed {ran} experiments![/bold green]")
 
 
 def load_config(path: Path) -> Config:

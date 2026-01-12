@@ -52,45 +52,38 @@ class Runner(IRunner):
                 for idx, step in enumerate(steps)
             ]
 
-            for step in steps:
-                progress.add_task(
-                    f"{step.task_id + starting_step_number + 1}. {step.description} -",
-                    total=step.calculate_total(),
-                )
+            async def run_all():
+                for step in steps:
+                    step_number = step.task_id + starting_step_number + 1
 
-                async def runner_loop(step: IStep):
-                    if step is None or not step.is_present:
+                    # Step-level progress bar
+                    step_task_id = progress.add_task(
+                        f"{step_number}. {step.description}",
+                        total=step.calculate_total(),
+                    )
+
+                    async for task, generators in step.get_tasks(cache):
+
+                        async def consume(gen):
+                            async for event in gen:
+                                step.log(event)
+
+                        await asyncio.gather(*(consume(gen) for gen in generators))
+                        step.log(task.completed_callback())
+
+                        progress.advance(step_task_id)
+
+                    # Manual stop support
+                    if run_steps == step.task_id + 1:
+                        progress.print(
+                            Panel.fit(
+                                f"Stopping execution after step "
+                                f"[bold yellow]{step.description}[/bold yellow]",
+                                border_style="red",
+                            ),
+                            justify="center",
+                        )
                         return
 
-                    run = await step.tasks(cache)
-
-                    async def consume_gen(gen):
-                        async for event in gen:
-                            step.log(event)
-
-                    async def run_task(task: Task, gens):
-                        tasks = [asyncio.create_task(consume_gen(gen)) for gen in gens]
-                        await asyncio.gather(*tasks)
-                        step.log(task.completed_callback())
-                        progress.advance(task_id=step.task_id)
-
-                    await asyncio.gather(
-                        *(run_task(task, generators) for task, generators in run.items())
-                    )
-
-                asyncio.run(runner_loop(step))
-
-                # Manual stop of application after given step
-                if run_steps == step.task_id + 1:
-                    progress.print(
-                        Panel.fit(
-                            f"Stopping execution after step "
-                            f"[bold yellow]{step.capitalize()}[/bold yellow]",
-                            border_style="red",
-                        ),
-                        justify="center",
-                    )
-                    progress.stop()
-                    return run_steps
-
+            asyncio.run(run_all())
             return len(steps)

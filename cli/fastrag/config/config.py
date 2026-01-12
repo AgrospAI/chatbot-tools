@@ -9,80 +9,47 @@ from fastrag.helpers.utils import parse_to_seconds
 @dataclass(frozen=True)
 class Strategy:
     strategy: str
-    params: dict
+    params: dict | None
 
 
+Step: TypeAlias = list[Strategy]
 Steps: TypeAlias = dict[str, list[Strategy]]
 
 
 @dataclass(frozen=True)
-class Sources:
+class MultiStrategy:
     steps: Steps
     strategy: str = "async"
-
-
-@dataclass(frozen=True)
-class Experiments:
-    steps: Steps
-    strategy: str = "async"
-
-
-@dataclass(frozen=True)
-class Source(Strategy): ...
-
-
-@dataclass(frozen=True)
-class Parsing(Strategy): ...
-
-
-@dataclass(frozen=True)
-class Chunking(Strategy): ...
-
-
-@dataclass(frozen=True)
-class Embedding(Strategy): ...
-
-
-@dataclass(frozen=True)
-class VectorStore(Strategy): ...
-
-
-@dataclass(frozen=True)
-class LLM(Strategy): ...
-
-
-@dataclass(frozen=True)
-class Benchmarking(Strategy): ...
 
 
 @dataclass(frozen=True)
 class Cache:
+    lifespan_str: InitVar[str] = "1d"
     strategy: str = field(default="local")
     _lifespan: int = field(init=False)
-
-    lifespan: InitVar[str | None]
-    default_lifespan: ClassVar[str] = "1d"
 
     @property
     def lifespan(self) -> int:
         return self._lifespan
 
-    def __post_init__(self, lifespan: str) -> None:
+    def __post_init__(self, lifespan_str: str) -> None:
         object.__setattr__(
-            self, "_lifespan", parse_to_seconds(lifespan or Cache.default_lifespan)
+            self,
+            "_lifespan",
+            parse_to_seconds(lifespan_str),
         )
 
 
 @dataclass(frozen=True)
 class Resources:
-    sources: Sources
+    sources: MultiStrategy
     cache: Cache = field(default_factory=Cache)
-    store: VectorStore | None = field(default=None)
+    store: Strategy | None = field(default=None)
     llm: Strategy | None = field(default=None)
 
 
 @dataclass(frozen=True)
 class Config:
     resources: Resources
-    experiments: Experiments
+    experiments: MultiStrategy
     benchmarking: list[Strategy]

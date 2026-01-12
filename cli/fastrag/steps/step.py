@@ -1,10 +1,11 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import AsyncGenerator, ClassVar, Dict, List, override
+from typing import AsyncGenerator, ClassVar, override
 
 from rich.progress import Progress
 
 from fastrag.cache.cache import ICache
+from fastrag.config.config import Step, Steps
 from fastrag.events import Event
 from fastrag.plugins import PluginBase
 from fastrag.steps.logs import Loggable
@@ -13,11 +14,11 @@ from fastrag.steps.task import Task
 
 @dataclass
 class IStep(Loggable, PluginBase, ABC):
-    step: str
+    step: Step
     progress: Progress
     task_id: int
     description: ClassVar[str] = "UNKNOWN STEP"
-    _tasks: ClassVar[Dict[Task, List[AsyncGenerator[Event, None]]]] = None
+    _tasks: ClassVar[dict[Task, list[AsyncGenerator[Event, None]]]] = None
 
     def calculate_total(self) -> int:
         """Calculates the number of tasks to perform by this step
@@ -26,16 +27,6 @@ class IStep(Loggable, PluginBase, ABC):
             int: number of tasks to perform
         """
         return len(self.step) if self.step else 0
-
-    @property
-    def is_present(self) -> bool:
-        """If the step has been loaded / is present in the configuration file"""
-        return self.step is not None
-
-    async def tasks(self, cache: ICache) -> Dict[Task, List[AsyncGenerator[Event, None]]]:
-        if self._tasks is None:
-            self._tasks = await self.get_tasks(cache)
-        return self._tasks
 
     def completed_callback(self, task: Task) -> Event:
         """Callback to call when the task has been completed
@@ -70,11 +61,28 @@ class IStep(Loggable, PluginBase, ABC):
                 self.log_verbose(event)
 
     @abstractmethod
-    async def get_tasks(self, cache: ICache) -> Dict[Task, List[AsyncGenerator[Event, None]]]:
+    async def get_tasks(
+        self, cache: ICache
+    ) -> AsyncGenerator[tuple[Task, list[AsyncGenerator[Event, None]]], None]:
         """Generate a dict with the tasks to perform
 
         Returns:
-            Dict[Task, List[AsyncGenerator[Event, None]]]: Task instance - Its list of callbacks
+            dict[Task, list[AsyncGenerator[Event, None]]]: Task instance - Its list of callbacks
+        """
+
+        raise NotImplementedError
+
+
+@dataclass
+class IMultiStep(IStep):
+    step: Steps
+
+    @abstractmethod
+    def get_steps(self) -> list[IStep]:
+        """Get the instances of the involved steps
+
+        Returns:
+            list[IStep]: list of instances
         """
 
         raise NotImplementedError
