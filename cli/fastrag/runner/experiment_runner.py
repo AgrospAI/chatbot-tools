@@ -1,5 +1,5 @@
 import asyncio
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from itertools import product
 from typing import ClassVar, override
 
@@ -17,12 +17,13 @@ from fastrag.config.config import Steps
 from fastrag.plugins import inject
 from fastrag.runner.runner import IRunner
 from fastrag.steps.step import IMultiStep
-from fastrag.steps.task import Task
 
 
 @dataclass(frozen=True)
 class ExperimentsRunner(IRunner):
     supported: ClassVar[str] = "async_experiments"
+
+    max_concurrent: int = field(default=5)
 
     @override
     def run(
@@ -40,9 +41,6 @@ class ExperimentsRunner(IRunner):
             TextColumn("•"),
             TimeRemainingColumn(),
         ) as progress:
-            # ------------------------------------------------------------
-            # Generate experiment combinations
-            # ------------------------------------------------------------
             step_names = list(steps.keys())
             strategy_lists = [steps[name] for name in step_names]
             experiment_combinations = list(product(*strategy_lists))
@@ -54,9 +52,6 @@ class ExperimentsRunner(IRunner):
                 total=len(experiment_combinations),
             )
 
-            # ------------------------------------------------------------
-            # Build IMultiStep instances
-            # ------------------------------------------------------------
             experiments: list[IMultiStep] = []
 
             for exp_idx, combination in enumerate(experiment_combinations, start=1):
@@ -74,36 +69,43 @@ class ExperimentsRunner(IRunner):
 
                 experiments.append(step_instance)
 
-            # ------------------------------------------------------------
-            # Async runner
-            # ------------------------------------------------------------
+            semaphore = asyncio.Semaphore(self.max_concurrent) if self.max_concurrent else None
+
+            async def run_single_experiment(exp_idx: int, experiment: IMultiStep):
+                if semaphore:
+                    async with semaphore:
+                        await _run_experiment(exp_idx, experiment)
+                else:
+                    await _run_experiment(exp_idx, experiment)
+
+            async def _run_experiment(exp_idx: int, experiment: IMultiStep):
+                async for task, generators in experiment.get_tasks(cache):
+                    task_name = task.supported
+                    if isinstance(task_name, list):
+                        task_name = task_name[0]
+
+                    step_task_id = progress.add_task(
+                        f"{main_idx}.{exp_idx} {task_name.upper()}",
+                        total=len(generators),
+                    )
+
+                    async def consume(gen):
+                        async for event in gen:
+                            experiment.log(event)
+                        progress.advance(step_task_id)
+
+                    await asyncio.gather(*(consume(gen) for gen in generators))
+                    experiment.log(task.completed_callback())
+
+                progress.advance(experiments_task_id)
+
             async def run_all():
-                for exp_idx, experiment in enumerate(experiments, start=1):
-                    # Each IMultiStep yields tasks lazily, already ordered
-                    async for task, generators in experiment.get_tasks(cache):
-                        # Each yielded task corresponds to a *single concrete step*
-                        step_description = task.supported
-
-                        if isinstance(step_description, list):
-                            step_description = step_description[0].upper()
-                        else:
-                            step_description = step_description.upper()
-
-                        task_id = progress.add_task(
-                            f"{main_idx}.{exp_idx} {step_description}",
-                            total=len(generators),
-                        )
-
-                        async def consume(gen):
-                            async for event in gen:
-                                experiment.log(event)
-                            progress.advance(task_id)
-
-                        await asyncio.gather(*(consume(gen) for gen in generators))
-                        experiment.log(task.completed_callback())
-
-                    # Mark experiment completed
-                    progress.advance(experiments_task_id)
+                await asyncio.gather(
+                    *(
+                        run_single_experiment(idx, exp)
+                        for idx, exp in enumerate(experiments, start=1)
+                    )
+                )
 
             asyncio.run(run_all())
 

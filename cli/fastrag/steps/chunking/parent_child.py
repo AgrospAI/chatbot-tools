@@ -24,6 +24,7 @@ class ParentChildChunker(Task):
     embedding_model: str = "all-MiniLM-L6-v2"
 
     _chunked: int = field(default=0, init=False)
+    _cached: bool = field(default=False, init=False)
 
     @override
     async def callback(
@@ -43,15 +44,17 @@ class ParentChildChunker(Task):
         if existed:
             entries = json.loads(cached.content)
             object.__setattr__(self, "_chunked", len(entries))
+            object.__setattr__(self, "_cached", True)
 
         status = "Cached" if existed else "Generated"
         yield Event(Event.Type.PROGRESS, f"{status} {self._chunked} chunks for {uri}")
 
     @override
     def completed_callback(self) -> Event:
+        status = f"Chunking done{' (cached)' if self._cached else ''}"
         return Event(
             Event.Type.COMPLETED,
-            f"Chunking finished. Total chunks: {self._chunked}",
+            f"{status} {self._chunked} chunks",
         )
 
     def chunker_logic(self, uri: str, entry: CacheEntry) -> bytes:
