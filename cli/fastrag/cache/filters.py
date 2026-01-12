@@ -2,17 +2,7 @@ from dataclasses import dataclass, field
 from typing import override
 
 from fastrag.cache.cache import CacheEntry
-from fastrag.config.config import StepNames
 from fastrag.helpers.filters import Filter
-
-
-@dataclass
-class StepFilter(Filter[CacheEntry]):
-    step: StepNames
-
-    @override
-    def apply(self, entry: CacheEntry) -> bool:
-        return entry.step == self.step
 
 
 @dataclass(kw_only=True, slots=True)

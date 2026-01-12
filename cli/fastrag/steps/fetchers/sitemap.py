@@ -64,8 +64,11 @@ class SitemapXMLFetcher(Task):
         await self.cache.create(
             url,
             res.text.encode(),
-            "fetching",
-            {"format": "html", "strategy": SitemapXMLFetcher.supported},
+            {
+                "step": "fetching",
+                "format": "html",
+                "strategy": SitemapXMLFetcher.supported,
+            },
         )
         return FetchingEvent(FetchingEvent.Type.PROGRESS, f"Fetching {url}")
 

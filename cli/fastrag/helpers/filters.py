@@ -41,12 +41,6 @@ class AndFilter(Filter[T]):
             return False
         return all(f.apply(entry) for f in self.filters)
 
-    def __and__(self, other: Filter):
-        return AndFilter([*self.filters, other])
-
-    def __or__(self, other: Filter):
-        return OrFilter([*self.filters, other])
-
 
 @dataclass
 class OrFilter(Filter[T]):
@@ -57,9 +51,3 @@ class OrFilter(Filter[T]):
         if not self.filters:
             return True
         return any(f.apply(entry) for f in self.filters)
-
-    def __and__(self, other: Filter):
-        return AndFilter([*self.filters, other])
-
-    def __or__(self, other: Filter):
-        return OrFilter([*self.filters, other])

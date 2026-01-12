@@ -1,11 +1,12 @@
 import hashlib
 import json
+import shutil
 from asyncio import Lock
-from dataclasses import dataclass, field
+from dataclasses import InitVar, dataclass, field
 from pathlib import Path
-from typing import Callable, ClassVar, Iterable, get_args, override
+from typing import Callable, ClassVar, Iterable, override
 
-from fastrag.cache.cache import CacheEntry, ICache, StepNames
+from fastrag.cache.cache import CacheEntry, ICache
 from fastrag.helpers import PosixTimestamp, timestamp
 from fastrag.helpers.filters import Filter
 
@@ -17,9 +18,28 @@ def is_outdated(time: PosixTimestamp, lifespan: int) -> bool:
 
 
 @dataclass(frozen=True)
+class Paths:
+    metadata: Path = field(init=False)
+    data: Path = field(init=False)
+
+    base: InitVar[Path]
+
+    def __post_init__(self, base: Path) -> None:
+        object.__setattr__(self, "metadata", base / "metadata.json")
+        object.__setattr__(self, "data", base / "cache")
+
+        self.metadata.parent.mkdir(exist_ok=True)
+        self.data.mkdir(exist_ok=True)
+
+        self.metadata.touch(mode=0o770, exist_ok=True)
+
+
+@dataclass(frozen=True)
 class LocalCache(ICache):
+    base: ClassVar[Path] = Path(".fastrag")
     supported: ClassVar[str] = "local"
 
+    _paths: Paths = field(init=False)
     _lock: Lock = field(init=False, repr=False, default_factory=Lock)
     metadata: Metadata = field(init=False, repr=False, default_factory=lambda: dict)
 
@@ -27,22 +47,17 @@ class LocalCache(ICache):
         # Load metadata from file
         metadata = {}
 
-        if self.metadata_path.exists():
-            with open(self.metadata_path, "r") as f:
-                raw = json.load(f)
-                metadata = {k: CacheEntry.from_dict(v) for k, v in raw.items()}
+        paths = Paths(self.base)
 
-        for step in get_args(StepNames):
-            path: Path = self.base / step
-            path.mkdir(parents=True, exist_ok=True)
+        raw = paths.metadata.read_text()
+        if raw:
+            raw = json.loads(raw)
+            metadata = {k: CacheEntry.from_dict(v) for k, v in raw.items()}
 
+        object.__setattr__(self, "_paths", paths)
         object.__setattr__(self, "metadata", metadata)
 
         self._delete_invalid()
-
-    @property
-    def metadata_path(self) -> Path:
-        return self.base / "metadata.json"
 
     @override
     def is_present(self, uri: str) -> bool:
@@ -54,15 +69,12 @@ class LocalCache(ICache):
         self,
         uri: str,
         contents: bytes,
-        step: StepNames,
         metadata: dict | None = None,
     ) -> CacheEntry:
-        digest = hashlib.sha256(contents).hexdigest()
+        digest = hashlib.sha256(uri.encode()).hexdigest()
         entry = CacheEntry(
-            content_hash=digest,
-            path=self.base / step / digest,
+            path=self._paths.data / digest,
             metadata=metadata,
-            step=step,
         )
         async with self._lock:
             self.metadata[uri] = entry
@@ -75,13 +87,12 @@ class LocalCache(ICache):
         self,
         uri: str,
         contents: Callable[..., bytes],
-        step: StepNames,
         metadata: dict | None = None,
     ) -> tuple[bool, CacheEntry]:
         entry = await self.get(uri)
         if entry:
             return True, entry
-        return False, await self.create(uri, contents(), step, metadata)
+        return False, await self.create(uri, contents(), metadata)
 
     @override
     async def get(self, uri: str) -> CacheEntry | None:
@@ -94,6 +105,13 @@ class LocalCache(ICache):
         if not filter:
             return [(k, e) for k, e in self.metadata.items()]
         return [(k, e) for k, e in self.metadata.items() if filter.apply(e)]
+
+    @override
+    def clean(self) -> int:
+        paths = self.base.rglob("*")
+        size = sum(p.stat().st_size for p in paths if p.is_file())
+        shutil.rmtree(self.base)
+        return size
 
     def _delete_invalid(self) -> None:
         outdated = [
@@ -110,9 +128,8 @@ class LocalCache(ICache):
         self._save_metadata()
 
     def _save_metadata(self) -> None:
-        self.metadata_path.touch(mode=0o770, exist_ok=True)
         raw = {k: v.to_dict() for k, v in self.metadata.items()}
-        with open(self.metadata_path, "w") as f:
+        with open(self._paths.metadata, "w") as f:
             json.dump(raw, f, indent=2)
 
     def _save(self, path: Path, contents: bytes) -> None:

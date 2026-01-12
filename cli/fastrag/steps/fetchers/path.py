@@ -40,9 +40,9 @@ class PathFetcher(Task):
             for p in list_paths(self.path):
                 existed, _ = await self.cache.get_or_create(
                     uri=p.resolve().as_uri(),
-                    step="fetching",
                     contents=p.read_bytes,
                     metadata={
+                        "step": "fetching",
                         "format": p.suffix[1:],
                         "strategy": PathFetcher.supported,
                     },

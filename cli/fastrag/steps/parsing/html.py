@@ -8,7 +8,7 @@ from bs4 import BeautifulSoup
 from html_to_markdown import convert_to_markdown
 
 from fastrag.cache.entry import CacheEntry
-from fastrag.cache.filters import MetadataFilter, StepFilter
+from fastrag.cache.filters import MetadataFilter
 from fastrag.events import Event
 from fastrag.helpers.filters import Filter
 from fastrag.steps.parsing.events import ParsingEvent
@@ -31,10 +31,9 @@ def parse_to_md(path: Path, base_url: str) -> bytes:
 @dataclass(frozen=True)
 class HtmlParser(Task):
     supported: ClassVar[str] = "HtmlParser"
-    filter: ClassVar[Filter] = StepFilter("fetching") & MetadataFilter(format="html")
+    filter: ClassVar[Filter] = MetadataFilter(step="fetching", format="html")
 
     use: list[str] = field(default_factory=list, hash=False)
-
     _parsed: int = field(default=0)
 
     @override
@@ -46,7 +45,6 @@ class HtmlParser(Task):
         existed, _ = await self.cache.get_or_create(
             uri=entry.path.resolve().as_uri(),
             contents=partial(parse_to_md, entry.path, uri),
-            step="parsing",
             metadata={"source": uri, "strategy": HtmlParser.supported},
         )
         object.__setattr__(self, "_parsed", self._parsed + 1)

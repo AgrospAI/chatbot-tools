@@ -1,8 +1,7 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from typing import Callable
+from typing import Callable, ClassVar
 
-from fastrag.constants import get_constants
 from fastrag.events import Event
 
 
@@ -10,11 +9,11 @@ from fastrag.events import Event
 class Loggable(ABC):
     log: Callable[[Event], None] = field(init=False, repr=False)
 
+    is_verbose: ClassVar[bool] = False
+
     def __post_init__(self) -> None:
         object.__setattr__(
-            self,
-            "log",
-            self.log_verbose if get_constants().verbose else self.log_normal,
+            self, "log", self.log_verbose if Loggable.is_verbose else self.log_normal
         )
 
     @abstractmethod

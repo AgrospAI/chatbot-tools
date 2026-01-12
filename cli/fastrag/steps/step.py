@@ -5,8 +5,6 @@ from typing import AsyncGenerator, ClassVar, Dict, List, override
 from rich.progress import Progress
 
 from fastrag.cache.cache import ICache
-from fastrag.config.config import Step
-from fastrag.constants import get_constants
 from fastrag.events import Event
 from fastrag.plugins import PluginBase
 from fastrag.steps.logs import Loggable
@@ -15,7 +13,7 @@ from fastrag.steps.task import Task
 
 @dataclass
 class IStep(Loggable, PluginBase, ABC):
-    step: Step
+    step: str
     progress: Progress
     task_id: int
     description: ClassVar[str] = "UNKNOWN STEP"
@@ -34,9 +32,8 @@ class IStep(Loggable, PluginBase, ABC):
         """If the step has been loaded / is present in the configuration file"""
         return self.step is not None
 
-    async def tasks(self) -> Dict[Task, List[AsyncGenerator[Event, None]]]:
+    async def tasks(self, cache: ICache) -> Dict[Task, List[AsyncGenerator[Event, None]]]:
         if self._tasks is None:
-            cache = get_constants().cache
             self._tasks = await self.get_tasks(cache)
         return self._tasks
 

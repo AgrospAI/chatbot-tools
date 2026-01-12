@@ -6,7 +6,7 @@ from fastrag.cache.filters import MetadataFilter
 from fastrag.config.config import Parsing
 from fastrag.events import Event
 from fastrag.helpers.filters import OrFilter
-from fastrag.plugins import PluginRegistry, inject
+from fastrag.plugins import inject
 from fastrag.steps.step import IStep
 from fastrag.steps.task import Task
 

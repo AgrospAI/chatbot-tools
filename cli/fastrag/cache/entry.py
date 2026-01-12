@@ -5,14 +5,11 @@ from functools import cached_property
 from pathlib import Path
 from urllib.parse import unquote, urlparse
 
-from fastrag.config.config import StepNames
 from fastrag.helpers.utils import PosixTimestamp, timestamp
 
 
 @dataclass(frozen=True)
 class CacheEntry:
-    content_hash: str
-    step: StepNames
     path: Path
     timestamp: PosixTimestamp = field(default_factory=timestamp)
     metadata: dict | None = field(default=None)

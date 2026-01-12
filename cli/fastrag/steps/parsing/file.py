@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import AsyncGenerator, ClassVar, override
 
 from fastrag.cache.entry import CacheEntry
-from fastrag.cache.filters import MetadataFilter, StepFilter
+from fastrag.cache.filters import MetadataFilter
 from fastrag.events import Event
 from fastrag.helpers.filters import Filter
 from fastrag.steps.parsing.events import ParsingEvent
@@ -28,9 +28,8 @@ def to_markdown(fmt: str, path: Path) -> bytes:
 @dataclass(frozen=True)
 class FileParser(Task):
     supported: ClassVar[str] = "FileParser"
-    filter: ClassVar[Filter] = StepFilter("fetching") & (
-        MetadataFilter(format="docx") | MetadataFilter(format="pdf")
-    )
+    filter: ClassVar[Filter] = MetadataFilter(format="docx") | MetadataFilter(format="pdf")
+
     use: list[str] = field(default_factory=list, hash=False)
 
     _parsed: int = field(default=0)
@@ -46,7 +45,6 @@ class FileParser(Task):
         existed, _ = await self.cache.get_or_create(
             uri=entry.path.resolve().absolute().as_uri(),
             contents=contents,
-            step="parsing",
             metadata={"source": uri, "strategy": FileParser.supported},
         )
         object.__setattr__(self, "_parsed", self._parsed + 1)
