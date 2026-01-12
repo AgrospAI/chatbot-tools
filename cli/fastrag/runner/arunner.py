@@ -49,12 +49,12 @@ class Runner(IRunner):
                     task_id=idx,
                     step=steps[step],
                 )
-                for idx, step in enumerate(steps, start=starting_step_number)
+                for idx, step in enumerate(steps)
             ]
 
             for step in steps:
                 progress.add_task(
-                    f"{step.task_id + 1}. {step.description} -",
+                    f"{step.task_id + starting_step_number + 1}. {step.description} -",
                     total=step.calculate_total(),
                 )
 
