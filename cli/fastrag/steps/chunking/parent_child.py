@@ -51,12 +51,6 @@ class ParentChildChunker(Task):
             f"{status} {len(chunks_data)} chunks for {uri}"
         )
 
-        for chunk_dict in chunks_data:
-            yield ChunkingEvent(
-                ChunkingEvent.Type.CHUNK_CREATED,
-                payload=chunk_dict
-            )
-
     @override
     def completed_callback(self) -> Event:
         return ChunkingEvent(
