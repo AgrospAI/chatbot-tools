@@ -9,7 +9,7 @@ from fastrag.steps.task import Task
 
 
 @dataclass
-class SourceStep(IStep):
+class FetchingStep(IStep):
     description: ClassVar[str] = "FETCH"
     supported: ClassVar[str] = "fetching"
 

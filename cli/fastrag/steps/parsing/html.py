@@ -45,7 +45,11 @@ class HtmlParser(Task):
         existed, _ = await self.cache.get_or_create(
             uri=entry.path.resolve().as_uri(),
             contents=partial(parse_to_md, entry.path, uri),
-            metadata={"source": uri, "strategy": HtmlParser.supported},
+            metadata={
+                "source": uri,
+                "strategy": HtmlParser.supported,
+                "step": "parsing",
+            },
         )
         object.__setattr__(self, "_parsed", self._parsed + 1)
         yield ParsingEvent(

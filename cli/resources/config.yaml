@@ -1,6 +1,4 @@
 resources:
-  cache:
-    lifespan: 1d
   store:
     strategy: milvus
     params:
@@ -47,7 +45,7 @@ resources:
             use:
               - Path
 experiments:
-  strategy: async
+  strategy: "async_experiments"
   steps:
     chunking:
       - strategy: ParentChild
@@ -56,6 +54,11 @@ experiments:
           embedding_model: all-MiniLM-L6-v2
     embedding:
       - strategy: OpenAI-Simple
+        params:
+          model: nomic-embed-text:latest
+          api_key: ${CHAT_API_KEY}
+          url: https://chat.agrospai.udl.cat/api/embeddings
+      - strategy: openai-simple
         params:
           model: nomic-embed-text:latest
           api_key: ${CHAT_API_KEY}

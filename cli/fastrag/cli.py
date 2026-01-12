@@ -131,14 +131,6 @@ def run(
         Path,
         typer.Argument(help="Path to the config file."),
     ] = DEFAULT_CONFIG,
-    step: Annotated[
-        int,
-        typer.Option(
-            "--step",
-            "-s",
-            help="What step to execute up to",
-        ),
-    ] = -1,
     plugins: Annotated[
         Path | None,
         typer.Option("--plugins", "-p", help="Path to the plugins directory."),
@@ -175,16 +167,14 @@ def run(
     ran = inject(IRunner, config.resources.sources.strategy).run(
         config.resources.sources.steps,
         cache,
-        step,
     )
-    ran += inject(IRunner, config.experiments.strategy).run(
+    ran = inject(IRunner, config.experiments.strategy).run(
         config.experiments.steps,
         cache,
-        step,
         starting_step_number=ran,
     )
 
-    console.print(f"[bold green]:heavy_check_mark: Completed {ran} steps![/bold green]")
+    console.print(f"[bold green]:heavy_check_mark: Completed {ran} experiments![/bold green]")
 
 
 def load_config(path: Path) -> Config:

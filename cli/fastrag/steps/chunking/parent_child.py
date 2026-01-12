@@ -46,9 +46,7 @@ class ParentChildChunker(Task):
         object.__setattr__(self, "_chunked", new_count)
 
         status = "Cached" if existed else "Generated"
-        yield ChunkingEvent(
-            ChunkingEvent.Type.PROGRESS, f"{status} {len(chunks_data)} chunks for {uri}"
-        )
+        yield ChunkingEvent(ChunkingEvent.Type.PROGRESS, f"{status} {len(chunks_data)} chunks")
 
     @override
     def completed_callback(self) -> Event:

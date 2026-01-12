@@ -28,11 +28,6 @@ class IStep(Loggable, PluginBase, ABC):
         """
         return len(self.step) if self.step else 0
 
-    @property
-    def is_present(self) -> bool:
-        """If the step has been loaded / is present in the configuration file"""
-        return self.step is not None
-
     async def tasks(self, cache: ICache) -> Dict[Task, List[AsyncGenerator[Event, None]]]:
         if self._tasks is None:
             self._tasks = await self.get_tasks(cache)

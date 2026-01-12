@@ -9,7 +9,7 @@ from fastrag.helpers.utils import parse_to_seconds
 @dataclass(frozen=True)
 class Strategy:
     strategy: str
-    params: dict
+    params: dict | None
 
 
 Step: TypeAlias = list[Strategy]
@@ -24,19 +24,19 @@ class MultiStrategy:
 
 @dataclass(frozen=True)
 class Cache:
+    lifespan_str: InitVar[str] = "1d"
     strategy: str = field(default="local")
     _lifespan: int = field(init=False)
-
-    lifespan: InitVar[str | None]
-    default_lifespan: ClassVar[str] = "1d"
 
     @property
     def lifespan(self) -> int:
         return self._lifespan
 
-    def __post_init__(self, lifespan: str) -> None:
+    def __post_init__(self, lifespan_str: str) -> None:
         object.__setattr__(
-            self, "_lifespan", parse_to_seconds(lifespan or Cache.default_lifespan)
+            self,
+            "_lifespan",
+            parse_to_seconds(lifespan_str),
         )
 
 

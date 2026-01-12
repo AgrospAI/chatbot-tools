@@ -45,7 +45,11 @@ class FileParser(Task):
         existed, _ = await self.cache.get_or_create(
             uri=entry.path.resolve().absolute().as_uri(),
             contents=contents,
-            metadata={"source": uri, "strategy": FileParser.supported},
+            metadata={
+                "source": uri,
+                "strategy": FileParser.supported,
+                "step": "parsing",
+            },
         )
         object.__setattr__(self, "_parsed", self._parsed + 1)
         yield ParsingEvent(

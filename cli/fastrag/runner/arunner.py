@@ -59,9 +59,6 @@ class Runner(IRunner):
                 )
 
                 async def runner_loop(step: IStep):
-                    if step is None or not step.is_present:
-                        return
-
                     run = await step.tasks(cache)
 
                     async def consume_gen(gen):
