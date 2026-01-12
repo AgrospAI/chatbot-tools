@@ -16,7 +16,7 @@ from fastrag.cache.cache import ICache
 from fastrag.config.config import Steps
 from fastrag.plugins import inject
 from fastrag.runner.runner import IRunner
-from fastrag.steps.step import IMultiStep, IStep
+from fastrag.steps.step import IMultiStep
 from fastrag.steps.task import Task
 
 
@@ -69,11 +69,9 @@ class ExperimentsRunner(IRunner):
             async def runner():
                 for exp_idx, step in experiments:
                     strat_task_ids = []
-                    for strat_idx, strat in enumerate(step.step, 1):
-                        numbering = f"{main_idx}.{exp_idx}.{strat_idx}"
-                        description = (
-                            f"{numbering} {step.get_steps()[strat_idx - 1].description}"
-                        )
+                    for strat_idx, strat in enumerate(step.step):
+                        numbering = f"{main_idx}.{exp_idx}.{strat_idx + 1}"
+                        description = f"{numbering} {step.get_steps()[strat_idx].description}"
                         task_id = progress.add_task(description, total=step.calculate_total())
                         strat_task_ids.append(task_id)
 
@@ -89,12 +87,8 @@ class ExperimentsRunner(IRunner):
                         step.log(task.completed_callback())
 
                     # Run all strategy tasks in this experiment
-                    await asyncio.gather(
-                        *(
-                            run_task(task, gens, strat_task_ids[i])
-                            for i, (task, gens) in enumerate(run.items())
-                        )
-                    )
+                    for i, (task, gens) in enumerate(run.items()):
+                        await asyncio.gather(run_task(task, gens, strat_task_ids[i]))
 
                     # Mark experiment complete
                     progress.advance(main_task_id)

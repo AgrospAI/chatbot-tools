@@ -7,7 +7,6 @@ from fastrag.cache.entry import CacheEntry
 from fastrag.cache.filters import MetadataFilter
 from fastrag.events import Event
 from fastrag.helpers.filters import Filter
-from fastrag.steps.parsing.events import ParsingEvent
 from fastrag.steps.task import Task
 
 
@@ -52,15 +51,15 @@ class FileParser(Task):
             },
         )
         object.__setattr__(self, "_parsed", self._parsed + 1)
-        yield ParsingEvent(
-            ParsingEvent.Type.PROGRESS,
+        yield Event(
+            Event.Type.PROGRESS,
             ("Cached" if existed else "Parsing")
             + f" {fmt.upper()} {entry.path.resolve().absolute().as_uri()}",
         )
 
     @override
     def completed_callback(self) -> Event:
-        return ParsingEvent(
-            ParsingEvent.Type.COMPLETED,
+        return Event(
+            Event.Type.COMPLETED,
             f"Parsed {self._parsed} document(s) with FileParser",
         )

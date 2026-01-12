@@ -1,13 +1,15 @@
-from fastrag.steps.benchmarking import BenchmarkingEvent
-from fastrag.steps.chunking import ChunkingEvent
-from fastrag.steps.embeddings import EmbeddingEvent
-from fastrag.steps.fetchers import FetchingEvent
-from fastrag.steps.impl.benchmarking import BenchmarkingStep
-from fastrag.steps.impl.chunking import ChunkingStep
-from fastrag.steps.impl.embedding import EmbeddingStep
-from fastrag.steps.impl.fetching import FetchingStep
-from fastrag.steps.impl.parsing import ParsingStep
-from fastrag.steps.parsing.events import ParsingEvent
+from fastrag.events import Event
+from fastrag.steps.chunking import ParentChildChunker
+from fastrag.steps.embeddings import SelfHostedEmbeddings
+from fastrag.steps.fetchers import CrawlerFetcher, HttpFetcher, PathFetcher, SitemapXMLFetcher
+from fastrag.steps.impl import (
+    BenchmarkingStep,
+    ChunkingStep,
+    EmbeddingStep,
+    FetchingStep,
+    ParsingStep,
+)
+from fastrag.steps.parsing import FileParser, HtmlParser
 from fastrag.steps.step import IStep
 from fastrag.steps.task import Task
 
@@ -19,9 +21,13 @@ __all__ = [
     ChunkingStep,
     BenchmarkingStep,
     Task,
-    FetchingEvent,
-    BenchmarkingEvent,
-    ChunkingEvent,
-    EmbeddingEvent,
-    ParsingEvent,
+    Event,
+    PathFetcher,
+    HttpFetcher,
+    SitemapXMLFetcher,
+    CrawlerFetcher,
+    HtmlParser,
+    FileParser,
+    ParentChildChunker,
+    SelfHostedEmbeddings,
 ]

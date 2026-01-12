@@ -6,7 +6,6 @@ import humanize
 
 from fastrag.events import Event
 from fastrag.helpers import PathField
-from fastrag.steps.fetchers.events import FetchingEvent
 from fastrag.steps.task import Task
 
 
@@ -31,8 +30,8 @@ class PathFetcher(Task):
 
     @override
     async def callback(self) -> AsyncGenerator[Event, None]:
-        yield FetchingEvent(
-            FetchingEvent.Type.PROGRESS,
+        yield Event(
+            Event.Type.PROGRESS,
             f"Copying local files ({humanize.naturalsize(self.path.stat().st_size)})",
         )
 
@@ -47,8 +46,8 @@ class PathFetcher(Task):
                         "strategy": PathFetcher.supported,
                     },
                 )
-                yield FetchingEvent(
-                    FetchingEvent.Type.PROGRESS,
+                yield Event(
+                    Event.Type.PROGRESS,
                     (
                         ("Cached" if existed else "Copied")
                         + f" local path {p.resolve().as_uri()}"
@@ -56,8 +55,8 @@ class PathFetcher(Task):
                 )
 
         except Exception as e:
-            yield FetchingEvent(FetchingEvent.Type.EXCEPTION, f"ERROR: {e}")
+            yield Event(Event.Type.EXCEPTION, f"ERROR: {e}")
 
     @override
     def completed_callback(self) -> Event:
-        return FetchingEvent(FetchingEvent.Type.COMPLETED, "Completed local path copy")
+        return Event(Event.Type.COMPLETED, "Completed local path copy")

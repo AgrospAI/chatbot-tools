@@ -5,7 +5,6 @@ from httpx import AsyncClient
 
 from fastrag.events import Event
 from fastrag.helpers import URLField
-from fastrag.steps.fetchers.events import FetchingEvent
 from fastrag.steps.task import Task
 
 
@@ -26,7 +25,7 @@ class HttpFetcher(Task):
             async with AsyncClient(timeout=10) as client:
                 res = await client.get(self.url)
         except Exception as e:
-            yield FetchingEvent(FetchingEvent.Type.EXCEPTION, f"ERROR: {e}")
+            yield Event(Event.Type.EXCEPTION, f"ERROR: {e}")
             return
 
         await self.cache.create(
@@ -41,7 +40,7 @@ class HttpFetcher(Task):
 
     @override
     def completed_callback(self) -> Event:
-        return FetchingEvent(
-            FetchingEvent.Type.COMPLETED,
+        return Event(
+            Event.Type.COMPLETED,
             f"{'Cached' if self._cached else 'Fetched'} {self.url}",
         )

@@ -113,6 +113,8 @@ def clean(
     if not sure:
         raise typer.Abort()
 
+    console.quiet = True
+
     # Load plugins before config
     load_plugins(plugins)
     config: Config = load_config(config)
@@ -121,6 +123,8 @@ def clean(
         ICache, config.resources.cache.strategy, lifespan=config.resources.cache.lifespan
     )
     size = cache.clean()
+
+    console.quiet = False
 
     console.print(f"[bold green] Deleted {humanize.naturalsize(size)}[/bold green]")
 

@@ -8,7 +8,6 @@ import httpx
 
 from fastrag.events import Event
 from fastrag.helpers import URLField
-from fastrag.steps.fetchers.events import FetchingEvent
 from fastrag.steps.task import Task
 
 
@@ -36,8 +35,8 @@ class SitemapXMLFetcher(Task):
             else:
                 skipped += 1
 
-        yield FetchingEvent(
-            type=FetchingEvent.Type.PROGRESS,
+        yield Event(
+            type=Event.Type.PROGRESS,
             data=(
                 f"Retrieving {len(urls)} URLs "
                 f"(filtered out {skipped} out of {len(urls) + skipped})"
@@ -54,12 +53,12 @@ class SitemapXMLFetcher(Task):
 
     async def fetch_async(self, client, url: str):
         if self.cache.is_present(url):
-            return FetchingEvent(FetchingEvent.Type.PROGRESS, f"Cached {url}")
+            return Event(Event.Type.PROGRESS, f"Cached {url}")
 
         try:
             res = await client.get(url)
         except Exception as e:
-            return FetchingEvent(FetchingEvent.Type.EXCEPTION, f"ERROR: {e}")
+            return Event(Event.Type.EXCEPTION, f"ERROR: {e}")
 
         await self.cache.create(
             url,
@@ -70,8 +69,8 @@ class SitemapXMLFetcher(Task):
                 "strategy": SitemapXMLFetcher.supported,
             },
         )
-        return FetchingEvent(FetchingEvent.Type.PROGRESS, f"Fetching {url}")
+        return Event(Event.Type.PROGRESS, f"Fetching {url}")
 
     @override
     def completed_callback(self) -> Event:
-        return FetchingEvent(FetchingEvent.Type.COMPLETED, "Completed sitemap.xml")
+        return Event(Event.Type.COMPLETED, "Completed sitemap.xml")

@@ -12,7 +12,6 @@ from fastrag.cache.entry import CacheEntry
 from fastrag.cache.filters import MetadataFilter
 from fastrag.events import Event
 from fastrag.helpers.filters import Filter
-from fastrag.steps.chunking.events import ChunkingEvent
 from fastrag.steps.task import Task
 
 
@@ -31,7 +30,7 @@ class ParentChildChunker(Task):
         self,
         uri: str,
         entry: CacheEntry,
-    ) -> AsyncGenerator[ChunkingEvent, None]:
+    ) -> AsyncGenerator[Event, None]:
         existed, cached = await self.cache.get_or_create(
             uri=f"{uri}.chunk.json",
             contents=partial(self.chunker_logic, uri, entry),
@@ -46,14 +45,12 @@ class ParentChildChunker(Task):
             object.__setattr__(self, "_chunked", len(entries))
 
         status = "Cached" if existed else "Generated"
-        yield ChunkingEvent(
-            ChunkingEvent.Type.PROGRESS, f"{status} {self._chunked} chunks for {uri}"
-        )
+        yield Event(Event.Type.PROGRESS, f"{status} {self._chunked} chunks for {uri}")
 
     @override
     def completed_callback(self) -> Event:
-        return ChunkingEvent(
-            ChunkingEvent.Type.COMPLETED,
+        return Event(
+            Event.Type.COMPLETED,
             f"Chunking finished. Total chunks: {self._chunked}",
         )
 

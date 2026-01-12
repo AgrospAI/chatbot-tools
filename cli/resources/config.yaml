@@ -20,14 +20,14 @@ resources:
         - strategy: Path
           params:
             path: ./resources/test/
-        # - strategy: SitemapXML
-        #   params:
-        #     url: https://agrospai.udl.cat/sitemap.xml
-        #     regex:
-        #       - https?://[^/]+/docs/
-        # - strategy: URL
-        #   params:
-        #     url: https://x.com
+        - strategy: SitemapXML
+          params:
+            url: https://agrospai.udl.cat/sitemap.xml
+            regex:
+              - https?://[^/]+/docs/
+        - strategy: URL
+          params:
+            url: https://x.com
         # - strategy: Crawling
         #   params:
         #     url: https://agrospai.udl.cat
