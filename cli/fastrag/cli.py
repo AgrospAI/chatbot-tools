@@ -166,16 +166,25 @@ def run(
     # Load plugins before config
     load_plugins(plugins)
     config: Config = load_config(config)
-    cache: ICache = inject(
-        ICache, config.resources.cache.strategy, lifespan=config.resources.cache.lifespan
+    cache = inject(
+        ICache,
+        config.resources.cache.strategy,
+        lifespan=config.resources.cache.lifespan,
     )
 
     ran = inject(IRunner, config.resources.sources.strategy).run(
-        config.resources.sources.steps, cache, step
+        config.resources.sources.steps,
+        cache,
+        step,
     )
-    ran = inject(IRunner, config.experiments.strategy).run(
-        config.experiments.steps, cache, step, starting_step_number=ran
+    ran += inject(IRunner, config.experiments.strategy).run(
+        config.experiments.steps,
+        cache,
+        step,
+        starting_step_number=ran,
     )
+
+    console.print(f"[bold green]:heavy_check_mark: Completed {ran} steps![/bold green]")
 
 
 def load_config(path: Path) -> Config:

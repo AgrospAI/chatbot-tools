@@ -16,43 +16,9 @@ Steps: TypeAlias = dict[str, list[Strategy]]
 
 
 @dataclass(frozen=True)
-class Sources:
+class MultiStrategy:
+    strategy: str
     steps: Steps
-    strategy: str = "async"
-
-
-@dataclass(frozen=True)
-class Experiments:
-    steps: Steps
-    strategy: str = "async"
-
-
-@dataclass(frozen=True)
-class Source(Strategy): ...
-
-
-@dataclass(frozen=True)
-class Parsing(Strategy): ...
-
-
-@dataclass(frozen=True)
-class Chunking(Strategy): ...
-
-
-@dataclass(frozen=True)
-class Embedding(Strategy): ...
-
-
-@dataclass(frozen=True)
-class VectorStore(Strategy): ...
-
-
-@dataclass(frozen=True)
-class LLM(Strategy): ...
-
-
-@dataclass(frozen=True)
-class Benchmarking(Strategy): ...
 
 
 @dataclass(frozen=True)
@@ -75,14 +41,14 @@ class Cache:
 
 @dataclass(frozen=True)
 class Resources:
-    sources: Sources
+    sources: MultiStrategy
     cache: Cache = field(default_factory=Cache)
-    store: VectorStore | None = field(default=None)
+    store: Strategy | None = field(default=None)
     llm: Strategy | None = field(default=None)
 
 
 @dataclass(frozen=True)
 class Config:
     resources: Resources
-    experiments: Experiments
+    experiments: MultiStrategy
     benchmarking: list[Strategy]

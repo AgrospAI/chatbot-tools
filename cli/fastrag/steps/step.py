@@ -5,6 +5,7 @@ from typing import AsyncGenerator, ClassVar, Dict, List, override
 from rich.progress import Progress
 
 from fastrag.cache.cache import ICache
+from fastrag.config.config import Strategy
 from fastrag.events import Event
 from fastrag.plugins import PluginBase
 from fastrag.steps.logs import Loggable
@@ -13,7 +14,7 @@ from fastrag.steps.task import Task
 
 @dataclass
 class IStep(Loggable, PluginBase, ABC):
-    step: str
+    step: list[Strategy]
     progress: Progress
     task_id: int
     description: ClassVar[str] = "UNKNOWN STEP"

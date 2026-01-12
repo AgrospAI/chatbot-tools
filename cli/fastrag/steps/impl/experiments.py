@@ -8,7 +8,7 @@ from fastrag.steps.task import Task
 
 
 @dataclass
-class EmbeddingStep(IStep):
+class ExperimentsStep(IStep):
     description: ClassVar[str] = "EMBED"
     supported: ClassVar[str] = "embedding"
 

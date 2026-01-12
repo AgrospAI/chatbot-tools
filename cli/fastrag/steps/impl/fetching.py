@@ -2,7 +2,6 @@ from dataclasses import dataclass
 from typing import AsyncGenerator, ClassVar, Dict, override
 
 from fastrag.cache.cache import ICache
-from fastrag.config.config import Source
 from fastrag.events import Event
 from fastrag.plugins import inject
 from fastrag.steps.step import IStep
@@ -13,8 +12,6 @@ from fastrag.steps.task import Task
 class SourceStep(IStep):
     description: ClassVar[str] = "FETCH"
     supported: ClassVar[str] = "fetching"
-
-    step: list[Source]
 
     @override
     async def get_tasks(self, cache: ICache) -> Dict[Task, AsyncGenerator[Event, None]]:

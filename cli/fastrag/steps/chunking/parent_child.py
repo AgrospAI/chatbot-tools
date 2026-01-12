@@ -30,13 +30,14 @@ class ParentChildChunker(Task):
     ) -> AsyncGenerator[ChunkingEvent, None]:
         markdown_text = entry.path.read_text(encoding="utf-8")
 
-        process_func = partial(chunker_logic, markdown_text, uri, self.embedding_model)
-
         existed, result_entry = await self.cache.get_or_create(
             uri=f"{uri}.chunks.json",
-            contents=process_func,
-            step="chunking",
-            metadata={"source": uri, "strategy": ParentChildChunker.supported},
+            contents=partial(chunker_logic, markdown_text, uri, self.embedding_model),
+            metadata={
+                "step": "chunking",
+                "source": uri,
+                "strategy": ParentChildChunker.supported,
+            },
         )
 
         chunks_data = json.loads(result_entry.path.read_text())

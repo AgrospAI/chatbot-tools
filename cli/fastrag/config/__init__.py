@@ -1,13 +1,7 @@
 from fastrag.config.config import (
-    LLM,
-    Benchmarking,
     Cache,
     Chunking,
     Config,
-    Embedding,
-    Parsing,
-    Source,
-    VectorStore,
 )
 from fastrag.config.env import load_env_file
 from fastrag.config.loaders import IConfigLoader
@@ -15,13 +9,7 @@ from fastrag.config.loaders import IConfigLoader
 __all__ = [
     Config,
     Cache,
-    Benchmarking,
-    Source,
-    Parsing,
     Chunking,
-    Embedding,
-    VectorStore,
-    LLM,
     IConfigLoader,
     load_env_file,
 ]
