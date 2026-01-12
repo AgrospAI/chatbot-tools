@@ -1,7 +1,6 @@
 from fastrag.cache import ICache
 from fastrag.config import (
     Cache,
-    Chunking,
     Config,
     IConfigLoader,
     load_env_file,
@@ -22,7 +21,6 @@ __all__ = [
     ICache,
     Config,
     Cache,
-    Chunking,
     PathField,
     URLField,
     version,

@@ -12,13 +12,14 @@ class Strategy:
     params: dict
 
 
+Step: TypeAlias = list[Strategy]
 Steps: TypeAlias = dict[str, list[Strategy]]
 
 
 @dataclass(frozen=True)
 class MultiStrategy:
-    strategy: str
     steps: Steps
+    strategy: str = "async"
 
 
 @dataclass(frozen=True)
