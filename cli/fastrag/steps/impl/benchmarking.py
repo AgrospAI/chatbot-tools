@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import AsyncGenerator, ClassVar, Dict, override
+from typing import AsyncGenerator, ClassVar, override
 
 from fastrag.cache.cache import ICache
 from fastrag.events import Event
@@ -13,5 +13,5 @@ class BenchmarkingStep(IStep):
     description: ClassVar[str] = "BENCH"
 
     @override
-    async def get_tasks(self, cache: ICache) -> Dict[Task, AsyncGenerator[Event, None]]:
+    async def get_tasks(self, cache: ICache) -> dict[Task, list[AsyncGenerator[Event, None]]]:
         return {}

@@ -42,7 +42,7 @@ class FileParser(Task):
     ) -> AsyncGenerator[Event, None]:
         fmt: str = entry.metadata["format"]
         contents = partial(to_markdown, fmt, entry.path)
-        existed, _ = await self.cache.get_or_create(
+        existed, entry = await self.cache.get_or_create(
             uri=entry.path.resolve().absolute().as_uri(),
             contents=contents,
             metadata={
@@ -54,7 +54,8 @@ class FileParser(Task):
         object.__setattr__(self, "_parsed", self._parsed + 1)
         yield ParsingEvent(
             ParsingEvent.Type.PROGRESS,
-            ("Cached" if existed else "Parsing") + f" {fmt.upper()} {uri}",
+            ("Cached" if existed else "Parsing")
+            + f" {fmt.upper()} {entry.path.resolve().absolute().as_uri()}",
         )
 
     @override

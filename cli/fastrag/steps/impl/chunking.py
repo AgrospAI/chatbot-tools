@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import AsyncGenerator, ClassVar, Dict, List, override
+from typing import AsyncGenerator, ClassVar, override
 
 from fastrag.cache.cache import ICache
 from fastrag.events import Event
@@ -10,11 +10,11 @@ from fastrag.steps.task import Task
 
 @dataclass
 class ChunkingStep(IStep):
-    description: ClassVar[str] = "CHUNK"
     supported: ClassVar[str] = "chunking"
+    description: ClassVar[str] = "CHUNK"
 
     @override
-    async def get_tasks(self, cache: ICache) -> Dict[Task, List[AsyncGenerator[Event, None]]]:
+    async def get_tasks(self, cache: ICache) -> dict[Task, list[AsyncGenerator[Event, None]]]:
         tasks = {}
         for s in self.step:
             instance = inject(Task, s.strategy, cache=cache, **s.params)

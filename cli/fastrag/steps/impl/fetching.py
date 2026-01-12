@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import AsyncGenerator, ClassVar, Dict, override
+from typing import AsyncGenerator, ClassVar, override
 
 from fastrag.cache.cache import ICache
 from fastrag.events import Event
@@ -14,7 +14,7 @@ class FetchingStep(IStep):
     supported: ClassVar[str] = "fetching"
 
     @override
-    async def get_tasks(self, cache: ICache) -> Dict[Task, AsyncGenerator[Event, None]]:
+    async def get_tasks(self, cache: ICache) -> dict[Task, list[AsyncGenerator[Event, None]]]:
         return {
             inst: [inst.callback()]
             for inst in [inject(Task, s.strategy, cache=cache, **s.params) for s in self.step]

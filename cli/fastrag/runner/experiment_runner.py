@@ -16,7 +16,7 @@ from fastrag.cache.cache import ICache
 from fastrag.config.config import Steps
 from fastrag.plugins import inject
 from fastrag.runner.runner import IRunner
-from fastrag.steps.step import IStep
+from fastrag.steps.step import IMultiStep, IStep
 from fastrag.steps.task import Task
 
 
@@ -31,10 +31,6 @@ class ExperimentsRunner(IRunner):
         cache: ICache,
         starting_step_number: int = 0,
     ) -> int:
-        """
-        Runs all experiment combinations as ExperimentsStep, showing hierarchical
-        numbering in Rich progress without any print statements.
-        """
         with Progress(
             TextColumn("[progress.percentage]{task.description} {task.percentage:>3.0f}%"),
             BarColumn(),
@@ -55,14 +51,18 @@ class ExperimentsRunner(IRunner):
                 f"{main_idx}. EXPERIMENTS", total=len(experiment_combinations)
             )
 
-            experiments: list[tuple[int, IStep]] = []
+            experiments: list[tuple[int, IMultiStep]] = []
             for exp_idx, combination in enumerate(experiment_combinations, 1):
-                step_instance: IStep = inject(
-                    IStep,
+                step_dict = {
+                    step_names[i]: [strategy] for i, strategy in enumerate(combination)
+                }
+
+                step_instance = inject(
+                    IMultiStep,
                     "experiments",
                     progress=progress,
                     task_id=exp_idx,
-                    step=list(combination),
+                    step=step_dict,
                 )
                 experiments.append((exp_idx, step_instance))
 
@@ -71,7 +71,9 @@ class ExperimentsRunner(IRunner):
                     strat_task_ids = []
                     for strat_idx, strat in enumerate(step.step, 1):
                         numbering = f"{main_idx}.{exp_idx}.{strat_idx}"
-                        description = f"{numbering} {strat.strategy}"
+                        description = (
+                            f"{numbering} {step.get_steps()[strat_idx - 1].description}"
+                        )
                         task_id = progress.add_task(description, total=step.calculate_total())
                         strat_task_ids.append(task_id)
 

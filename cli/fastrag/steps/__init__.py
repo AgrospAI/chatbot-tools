@@ -1,5 +1,5 @@
-from fastrag.steps.benchmarking.events import BenchmarkingEvent
-from fastrag.steps.chunking.events import ChunkingEvent
+from fastrag.steps.benchmarking import BenchmarkingEvent
+from fastrag.steps.chunking import ChunkingEvent
 from fastrag.steps.embeddings import EmbeddingEvent
 from fastrag.steps.fetchers import FetchingEvent
 from fastrag.steps.impl.benchmarking import BenchmarkingStep
