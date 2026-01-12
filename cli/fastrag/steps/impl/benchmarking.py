@@ -13,5 +13,7 @@ class BenchmarkingStep(IStep):
     description: ClassVar[str] = "BENCH"
 
     @override
-    async def get_tasks(self, cache: ICache) -> dict[Task, list[AsyncGenerator[Event, None]]]:
-        return {}
+    async def get_tasks(
+        self, cache: ICache
+    ) -> AsyncGenerator[tuple[Task, list[AsyncGenerator[Event, None]]], None]:
+        yield ()

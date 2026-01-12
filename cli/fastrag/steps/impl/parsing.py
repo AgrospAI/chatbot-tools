@@ -16,8 +16,9 @@ class ParsingStep(IStep):
     description: ClassVar[str] = "PARSE"
 
     @override
-    async def get_tasks(self, cache: ICache) -> dict[Task, list[AsyncGenerator[Event, None]]]:
-        tasks = {}
+    async def get_tasks(
+        self, cache: ICache
+    ) -> AsyncGenerator[tuple[Task, list[AsyncGenerator[Event, None]]], None]:
         for s in self.step:
             instance = inject(Task, s.strategy, cache=cache, **s.params)
             entries = await cache.get_entries(
@@ -25,6 +26,4 @@ class ParsingStep(IStep):
                 & OrFilter([MetadataFilter(strategy=strat) for strat in s.params["use"]])
             )
 
-            tasks[instance] = [instance.callback(uri, entry) for uri, entry in entries]
-
-        return tasks
+            yield (instance, [instance.callback(uri, entry) for uri, entry in entries])

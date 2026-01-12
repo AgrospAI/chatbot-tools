@@ -14,8 +14,8 @@ class FetchingStep(IStep):
     supported: ClassVar[str] = "fetching"
 
     @override
-    async def get_tasks(self, cache: ICache) -> dict[Task, list[AsyncGenerator[Event, None]]]:
-        return {
-            inst: [inst.callback()]
-            for inst in [inject(Task, s.strategy, cache=cache, **s.params) for s in self.step]
-        }
+    async def get_tasks(
+        self, cache: ICache
+    ) -> AsyncGenerator[tuple[Task, list[AsyncGenerator[Event, None]]], None]:
+        for instance in [inject(Task, s.strategy, cache=cache, **s.params) for s in self.step]:
+            yield (instance, [instance.callback()])

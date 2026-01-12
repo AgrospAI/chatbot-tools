@@ -28,11 +28,6 @@ class IStep(Loggable, PluginBase, ABC):
         """
         return len(self.step) if self.step else 0
 
-    async def tasks(self, cache: ICache) -> dict[Task, list[AsyncGenerator[Event, None]]]:
-        if self._tasks is None:
-            self._tasks = await self.get_tasks(cache)
-        return self._tasks
-
     def completed_callback(self, task: Task) -> Event:
         """Callback to call when the task has been completed
 
@@ -66,7 +61,9 @@ class IStep(Loggable, PluginBase, ABC):
                 self.log_verbose(event)
 
     @abstractmethod
-    async def get_tasks(self, cache: ICache) -> dict[Task, list[AsyncGenerator[Event, None]]]:
+    async def get_tasks(
+        self, cache: ICache
+    ) -> AsyncGenerator[tuple[Task, list[AsyncGenerator[Event, None]]], None]:
         """Generate a dict with the tasks to perform
 
         Returns:

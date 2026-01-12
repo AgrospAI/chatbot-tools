@@ -27,12 +27,9 @@ class ExperimentsStep(IMultiStep):
         ]
 
     @override
-    async def get_tasks(self, cache: ICache) -> dict[Task, list[AsyncGenerator[Event, None]]]:
-        tasks = {}
-
+    async def get_tasks(
+        self, cache: ICache
+    ) -> AsyncGenerator[tuple[Task, list[AsyncGenerator[Event, None]]], None]:
         for step in self.get_steps():
-            step_tasks = await step.tasks(cache)
-            # Merge steps
-            tasks.update(step_tasks)
-
-        return tasks
+            async for task, generators in step.get_tasks(cache):
+                yield task, generators

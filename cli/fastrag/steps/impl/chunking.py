@@ -14,11 +14,10 @@ class ChunkingStep(IStep):
     description: ClassVar[str] = "CHUNK"
 
     @override
-    async def get_tasks(self, cache: ICache) -> dict[Task, list[AsyncGenerator[Event, None]]]:
-        tasks = {}
+    async def get_tasks(
+        self, cache: ICache
+    ) -> AsyncGenerator[tuple[Task, list[AsyncGenerator[Event, None]]], None]:
         for s in self.step:
             instance = inject(Task, s.strategy, cache=cache, **s.params)
             entries = await cache.get_entries(instance.filter)
-            tasks[instance] = [instance.callback(uri, entry) for uri, entry in entries]
-
-        return tasks
+            yield (instance, [instance.callback(uri, entry) for uri, entry in entries])
