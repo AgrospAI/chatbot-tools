@@ -237,7 +237,7 @@ We will present you with another `Task` example, this time the `HtmlParser`. In 
 @dataclass(frozen=True)
 class HtmlParser(Task):
     supported: ClassVar[str] = "HtmlParser"
-    filter: ClassVar[Filter] = StepFilter("fetching") & MetadataFilter(format="html")
+    filter: ClassVar[Filter] = MetadataFilter(step="fetching", format="html")
 
     @override
     async def callback(
@@ -264,9 +264,9 @@ This method signature implies that the data (cache entry) is being passed to the
 
 ```python
 # Rewrote for non-dataclasses
-filter: Filter = StepFilter("fetching") & MetadataFilter(format="html")
+filter: Filter = MetadataFilter(step="fetching", format="html")
 ```
 
-This `filter` uses two special subclasses of `Filter`, `StepFilter` that only accepts the given step name, in this case `"fetching"` and the `MetadataFilter`, which only accepts the cache entries that have the given kwargs in their metadata. The operator `&` joins both filters in an `AndFilter`, which is a basic filter that ensures all its sub-filters accept the given entry for it to accept it, in case it's needed, there is also an `OrFilter` with the operator `|`.
+This `filter` uses a special subclass of `Filter`, the `MetadataFilter`, which only accepts the cache entries that have the given _kwargs_ in their metadata. The operator `&` joins both filters in an `AndFilter`, which is a basic filter that ensures all its sub-filters accept the given entry for it to accept it, in case it's needed, there is also an `OrFilter` with the operator `|`.
 
 > **NOTE** that for every entry compliant with the given filter, with the default `Step` implementations, an `asyncio.Task` will be created and waited for.

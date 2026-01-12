@@ -1,5 +1,4 @@
 import os
-import shutil
 from pathlib import Path
 from typing import Annotated
 
@@ -12,16 +11,16 @@ from rich.pretty import Pretty
 from fastrag import (
     DEFAULT_CONFIG,
     Config,
-    Constants,
     IConfigLoader,
     IRunner,
     PluginRegistry,
     import_plugins,
-    init_constants,
     inject,
     load_env_file,
     version,
 )
+from fastrag.cache.cache import ICache
+from fastrag.steps.logs import Loggable
 
 app = typer.Typer(help="FastRAG CLI", add_completion=False)
 console = Console()
@@ -66,12 +65,13 @@ def serve(
     )
 
     console.quiet = not verbose
+    Loggable.is_verbose = verbose
 
     # Load plugins before config
     load_plugins(plugins)
 
     # Load configuration
-    cfg = load_config(config, verbose)
+    cfg = load_config(config)
 
     # Import and initialize serve module
     from fastrag.serve import init_serve, start_server
@@ -99,27 +99,30 @@ def clean(
             confirmation_prompt=True,
         ),
     ] = False,
+    config: Annotated[
+        Path,
+        typer.Argument(help="Path to the config file."),
+    ] = DEFAULT_CONFIG,
+    plugins: Annotated[
+        Path | None,
+        typer.Option("--plugins", "-p", help="Path to the plugins directory."),
+    ] = None,
 ):
-    """Clean the caches"""
+    """Clean the cache"""
 
     if not sure:
         raise typer.Abort()
 
-    path = Constants.global_cache()
-    if not path.exists():
-        console.print(f"[bold red]Could not find global cache at {path}[/bold red]")
-        raise typer.Abort()
+    # Load plugins before config
+    load_plugins(plugins)
+    config: Config = load_config(config)
 
-    with open(Constants.global_cache()) as f:
-        lines = f.readlines()
-        size = 0
-        for path in lines:
-            size += sum(p.stat().st_size for p in Path(path).rglob("*") if p.is_file())
-            shutil.rmtree(path)
+    cache = inject(
+        ICache, config.resources.cache.strategy, lifespan=config.resources.cache.lifespan
+    )
+    size = cache.clean()
 
-        console.print(f"[bold green] Deleted {humanize.naturalsize(size)}[/bold green]")
-
-        Constants.global_cache().unlink()
+    console.print(f"[bold green] Deleted {humanize.naturalsize(size)}[/bold green]")
 
 
 @app.command()
@@ -158,20 +161,28 @@ def run(
     )
 
     console.quiet = not verbose
+    Loggable.is_verbose = verbose
 
     # Load plugins before config
     load_plugins(plugins)
-    config: Config = load_config(config, verbose)
+    config: Config = load_config(config)
+    cache: ICache = inject(
+        ICache, config.resources.cache.strategy, lifespan=config.resources.cache.lifespan
+    )
 
-    inject(IRunner, config.steps.strategy).run(config, step)
+    ran = inject(IRunner, config.resources.sources.strategy).run(
+        config.resources.sources.steps, cache, step
+    )
+    ran = inject(IRunner, config.experiments.strategy).run(
+        config.experiments.steps, cache, step, starting_step_number=ran
+    )
 
 
-def load_config(path: Path, verbose: bool) -> Config:
+def load_config(path: Path) -> Config:
     # Load environment variables from .env file before loading config
     load_env_file()
 
     config = inject(IConfigLoader, path.suffix).load(path)
-    init_constants(config, verbose)
     console.print(
         Panel(
             Pretty(config),

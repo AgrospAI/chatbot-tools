@@ -1,8 +1,7 @@
 from __future__ import annotations
 
-from dataclasses import InitVar, asdict, dataclass, field
-from pathlib import Path
-from typing import Literal, TypeAlias, TypeVar
+from dataclasses import InitVar, dataclass, field
+from typing import ClassVar, TypeAlias
 
 from fastrag.helpers.utils import parse_to_seconds
 
@@ -11,6 +10,21 @@ from fastrag.helpers.utils import parse_to_seconds
 class Strategy:
     strategy: str
     params: dict
+
+
+Steps: TypeAlias = dict[str, list[Strategy]]
+
+
+@dataclass(frozen=True)
+class Sources:
+    steps: Steps
+    strategy: str = "async"
+
+
+@dataclass(frozen=True)
+class Experiments:
+    steps: Steps
+    strategy: str = "async"
 
 
 @dataclass(frozen=True)
@@ -42,47 +56,33 @@ class Benchmarking(Strategy): ...
 
 
 @dataclass(frozen=True)
-class Steps:
-    fetching: list[Source] | None
-    parsing: list[Parsing] | None
-    chunking: list[Chunking] | None
-    embedding: list[Embedding] | None
-    benchmarking: list[Benchmarking] | None
-
-    strategy: str = "async"
-    asdict = asdict
-
-
-StepNames: TypeAlias = Literal[
-    "fetching",
-    "parsing",
-    "chunking",
-    "embedding",
-    "benchmarking",
-]
-T = TypeVar("T", bound=Source | Parsing | Chunking | Embedding | Benchmarking)
-Step = list[T]
-
-
-@dataclass(frozen=True)
 class Cache:
-    path: Path
-    strategy: str
+    strategy: str = field(default="local")
     _lifespan: int = field(init=False)
 
-    lifespan: InitVar[str]
+    lifespan: InitVar[str | None]
+    default_lifespan: ClassVar[str] = "1d"
 
     @property
     def lifespan(self) -> int:
         return self._lifespan
 
     def __post_init__(self, lifespan: str) -> None:
-        object.__setattr__(self, "_lifespan", parse_to_seconds(lifespan))
+        object.__setattr__(
+            self, "_lifespan", parse_to_seconds(lifespan or Cache.default_lifespan)
+        )
+
+
+@dataclass(frozen=True)
+class Resources:
+    sources: Sources
+    cache: Cache = field(default_factory=Cache)
+    store: VectorStore | None = field(default=None)
+    llm: Strategy | None = field(default=None)
 
 
 @dataclass(frozen=True)
 class Config:
-    cache: Cache
-    steps: Steps
-    vectorstore: VectorStore | None = None
-    llm: LLM | None = None
+    resources: Resources
+    experiments: Experiments
+    benchmarking: list[Strategy]

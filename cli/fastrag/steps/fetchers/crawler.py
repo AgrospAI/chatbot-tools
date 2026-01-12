@@ -150,8 +150,8 @@ class CrawlerFetcher(Task):
                             await self.cache.create(
                                 url,
                                 html.encode(),
-                                "fetching",
                                 {
+                                    "step": "fetching",
                                     "format": "html",
                                     "strategy": CrawlerFetcher.supported,
                                     "depth": depth,

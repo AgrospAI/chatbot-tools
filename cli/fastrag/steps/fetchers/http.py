@@ -32,8 +32,11 @@ class HttpFetcher(Task):
         await self.cache.create(
             self.url,
             res.text.encode(),
-            "fetching",
-            {"format": "html", "strategy": HttpFetcher.supported},
+            {
+                "step": "fetching",
+                "format": "html",
+                "strategy": HttpFetcher.supported,
+            },
         )
 
     @override

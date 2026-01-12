@@ -15,7 +15,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
-from fastrag import ILLM, Config, init_constants
+from fastrag import ILLM, Config
 from fastrag.config.env import load_env_file
 from fastrag.plugins import import_plugins, inject
 from fastrag.settings import DEFAULT_CONFIG
@@ -33,29 +33,29 @@ def init_serve(app_config: Config) -> None:
 
     config = app_config
 
-    if config.vectorstore is None:
+    if config.resources.store is None:
         raise ValueError("Vector store configuration is required for serve command")
 
-    if config.llm is None:
+    if config.resources.llm is None:
         raise ValueError("LLM configuration is required for serve command")
 
     # Get the embedding model instance
-    if not config.steps.embedding:
+    if "embedding" not in config.experiments.steps.keys():
         raise ValueError("Embedding configuration is required for vector store")
 
-    embedding_config = config.steps.embedding[0]
+    embedding_config = config.experiments.steps["embedding"][0]
     embedding_model = inject(IEmbeddings, embedding_config.strategy, **embedding_config.params)
 
     # Initialize vector store with embedding model
     vector_store = inject(
         IVectorStore,
-        config.vectorstore.strategy,
+        config.resources.store.strategy,
         embedding_model=embedding_model,
-        **config.vectorstore.params,
+        **config.resources.store.params,
     )
 
     # Initialize LLM
-    llm = inject(ILLM, config.llm.strategy, **config.llm.params)
+    llm = inject(ILLM, config.resources.llm.strategy, **config.resources.llm.params)
 
 
 @asynccontextmanager
@@ -137,7 +137,6 @@ def create_app() -> FastAPI:
     cfg: Config = loader.load(cfg_path)
 
     # Initialize constants and serve components
-    init_constants(cfg, False)
     init_serve(cfg)
 
     app = _make_app()
@@ -147,7 +146,7 @@ def create_app() -> FastAPI:
         print(f"Received question: {req.question}")
 
         # Get the embedding for the query
-        embedding_config = config.steps.embedding[0]
+        embedding_config = config.experiments.steps["embeddings"][0]
         embedding_model = inject(
             IEmbeddings, embedding_config.strategy, **embedding_config.params
         )

@@ -7,8 +7,6 @@ from fastrag.config.config import (
     Embedding,
     Parsing,
     Source,
-    Step,
-    Steps,
     VectorStore,
 )
 from fastrag.config.env import load_env_file
@@ -16,8 +14,6 @@ from fastrag.config.loaders import IConfigLoader
 
 __all__ = [
     Config,
-    Steps,
-    Step,
     Cache,
     Benchmarking,
     Source,
