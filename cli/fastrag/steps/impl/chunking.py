@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import AsyncGenerator, ClassVar, Dict, override
+from typing import AsyncGenerator, ClassVar, Dict, List, override
 
 from fastrag.cache.cache import ICache
 from fastrag.config.config import Chunking
@@ -7,6 +7,7 @@ from fastrag.events import Event
 from fastrag.steps.step import IStep
 from fastrag.steps.task import Task
 from fastrag.plugins import PluginRegistry, inject
+
 
 
 @dataclass
