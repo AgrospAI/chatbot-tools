@@ -1,0 +1,13 @@
+packages:
+- '.'
+
+onlyBuiltDependencies:
+- '@parcel/watcher'
+- msw
+- sharp
+- unrs-resolver
+
+publicHoistPattern:
+- '*'
+
+shamefullyHoist: true

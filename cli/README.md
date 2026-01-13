@@ -1,4 +1,5 @@
 # FastRAG CLI
+
 [![PyPI](https://img.shields.io/pypi/v/fastrag-cli?label=pypi&style=flat-square)](https://pypi.org/project/fastrag-cli/)
 
 **Installation**
@@ -25,7 +26,7 @@ To run your own configuration workflow `config.yaml` with verbosity.
 fastrag run -v config.yaml
 ```
 
-To run your own configuration workflow `config.yaml` and stop execution after *Step 1*.
+To run your own configuration workflow `config.yaml` and stop execution after _Step 1_.
 
 ```bash
 fastrag run -v config.yaml --step 1
@@ -62,27 +63,26 @@ typer ./fastrag/__main__.py utils docs > USAGE.md
 The main benefit of using plugins is being able to expand the workflow execution capabilities, which requires to understand how it works, as of now, the core components forming FastRAG are:
 
 - **_ICache_** handles the caching capabilities of the workflow.
-    - Implementation provided for `LocalCache (supported="local")`.
+  - Implementation provided for `LocalCache (supported="local")`.
 - **_IConfigLoader_** provides a loading method to transform the given config file into a configuration object.
-    - Implementation provided for `YamlLoader (supported=[".yaml", ".yml"])` (will decide based on configuration file extension).
+  - Implementation provided for `YamlLoader (supported=[".yaml", ".yml"])` (will decide based on configuration file extension).
 - **_IRunner_** orchestrates the steps in the configuration object.
-    - Implementation provided for `AsyncRunner (supported="async")`.
+  - Implementation provided for `AsyncRunner (supported="async")`.
 - **_IStep_** defines the tasks to be performed in every step, handles the communication of data between steps.
-    - Implementation provided for `Fetching (supported="fetching")`, `Parsing (supported="parsing")`, `Chunking (supported="chunking")`, `Embedding (supported="embedding")` and `Benchmarking (supported="benchmarking")`.
+  - Implementation provided for `Fetching (supported="fetching")`, `Parsing (supported="parsing")`, `Chunking (supported="chunking")`, `Embedding (supported="embedding")` and `Benchmarking (supported="benchmarking")`.
 - **_Task_** executes the declared task.
-    - Implementation provided for:
-        - `Fetching`: 
-            - `HttpFetcher (supported=["URL"])`
-            - `LocalFetcher (supported=["Path"]) `
-            - `SitemapXMLFetcher (supported=["SitemapXML"])`
-            - `CrawlerFetcher (supported=["Crawling"]) `
-        - `Parsing`:
-            - `HtmlParser (supported=["HtmlParser"])`
-            - `FileParser (supported=["FileParser"])`
-        - `Chunking`:
-        - `Embedding`:
-        - `Benchmarking`:
-
+  - Implementation provided for:
+    - `Fetching`:
+      - `HttpFetcher (supported=["URL"])`
+      - `LocalFetcher (supported=["Path"]) `
+      - `SitemapXMLFetcher (supported=["SitemapXML"])`
+      - `CrawlerFetcher (supported=["Crawling"]) `
+    - `Parsing`:
+      - `HtmlParser (supported=["HtmlParser"])`
+      - `FileParser (supported=["FileParser"])`
+    - `Chunking`:
+    - `Embedding`:
+    - `Benchmarking`:
 
 Providing a new implementation for any of these components is as easy as inheriting from them and executing _fastRAG_ with the plugin base dir as:
 
@@ -137,11 +137,11 @@ Here we can see a few things, first of all, we have our class which inherits fro
 ```python
 class HttpFetcher(Task):
     # It supports using it as URL
-    supported: str = "URL" 
+    supported: str = "URL"
 
 class HttpFetcher(Task):
     # It supports using both URL or HTTP
-    supported: str = ["URL", "HTTP"] 
+    supported: str = ["URL", "HTTP"]
 ```
 
 This `supported` attribute is the one that must match the configuration step strategy and will be used when deciding which implementation to use.
@@ -180,7 +180,7 @@ async def callback(self) -> AsyncGenerator[Event, None]:
     ...
 ```
 
-As shown in the type hinting, the method is expected to *yield* events, we provide an event base class and some subclasses for each workflow step. These events are nothing but feedback to show in the terminal (behaviour defined in `Step`). In this shown example, we only show feedback upon failure.
+As shown in the type hinting, the method is expected to _yield_ events, we provide an event base class and some subclasses for each workflow step. These events are nothing but feedback to show in the terminal (behaviour defined in `Step`). In this shown example, we only show feedback upon failure.
 
 ```python
 async def callback(self) -> AsyncGenerator[Event, None]:
@@ -225,7 +225,8 @@ async def callback(self) -> AsyncGenerator[Event, None]:
     )
 ```
 
-The cache main methods are those two: 
+The cache main methods are those two:
+
 - `is_present`: Check for cache entry existence given a **URI**. Also checks for lifetime validity in case of `LocalCache`.
 - `create`: Creates a new cache entry given its **uri** (in this case the url), **contents**, **step** (in this case fetching) and **metadata** (arbitrary data). Besides the given data, the entries will also contain a **timestamp** and **path**.
 
