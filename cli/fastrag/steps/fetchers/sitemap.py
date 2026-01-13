@@ -19,7 +19,7 @@ class SitemapXMLFetcher(Task):
     url: URLField = URLField()
 
     @override
-    async def callback(self) -> AsyncGenerator[Event, None]:
+    async def run(self) -> AsyncGenerator[Event, None]:
         # 1. Fetch sitemap
         res = httpx.get(self.url)
         res.raise_for_status()
@@ -48,19 +48,22 @@ class SitemapXMLFetcher(Task):
             tasks = [self.fetch_async(client, url) for url in urls]
             results = await asyncio.gather(*tasks)
 
-        for event in results:
+        self._set_results([])
+        for entry, event in results:
+            self.results.append(entry)
             yield event
 
     async def fetch_async(self, client, url: str):
         if self.cache.is_present(url):
-            return Event(Event.Type.PROGRESS, f"Cached {url}")
+            entry = await self.cache.get(url)
+            return entry, Event(Event.Type.PROGRESS, f"Cached {url}")
 
         try:
             res = await client.get(url)
         except Exception as e:
-            return Event(Event.Type.EXCEPTION, f"ERROR: {e}")
+            return None, Event(Event.Type.EXCEPTION, f"ERROR: {e}")
 
-        await self.cache.create(
+        entry = await self.cache.create(
             url,
             res.text.encode(),
             {
@@ -69,7 +72,7 @@ class SitemapXMLFetcher(Task):
                 "strategy": SitemapXMLFetcher.supported,
             },
         )
-        return Event(Event.Type.PROGRESS, f"Fetching {url}")
+        return entry, Event(Event.Type.PROGRESS, f"Fetching {url}")
 
     @override
     def completed_callback(self) -> Event:

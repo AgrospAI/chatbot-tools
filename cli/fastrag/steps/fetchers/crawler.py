@@ -42,7 +42,7 @@ class CrawlerFetcher(Task):
         )
 
     @override
-    async def callback(self) -> AsyncGenerator[Event, None]:
+    async def run(self) -> AsyncGenerator[Event, None]:
         self._visited.clear()
 
         queue: asyncio.Queue[tuple[str, int]] = asyncio.Queue()

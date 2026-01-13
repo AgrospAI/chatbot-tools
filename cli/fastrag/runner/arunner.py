@@ -17,7 +17,6 @@ from fastrag.config.config import Steps
 from fastrag.plugins import inject
 from fastrag.runner.runner import IRunner
 from fastrag.steps.step import IStep
-from fastrag.steps.task import Task
 
 
 @dataclass(frozen=True)
@@ -45,9 +44,10 @@ class Runner(IRunner):
                 inject(
                     IStep,
                     step,
-                    progress=progress,
                     task_id=idx,
+                    progress=progress,
                     step=steps[step],
+                    cache=cache,
                 )
                 for idx, step in enumerate(steps)
             ]
@@ -62,7 +62,7 @@ class Runner(IRunner):
                         total=step.calculate_total(),
                     )
 
-                    async for task, generators in step.get_tasks(cache):
+                    async for task, generators in step.get_tasks():
 
                         async def consume(gen):
                             async for event in gen:

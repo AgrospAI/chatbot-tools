@@ -1,4 +1,6 @@
 from fastrag.events import Event
+from fastrag.steps.benchmarking.chunk_quality import ChunkQualityBenchmarking
+from fastrag.steps.benchmarking.queryset import QuerySetBenchmarking
 from fastrag.steps.chunking import ParentChildChunker
 from fastrag.steps.embeddings import SelfHostedEmbeddings
 from fastrag.steps.fetchers import CrawlerFetcher, HttpFetcher, PathFetcher, SitemapXMLFetcher
@@ -30,4 +32,6 @@ __all__ = [
     FileParser,
     ParentChildChunker,
     SelfHostedEmbeddings,
+    QuerySetBenchmarking,
+    ChunkQualityBenchmarking,
 ]

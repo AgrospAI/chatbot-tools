@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import ClassVar, override
 
 from fastrag.cache.filters import MetadataFilter
@@ -14,13 +14,14 @@ class SelfHostedEmbeddings(Task):
     supported: ClassVar[list[str]] = ["OpenAI-Simple", "openai", "openai-simple"]
     filter: ClassVar[Filter] = MetadataFilter(step="chunking")
 
-    model: str
-    api_key: str
-    url: str
+    model: str = field()
+    api_key: str = field(repr=False)
+    url: str = field()
 
     @override
-    async def callback(self, uri=None, entry=None):
+    async def run(self, uri=None, entry=None):
         yield Event(Event.Type.PROGRESS, f"Embedding {uri} TODO")
+        self._set_results([])
         return
 
     @override

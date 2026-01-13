@@ -1,5 +1,5 @@
 import asyncio
-from dataclasses import dataclass, field
+from dataclasses import InitVar, dataclass, field
 from itertools import product
 from typing import ClassVar, override
 
@@ -14,6 +14,7 @@ from rich.progress import (
 
 from fastrag.cache.cache import ICache
 from fastrag.config.config import Steps
+from fastrag.helpers.experiments import Experiments
 from fastrag.plugins import inject
 from fastrag.runner.runner import IRunner
 from fastrag.steps.step import IMultiStep
@@ -23,7 +24,14 @@ from fastrag.steps.step import IMultiStep
 class ExperimentsRunner(IRunner):
     supported: ClassVar[str] = "async_experiments"
 
-    max_concurrent: int = field(default=5)
+    max_concurrent: InitVar[int] = field(default=5)
+
+    _benchmarking_steps: Steps | None = field(default=None, init=False, repr=False)
+    _semaphore: asyncio.Semaphore | None = field(default=None, init=False, repr=False)
+
+    def __post_init__(self, max_concurrent: int) -> None:
+        semaphore = asyncio.Semaphore(max_concurrent) if max_concurrent else None
+        object.__setattr__(self, "_semaphore", semaphore)
 
     @override
     def run(
@@ -41,6 +49,11 @@ class ExperimentsRunner(IRunner):
             TextColumn("•"),
             TimeRemainingColumn(),
         ) as progress:
+            is_benchmarking = "benchmarking" in steps.keys()
+            if is_benchmarking:
+                benchmarking = steps.pop("benchmarking")
+                object.__setattr__(self, "_benchmarking_steps", benchmarking)
+
             step_names = list(steps.keys())
             strategy_lists = [steps[name] for name in step_names]
             experiment_combinations = list(product(*strategy_lists))
@@ -52,34 +65,32 @@ class ExperimentsRunner(IRunner):
                 total=len(experiment_combinations),
             )
 
-            experiments: list[IMultiStep] = []
-
-            for exp_idx, combination in enumerate(experiment_combinations, start=1):
+            experiments: Experiments = []
+            for idx, combination in enumerate(experiment_combinations):
                 step_dict = {
                     step_names[i]: [strategy] for i, strategy in enumerate(combination)
                 }
-
-                step_instance: IMultiStep = inject(
-                    IMultiStep,
-                    "experiments",
-                    progress=progress,
-                    task_id=exp_idx,
-                    step=step_dict,
+                step_dict["benchmarking"] = benchmarking
+                experiments.append(
+                    inject(
+                        IMultiStep,
+                        "experiments",
+                        task_id=idx,
+                        progress=progress,
+                        step=step_dict,
+                        cache=cache,
+                    )
                 )
 
-                experiments.append(step_instance)
-
-            semaphore = asyncio.Semaphore(self.max_concurrent) if self.max_concurrent else None
-
             async def run_single_experiment(exp_idx: int, experiment: IMultiStep):
-                if semaphore:
-                    async with semaphore:
+                if self._semaphore:
+                    async with self._semaphore:
                         await _run_experiment(exp_idx, experiment)
                 else:
                     await _run_experiment(exp_idx, experiment)
 
             async def _run_experiment(exp_idx: int, experiment: IMultiStep):
-                async for task, generators in experiment.get_tasks(cache):
+                async for task, generators in experiment.get_tasks():
                     task_name = task.supported
                     if isinstance(task_name, list):
                         task_name = task_name[0]
@@ -108,5 +119,8 @@ class ExperimentsRunner(IRunner):
                 )
 
             asyncio.run(run_all())
+
+            for experiment in experiments:
+                print(experiment.results)
 
             return len(experiment_combinations)
