@@ -13,6 +13,7 @@ from fastrag.cache.filters import MetadataFilter
 from fastrag.events import Event
 from fastrag.helpers.filters import Filter
 from fastrag.steps.task import Task
+from fastrag.helpers.markdown_utils import clean_markdown, normalize_metadata
 
 
 @dataclass(frozen=True)
@@ -57,12 +58,15 @@ class ParentChildChunker(Task):
             f"{status} {self._chunked} chunks",
         )
 
+
     def chunker_logic(self, uri: str, entry: CacheEntry) -> bytes:
-        text = entry.path.read_text(encoding="utf-8")
+        raw_text = entry.path.read_text(encoding="utf-8")
+        text, raw_metadata = clean_markdown(raw_text)
+        metadata = normalize_metadata(raw_metadata, uri)
 
         embed_model = HuggingFaceEmbeddings(model_name=self.embedding_model)
         parent_splitter = MarkdownHeaderTextSplitter(
-            headers_to_split_on=[("#", "Header 1"), ("##", "Header 2"), ("###", "Header 3")]
+            headers_to_split_on=[("#", "header_1"), ("##", "header_2"), ("###", "header_3")]
         )
         child_splitter = SemanticChunker(
             embeddings=embed_model, breakpoint_threshold_type="percentile"
@@ -72,26 +76,25 @@ class ParentChildChunker(Task):
         parent_docs = parent_splitter.split_text(text)
 
         for p_doc in parent_docs:
-            headers = [p_doc.metadata.get(k, "") for k in ["Header 1", "Header 2", "Header 3"]]
+            headers = [p_doc.metadata.get(k, "") for k in ["header_1", "header_2", "header_3"]]
             title_path = " > ".join(filter(None, headers))
 
+            context_header = f'Context: {title_path}'
+            if (metadata['description']):
+                context_header += f'\nSummary: {metadata["description"]}'
+
             parent_content = (
-                f"Context: {title_path}\n\n{p_doc.page_content}"
-                if title_path
-                else p_doc.page_content
+                f"{context_header}\n\n{p_doc.page_content}"
             )
             parent_id = str(uuid.uuid4())
 
+            final_metadata = {**metadata, **p_doc.metadata, "chunk_type": "parent", "title_path": title_path}
+            
             all_chunks.append(
                 {
                     "chunk_id": parent_id,
                     "content": parent_content,
-                    "metadata": {
-                        **p_doc.metadata,
-                        "source": uri,
-                        "chunk_type": "parent",
-                        "title_path": title_path,
-                    },
+                    "metadata": final_metadata,
                     "level": "parent",
                     "parent_id": None,
                 }
@@ -103,8 +106,7 @@ class ParentChildChunker(Task):
                         "chunk_id": str(uuid.uuid4()),
                         "content": parent_content,
                         "metadata": {
-                            **p_doc.metadata,
-                            "source": uri,
+                            **final_metadata,
                             "chunk_type": "child",
                         },
                         "level": "child",
@@ -128,8 +130,7 @@ class ParentChildChunker(Task):
                         "chunk_id": str(uuid.uuid4()),
                         "content": child_content,
                         "metadata": {
-                            **p_doc.metadata,
-                            "source": uri,
+                            **final_metadata,
                             "chunk_type": "child",
                             "child_index": i,
                         },
