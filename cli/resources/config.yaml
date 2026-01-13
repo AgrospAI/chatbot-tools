@@ -55,14 +55,14 @@ experiments:
     embedding:
       - strategy: OpenAI-Simple
         params:
-          model: nomic-embed-text:latest
+          model: mxbai-embed-large:latest
           api_key: ${CHAT_API_KEY}
-          url: https://chat.agrospai.udl.cat/api/embeddings
+          url: https://chat.agrospai.udl.cat/ollama/api/embed
       - strategy: openai-simple
         params:
-          model: nomic-embed-text:latest
+          model: mxbai-embed-large:latest
           api_key: ${CHAT_API_KEY}
-          url: https://chat.agrospai.udl.cat/api/embeddings
+          url: https://chat.agrospai.udl.cat/ollama/api/embed
 benchmarking:
   - strategy: ...
     params:
