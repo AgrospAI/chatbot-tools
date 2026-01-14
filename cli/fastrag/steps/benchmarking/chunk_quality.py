@@ -1,13 +1,13 @@
 import json
 import re
 from dataclasses import dataclass, field
-from typing import AsyncGenerator, ClassVar, Dict, List, override
+from typing import ClassVar, Dict, List, override
 
 import numpy as np
 from langchain_core.documents import Document
 
 from fastrag.events import Event
-from fastrag.steps.task import Task
+from fastrag.steps.task import Run, Task
 
 
 def calculate_corpus_quality(docs: List[Document]) -> Dict:
@@ -137,7 +137,7 @@ class ChunkQualityBenchmarking(Task):
     _quality: dict = field(default_factory=dict, repr=False)
 
     @override
-    async def run(self) -> AsyncGenerator[Event, None]:
+    async def run(self) -> Run:
         chunking_tasks = self.experiment.tasks("chunking")
 
         qualities = []

@@ -2,19 +2,31 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from dataclasses import InitVar, dataclass, field
-from typing import TYPE_CHECKING, Any, AsyncGenerator, ClassVar, override
+from typing import TYPE_CHECKING, AsyncGenerator, ClassVar, TypeAlias, override
 
 from rich.progress import Progress
 
 from fastrag.cache.cache import ICache
 from fastrag.config.config import Step, Steps
 from fastrag.events import Event
+from fastrag.llms.llm import ILLM
 from fastrag.plugins import PluginBase, inject
 from fastrag.steps.logs import Loggable
+from fastrag.stores.store import IVectorStore
 
 if TYPE_CHECKING:
     from fastrag.runner.experiment_runner import Experiment
     from fastrag.steps.task import Task
+
+
+@dataclass(frozen=True)
+class RuntimeResources:
+    cache: ICache
+    store: IVectorStore
+    llm: ILLM
+
+
+Tasks: TypeAlias = AsyncGenerator[tuple["Task", list[AsyncGenerator[Event, None]]], None]
 
 
 @dataclass
@@ -23,9 +35,10 @@ class IStep(Loggable, PluginBase, ABC):
 
     task_id: int = field(default=-1)
     step: Step = field(default_factory=list)
-    cache: ICache = field(default=None, compare=False, repr=False)
     progress: Progress = field(default=None, compare=False, repr=False)
-    _tasks: list[Task] = field(default_factory=list, init=False, hash=False, repr=False)
+    resources: RuntimeResources = field(default=None, compare=False, repr=False)
+
+    _tasks: list[Task] = field(init=False, default_factory=list, hash=False, repr=False)
 
     experiment: InitVar[Experiment | None] = None
 
@@ -39,21 +52,15 @@ class IStep(Loggable, PluginBase, ABC):
                 Task,
                 s.strategy,
                 experiment=experiment,
-                cache=self.cache,
+                resources=self.resources,
                 **s.params or {},
             )
             for s in self.step
         ]
 
-    def get_results(self) -> dict[Task, any]:
-        """Get the sub-results of the subtasks that make this step
-
-        Returns:
-            dict[Task, any]: each task and their results
-        """
-        from fastrag.steps.task import Task
-
-        return {t: t.results for t in self._tasks if isinstance(t, Task)}
+    @property
+    def cache(self) -> ICache:
+        return self.resources.cache
 
     def calculate_total(self) -> int:
         """Calculates the number of tasks to perform by this step
@@ -84,13 +91,11 @@ class IStep(Loggable, PluginBase, ABC):
                 self.log_verbose(event)
 
     @abstractmethod
-    async def get_tasks(
-        self,
-    ) -> AsyncGenerator[tuple[Task, list[AsyncGenerator[Event, None]]], None]:
+    async def get_tasks(self) -> Tasks:
         """Generate a dict with the tasks to perform
 
         Returns:
-            dict[Task, list[AsyncGenerator[Event, None]]]: Task instance - Its list of callbacks
+            Tasks: dict with Task instance - Async generator of callbacks
         """
 
         raise NotImplementedError
@@ -102,7 +107,8 @@ class IMultiStep(IStep):
 
     _tasks: list[IStep] = field(default_factory=list, init=False, hash=False, repr=False)
     results: str = field(default="")
-    experiment: InitVar[Experiment | None] = None
+
+    experiment: InitVar[any] = None
 
     def __post_init__(self, experiment: Experiment | None = None) -> None:
         super(IStep, self).__post_init__()
@@ -118,19 +124,18 @@ class IMultiStep(IStep):
                 task_id=idx,
                 progress=self.progress,
                 step=step,
-                cache=self.cache,
+                resources=self.resources,
             )
             for idx, (strat, step) in enumerate(self.step.items())
         ]
 
         lines = []
-
         for task in self._tasks:
             task_name = task.__class__.__name__
-            lines.append(f"  ● {task_name}")
+            lines.append(f"\t{task_name}:")
 
             for strat in task.step:
-                lines.append(f"      └─ {strat.strategy}")
+                lines.append(f"\t└─ {strat.strategy}")
 
         self.results = f"Experiment #{self.task_id + 1}:\n{'\n'.join(lines)}"
 

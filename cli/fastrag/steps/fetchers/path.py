@@ -1,12 +1,12 @@
 from dataclasses import dataclass
 from pathlib import Path
-from typing import AsyncGenerator, ClassVar, override
+from typing import ClassVar, override
 
 import humanize
 
 from fastrag.events import Event
 from fastrag.helpers import PathField
-from fastrag.steps.task import Task
+from fastrag.steps.task import Run, Task
 
 
 def get_uri(p: Path) -> str:
@@ -29,7 +29,7 @@ class PathFetcher(Task):
     path: PathField = PathField()
 
     @override
-    async def run(self) -> AsyncGenerator[Event, None]:
+    async def run(self) -> Run:
         yield Event(
             Event.Type.PROGRESS,
             f"Copying local files ({humanize.naturalsize(self.path.stat().st_size)})",
