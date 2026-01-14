@@ -35,11 +35,11 @@ resources:
         #     depth: 3
         #     delay: 0
       parsing:
-        # - strategy: HtmlParser
-        #   params:
-        #     use:
-        #       - Sitemap
-        #       - Crawling
+        - strategy: HtmlParser
+          params:
+            use:
+              - SitemapXML
+              - Crawling
         - strategy: FileParser
           params:
             use:

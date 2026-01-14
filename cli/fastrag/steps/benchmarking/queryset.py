@@ -63,7 +63,6 @@ def score_answer(question: Question) -> float:
 
         # Conservative combination
         score = max(edit_score, token_score)
-
         best_score = max(best_score, score)
 
     # Clamp defensively
@@ -103,8 +102,11 @@ class QuerySetBenchmarking(Task):
         for a in answers:
             yield Event(Event.Type.PROGRESS, f"Question: {a.question}, LLM: {a.answer}")
 
+        overall_score = sum(a.score for a in answers) / len(answers)
+        self.experiment.save_results(f"\nQuerySetBenchmarking overall score: {overall_score}")
+
         if self._questions:
-            object.__setattr__(self, "_score", sum(a.score for a in answers) / len(answers))
+            object.__setattr__(self, "_score", overall_score)
 
     @override
     def completed_callback(self) -> Event:
