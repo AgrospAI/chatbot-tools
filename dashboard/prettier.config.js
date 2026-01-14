@@ -5,5 +5,5 @@ export default {
   trailingComma: "all",
   sortingMethod: "alphabetical",
   plugins: ["prettier-plugin-tailwindcss", "prettier-plugin-sort-imports"],
-  tailwindStylesheet: "./app/globals.css",
+  tailwindStylesheet: "./styles/globals.css",
 }
