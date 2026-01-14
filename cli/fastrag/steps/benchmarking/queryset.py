@@ -4,10 +4,7 @@ from dataclasses import InitVar, dataclass, field
 from difflib import SequenceMatcher
 from typing import ClassVar, override
 
-from fastrag.config.config import Config
 from fastrag.events import Event
-from fastrag.llms.llm import ILLM
-from fastrag.plugins import inject
 from fastrag.steps.task import Run, Task
 
 
@@ -67,11 +64,6 @@ def score_answer(question: Question) -> float:
 
     # Clamp defensively
     return max(0.0, min(1.0, best_score))
-
-
-def _inject() -> ILLM:
-    config = Config.instance
-    return inject(ILLM, config.resources.llm.strategy, **config.resources.llm.params)
 
 
 @dataclass(frozen=True)

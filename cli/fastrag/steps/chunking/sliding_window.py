@@ -32,7 +32,7 @@ class SlidingWindowChunker(Task):
         entry: CacheEntry,
     ) -> AsyncGenerator[Event, None]:
         existed, cached = await self.cache.get_or_create(
-            uri=f"{uri}.sliding.json",
+            uri=f"{entry.path.resolve().as_uri()}.sliding.json",
             contents=partial(self.chunker_logic, uri, entry),
             metadata={
                 "step": "chunking",

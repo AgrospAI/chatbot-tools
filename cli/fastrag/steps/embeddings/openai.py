@@ -28,8 +28,8 @@ class SelfHostedEmbeddings(Task):
     @override
     async def run(self, uri: str, entry: CacheEntry) -> Run:
         existed, cached = await self.cache.get_or_create(
-            uri=f"{uri}.embedding.json",
-            contents=partial(self.embedding_logic, entry),
+            uri=f"{entry.path.resolve().as_uri()}.embedding.json",
+            contents=lambda: self.embedding_logic(entry),
             metadata={
                 "step": "embedding",
                 "model": self.model,
@@ -50,7 +50,7 @@ class SelfHostedEmbeddings(Task):
         status = f"Embedding done{' (cached)' if self._cached else ''}"
         return Event(Event.Type.COMPLETED, f"{status} {self._embedded} vectors")
 
-    def embedding_logic(self, entry: CacheEntry) -> bytes:
+    async def embedding_logic(self, entry: CacheEntry) -> bytes:
         raw_json = entry.path.read_text(encoding="utf-8")
         chunks = json.loads(raw_json)
 
@@ -65,7 +65,7 @@ class SelfHostedEmbeddings(Task):
         total_vectors = []
         content_chunks = [c["content"] for c in chunks]
 
-        with httpx.Client(timeout=120.0) as client:
+        async with httpx.AsyncClient(timeout=120.0) as client:
             for i in range(0, len(content_chunks), self.batch_size):
                 # Send to embedding model by batches size
                 batch_texts = content_chunks[i : i + self.batch_size]
@@ -76,7 +76,7 @@ class SelfHostedEmbeddings(Task):
                 }
 
                 try:
-                    response = client.post(self.url, headers=headers, json=payload)
+                    response = await client.post(self.url, headers=headers, json=payload)
                     response.raise_for_status()
 
                     result = response.json()
