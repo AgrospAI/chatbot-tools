@@ -38,7 +38,6 @@ def calculate_corpus_quality(docs: List[Document]) -> Dict:
         "min_quality": min(scores),
         "max_quality": max(scores),
         "low_quality_count": sum(1 for s in scores if s < 0.5),
-        "chunk_count": len(scores),
     }
 
     return overall_report
@@ -141,30 +140,41 @@ class ChunkQualityBenchmarking(Task):
         chunking_tasks = self.experiment.tasks("chunking")
 
         qualities = []
+        total = 0
 
         for task in chunking_tasks:
             for documents in task.results:
-                documents = [
-                    Document(
-                        page_content=document["content"],
-                        metadata={
-                            **document["metadata"],
-                            "chunk_id": document["chunk_id"],
-                            "level": document["level"],
-                        },
+                docs = []
+                for doc in documents:
+                    docs.append(
+                        Document(
+                            page_content=doc["content"],
+                            metadata={
+                                **doc["metadata"],
+                                "chunk_id": doc["chunk_id"],
+                                "level": doc["level"],
+                            },
+                        )
                     )
-                    for document in documents
-                ]
+                    total += 1
 
-                quality = calculate_corpus_quality(documents)
+                quality = calculate_corpus_quality(docs)
                 qualities.append(quality)
 
                 yield Event(
                     Event.Type.PROGRESS, f"Calculated quality of {len(documents)} chunks"
                 )
 
+        overall = {}
+        for quality in qualities:
+            for k, v in quality.items():
+                overall[k] = overall.get(k, 0) + v
+
+        for k, v in overall.items():
+            overall[k] = round(overall[k] / total, 3)
+
         self.experiment.save_results(
-            f"\nChunkQualityBenchmarking: {json.dumps(qualities, indent=4)}"
+            f"\nChunkQualityBenchmarking ({total} chunk): {json.dumps(overall, indent=4)}"
         )
         object.__setattr__(self, "_quality", quality)
 
