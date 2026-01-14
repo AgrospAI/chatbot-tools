@@ -16,6 +16,7 @@ export default function LocalChatbot({
   icon,
 }: Props) {
   const [currentChatId, setCurrentChatId] = useState<string | null>(null)
+  const chatEndpoint = `${endpoint}/${currentChatId}`
 
   useEffect(() => {
     ;(async () => {
@@ -63,7 +64,7 @@ export default function LocalChatbot({
   }
   return (
     <Chatbot
-      endpoint={endpoint}
+      endpoint={chatEndpoint}
       strings={strings}
       icon={icon}
       messages={messages}
