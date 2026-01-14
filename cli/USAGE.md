@@ -14,9 +14,9 @@ $ [OPTIONS] COMMAND [ARGS]...
 
 **Commands**:
 
-- `serve`: Start the FastRAG API server for question...
-- `clean`: Clean the caches
-- `run`: Go through the process of generating a...
+* `serve`: Start the FastRAG API server for question...
+* `clean`: Clean the cache
+* `run`: Go through the process of generating a...
 
 ## `serve`
 
@@ -43,18 +43,23 @@ $ serve [OPTIONS] [CONFIG]
 
 ## `clean`
 
-Clean the caches
+Clean the cache
 
 **Usage**:
 
 ```console
-$ clean [OPTIONS]
+$ clean [OPTIONS] [CONFIG]
 ```
+
+**Arguments**:
+
+* `[CONFIG]`: Path to the config file.  [default: /Users/spin3l/Documents/_dev/AgrospAI/chatbot-tools/cli/resources/config.yaml]
 
 **Options**:
 
-- `-y, --yes`
-- `--help`: Show this message and exit.
+* `-y, --yes`
+* `-p, --plugins PATH`: Path to the plugins directory.
+* `--help`: Show this message and exit.
 
 ## `run`
 
@@ -72,7 +77,7 @@ $ run [OPTIONS] [CONFIG]
 
 **Options**:
 
-- `-s, --step INTEGER`: What step to execute up to [default: -1]
-- `-p, --plugins PATH`: Path to the plugins directory.
-- `-v, --verbose`: Verbose prints
-- `--help`: Show this message and exit.
+* `-p, --plugins PATH`: Path to the plugins directory.
+* `-v, --verbose`: Verbose prints
+* `--help`: Show this message and exit.
+

@@ -65,7 +65,7 @@ class SelfHostedEmbeddings(Task):
         total_vectors = []
         content_chunks = [c["content"] for c in chunks]
 
-        async with httpx.AsyncClient(timeout=120.0) as client:
+        with httpx.Client(timeout=120.0) as client:
             for i in range(0, len(content_chunks), self.batch_size):
                 # Send to embedding model by batches size
                 batch_texts = content_chunks[i : i + self.batch_size]
@@ -76,7 +76,7 @@ class SelfHostedEmbeddings(Task):
                 }
 
                 try:
-                    response = await client.post(self.url, headers=headers, json=payload)
+                    response = client.post(self.url, headers=headers, json=payload)
                     response.raise_for_status()
 
                     result = response.json()
