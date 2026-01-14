@@ -1,0 +1,8 @@
+{
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "prettier.prettierPath": "./node_modules/prettier",
+  "prettier.configPath": "./prettier.config.js",
+  "editor.codeActionsOnSave": {
+    "source.organizeImports": "explicit"
+  }
+}

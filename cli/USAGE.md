@@ -10,7 +10,7 @@ $ [OPTIONS] COMMAND [ARGS]...
 
 **Options**:
 
-* `--help`: Show this message and exit.
+- `--help`: Show this message and exit.
 
 **Commands**:
 
@@ -30,16 +30,16 @@ $ serve [OPTIONS] [CONFIG]
 
 **Arguments**:
 
-* `[CONFIG]`: Path to the config file.  [default: /Users/spin3l/Documents/_dev/AgrospAI/chatbot-tools/cli/resources/config.yaml]
+- `[CONFIG]`: Path to the config file. [default: /Users/spin3l/Documents/_dev/AgrospAI/chatbot-tools/cli/resources/config.yaml]
 
 **Options**:
 
-* `-p, --plugins PATH`: Path to the plugins directory.
-* `-h, --host TEXT`: Host to bind the server to.  [default: 0.0.0.0]
-* `--port INTEGER`: Port to bind the server to.  [default: 8000]
-* `-r, --reload`: Enable auto-reload for development.
-* `-v, --verbose`: Verbose prints
-* `--help`: Show this message and exit.
+- `-p, --plugins PATH`: Path to the plugins directory.
+- `-h, --host TEXT`: Host to bind the server to. [default: 0.0.0.0]
+- `--port INTEGER`: Port to bind the server to. [default: 8000]
+- `-r, --reload`: Enable auto-reload for development.
+- `-v, --verbose`: Verbose prints
+- `--help`: Show this message and exit.
 
 ## `clean`
 
@@ -73,7 +73,7 @@ $ run [OPTIONS] [CONFIG]
 
 **Arguments**:
 
-* `[CONFIG]`: Path to the config file.  [default: /Users/spin3l/Documents/_dev/AgrospAI/chatbot-tools/cli/resources/config.yaml]
+- `[CONFIG]`: Path to the config file. [default: /Users/spin3l/Documents/_dev/AgrospAI/chatbot-tools/cli/resources/config.yaml]
 
 **Options**:
 

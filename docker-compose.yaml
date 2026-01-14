@@ -1,0 +1,111 @@
+services:
+  # registry:
+  #   build:
+  #     context: ./ui/registry
+  #     dockerfile: Dockerfile
+  #   container_name: registry
+  #   ports:
+  #     - "4321:4321"
+  #   networks:
+  #     - monitoring
+  #   restart: unless-stopped
+
+  # fastrag-api:
+  #   build:
+  #     context: ./cli
+  #     dockerfile: Dockerfile
+  #   container_name: fastrag-api
+  #   ports:
+  #     - "8000:8000"
+  #   environment:
+  #     - FASTRAG_CONFIG_PATH=/app/resources/config.yaml
+  #     - METRICS_BEARER_TOKEN=${METRICS_BEARER_TOKEN}
+  #     - MILVUS_USER=${MILVUS_USER}
+  #     - MILVUS_PASSWORD=${MILVUS_PASSWORD}
+  #     - CHAT_API_KEY=${CHAT_API_KEY}
+  #   volumes:
+  #     - ./cli/resources:/app/resources
+  #     - ./cli/fastrag:/app/fastrag
+  #   networks:
+  #     - monitoring
+  #   restart: unless-stopped
+  #   healthcheck:
+  #     test: ["CMD", "curl", "-f", "http://localhost:8000/healthz"]
+  #     interval: 30s
+  #     timeout: 10s
+  #     retries: 3
+  #     start_period: 40s
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus-data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+      - '--web.enable-lifecycle'
+    networks:
+      - monitoring
+    restart: unless-stopped
+    # depends_on:
+    #   - fastrag-api
+    entrypoint:
+      - /bin/sh
+      - -c
+      - |
+        echo "$${METRICS_BEARER_TOKEN}" > /etc/prometheus/bearer_token
+        /bin/prometheus --config.file=/etc/prometheus/prometheus.yml --storage.tsdb.path=/prometheus --web.console.libraries=/usr/share/prometheus/console_libraries --web.console.templates=/usr/share/prometheus/consoles --web.enable-lifecycle
+    environment:
+      - METRICS_BEARER_TOKEN=${METRICS_BEARER_TOKEN}
+
+  # dashboard:
+  #   build:
+  #     context: ./dashboard
+  #     dockerfile: Dockerfile
+  #   container_name: dashboard
+  #   ports:
+  #     - "3000:3000"
+  #   environment:
+  #     - PROMETHEUS_BASE_URL=http://prometheus:9090
+  #     - PROMETHEUS_BEARER_TOKEN=${PROMETHEUS_BEARER_TOKEN}
+  #     - METRICS_USE_MOCK=${METRICS_USE_MOCK}
+  #   networks:
+  #     - monitoring
+  #   restart: unless-stopped
+  #   depends_on:
+  #     - prometheus
+  #     - fastrag-api
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-chatbot}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - monitoring
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+networks:
+  monitoring:
+    driver: bridge
+
+volumes:
+  prometheus-data:
+  postgres-data:
