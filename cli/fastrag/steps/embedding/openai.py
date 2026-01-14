@@ -1,6 +1,5 @@
 import json
 from dataclasses import dataclass, field
-from functools import partial
 from typing import ClassVar, override
 
 import httpx
@@ -13,8 +12,8 @@ from fastrag.steps.task import Run, Task
 
 
 @dataclass(frozen=True)
-class SelfHostedEmbeddings(Task):
-    supported: ClassVar[list[str]] = ["OpenAI-Simple", "openai", "openai-simple"]
+class OpenAISimple(Task):
+    supported: ClassVar[list[str]] = "OpenAI-Simple"
     filter: ClassVar[Filter] = MetadataFilter(step="chunking")
 
     model: str

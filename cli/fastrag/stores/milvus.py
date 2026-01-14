@@ -55,6 +55,8 @@ class MilvusVectorStore(IVectorStore):
 
             embedding_function = EmbeddingWrapper(self.embedding_model)
 
+            print("Connecting to Milvus with args:", connection_args)
+
             self._store = Milvus(
                 embedding_function=embedding_function,
                 collection_name=self.collection_name,
