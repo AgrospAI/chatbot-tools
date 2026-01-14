@@ -49,13 +49,19 @@ experiments:
     chunking:
       - strategy: ParentChild
         params:
-          embedding_model: all-MiniLM-L6-v2
+          chunk_size: 500
+          embedding_model: "paraphrase-multilingual:latest"
+          embedding_api_url: "https://chat.agrospai.udl.cat/ollama/api/embed"
+          embedding_api_key: ${CHAT_API_KEY}
     embedding:
       - strategy: OpenAI-Simple
         params:
-          # model: mxbai-embed-large:latest
-          model: nomic-embed-text-v2-moe:latest
-          # model: paraphrase-multilingual:latest
+          model: paraphrase-multilingual:latest
+          api_key: ${CHAT_API_KEY}
+          url: https://chat.agrospai.udl.cat/ollama/api/embed
+      - strategy: openai-simple
+        params:
+          model: paraphrase-multilingual:latest
           api_key: ${CHAT_API_KEY}
           url: https://chat.agrospai.udl.cat/ollama/api/embed
     benchmarking:
