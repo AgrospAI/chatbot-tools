@@ -17,9 +17,9 @@ resources:
   sources:
     steps:
       fetching:
-        - strategy: Path
-          params:
-            path: ./resources/test/
+        # - strategy: Path
+        #   params:
+        #     path: ./resources/test/
         - strategy: SitemapXML
           params:
             url: https://agrospai.udl.cat/sitemap.xml
@@ -53,16 +53,18 @@ experiments:
       - strategy: ParentChild
         params:
           chunk_size: 500
-          embedding_model: all-MiniLM-L6-v2
+          embedding_model: "paraphrase-multilingual:latest"
+          embedding_api_url: "https://chat.agrospai.udl.cat/ollama/api/embed"
+          embedding_api_key: ${CHAT_API_KEY}
     embedding:
       - strategy: OpenAI-Simple
         params:
-          model: mxbai-embed-large:latest
+          model: paraphrase-multilingual:latest
           api_key: ${CHAT_API_KEY}
           url: https://chat.agrospai.udl.cat/ollama/api/embed
       - strategy: openai-simple
         params:
-          model: mxbai-embed-large:latest
+          model: paraphrase-multilingual:latest
           api_key: ${CHAT_API_KEY}
           url: https://chat.agrospai.udl.cat/ollama/api/embed
     benchmarking:

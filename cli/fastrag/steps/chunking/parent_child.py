@@ -14,6 +14,7 @@ from fastrag.events import Event
 from fastrag.helpers.filters import Filter
 from fastrag.helpers.markdown_utils import clean_markdown, normalize_metadata
 from fastrag.steps.task import Task
+from fastrag.steps.chunking.ollama_adapter import OpenWebUIEmbeddings
 
 
 @dataclass(frozen=True)
@@ -22,10 +23,13 @@ class ParentChildChunker(Task):
     filter: ClassVar[Filter] = MetadataFilter(step="parsing")
 
     chunk_size: int = 500
-    embedding_model: str = "all-MiniLM-L6-v2"
 
     _chunked: int = field(default=0, init=False, repr=False)
     _cached: bool = field(default=False, init=False, repr=False)
+
+    embedding_api_url: str = "https://chat.agrospai.udl.cat/ollama/api/embed"
+    embedding_api_key: str = "" 
+    embedding_model: str = "paraphrase-multilingual:latest"
 
     @override
     async def run(
@@ -69,9 +73,15 @@ class ParentChildChunker(Task):
         text, raw_metadata = clean_markdown(raw_text)
         metadata = normalize_metadata(raw_metadata, uri)
 
-        embed_model = HuggingFaceEmbeddings(model_name=self.embedding_model)
+        # embed_model = HuggingFaceEmbeddings(model_name=self.embedding_model)
+        embed_model = OpenWebUIEmbeddings(
+            base_url=self.embedding_api_url,
+            api_key=self.embedding_api_key,
+            model=self.embedding_model
+        )
+
         parent_splitter = MarkdownHeaderTextSplitter(
-            headers_to_split_on=[("#", "header_1"), ("##", "header_2"), ("###", "header_3")]
+            headers_to_split_on=[("#", "header_1"), ("##", "header_2")]
         )
         child_splitter = SemanticChunker(
             embeddings=embed_model, breakpoint_threshold_type="percentile"
