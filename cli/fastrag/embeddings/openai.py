@@ -7,7 +7,7 @@ from fastrag.embeddings.base import IEmbeddings
 
 
 @dataclass(frozen=True)
-class SelfHostedEmbeddings(IEmbeddings):
+class OpenAIEmbeddings(IEmbeddings):
     """Self-hosted OpenAI-compatible embedding model"""
 
     supported: ClassVar[list[str]] = ["OpenAI-Simple", "openai-simple"]
@@ -19,8 +19,15 @@ class SelfHostedEmbeddings(IEmbeddings):
 
     async def _embed(self, input_text: str | list[str]) -> list[list[float]] | list[float]:
         """Internal helper to handle the HTTP request logic."""
-        payload = {"model": self.model, "input": input_text}
 
+        if isinstance(input_text, str):
+            batch_input = [input_text]
+        elif isinstance(input_text, list) and all(isinstance(x, str) for x in input_text):
+            batch_input = input_text
+        else:
+            raise TypeError("input_text must be str or list[str]")
+
+        payload = {"model": self.model, "input": batch_input}
         client = await self.get_client(self.api_key)
 
         response = await client.post(self.url, json=payload)
@@ -41,7 +48,6 @@ class SelfHostedEmbeddings(IEmbeddings):
 
         texts = [doc.page_content for doc in documents]
 
-        # 2. Batch the extracted strings
         for i in range(0, len(texts), self.batch_size):
             batch = texts[i : i + self.batch_size]
             batch_results = await self._embed(batch)

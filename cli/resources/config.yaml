@@ -50,8 +50,8 @@ experiments:
     chunking:
       - strategy: ParentChild
         params:
-          embedding_model: "paraphrase-multilingual:latest"
-          embedding_api_url: "https://chat.agrospai.udl.cat/ollama/api/embed"
+          embedding_model: paraphrase-multilingual:latest
+          embedding_api_url: https://chat.agrospai.udl.cat/ollama/api/embed
           embedding_api_key: ${CHAT_API_KEY}
     embedding:
       # - strategy: OllamaEmbeddings
@@ -61,9 +61,9 @@ experiments:
       #     url: https://chat.agrospai.udl.cat/ollama/api/embed
       - strategy: OpenAI-Simple
         params:
-          model: "nomic-embed-text:latest"
+          model: paraphrase-multilingual:latest
           api_key: ${CHAT_API_KEY}
-          url: https://chat.agrospai.udl.cat/api/embeddings
+          url: https://chat.agrospai.udl.cat/ollama/api/embed
     benchmarking:
       - strategy: QuerySet
         params:

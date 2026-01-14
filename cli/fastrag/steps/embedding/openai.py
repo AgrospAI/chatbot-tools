@@ -18,7 +18,7 @@ def inject_embedder(*args, **kwargs) -> IEmbeddings:
 
 
 @dataclass(frozen=True)
-class SelfHostedEmbeddings(Task):
+class OpenAISimple(Task):
     supported: ClassVar[str] = ["OpenAI-Simple", "openai-simple"]
     filter: ClassVar[Filter] = MetadataFilter(step="chunking")
 
