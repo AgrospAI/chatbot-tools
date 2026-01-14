@@ -1,13 +1,13 @@
 from dataclasses import dataclass, field
 from functools import partial
 from pathlib import Path
-from typing import AsyncGenerator, ClassVar, override
+from typing import ClassVar, override
 
 from fastrag.cache.entry import CacheEntry
 from fastrag.cache.filters import MetadataFilter
 from fastrag.events import Event
 from fastrag.helpers.filters import Filter
-from fastrag.steps.task import Task
+from fastrag.steps.task import Run, Task
 
 
 def to_markdown(fmt: str, path: Path) -> bytes:
@@ -34,11 +34,7 @@ class FileParser(Task):
     _parsed: int = field(default=0)
 
     @override
-    async def callback(
-        self,
-        uri: str,
-        entry: CacheEntry,
-    ) -> AsyncGenerator[Event, None]:
+    async def run(self, uri: str, entry: CacheEntry) -> Run:
         fmt: str = entry.metadata["format"]
         contents = partial(to_markdown, fmt, entry.path)
         existed, entry = await self.cache.get_or_create(

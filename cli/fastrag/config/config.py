@@ -13,12 +13,13 @@ class Strategy:
 
 
 Step: TypeAlias = list[Strategy]
-Steps: TypeAlias = dict[str, list[Strategy]]
+Steps: TypeAlias = dict[str, Step]
 
 
 @dataclass(frozen=True)
 class MultiStrategy:
     steps: Steps
+    params: dict | None = None
     strategy: str = "async"
 
 
@@ -52,4 +53,5 @@ class Resources:
 class Config:
     resources: Resources
     experiments: MultiStrategy
-    benchmarking: list[Strategy]
+
+    instance: ClassVar[Config | None] = None

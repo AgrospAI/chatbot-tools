@@ -20,7 +20,11 @@ from fastrag import (
     version,
 )
 from fastrag.cache.cache import ICache
+from fastrag.embeddings import IEmbeddings
+from fastrag.llms.llm import ILLM
 from fastrag.steps.logs import Loggable
+from fastrag.steps.step import RuntimeResources
+from fastrag.stores.store import IVectorStore
 
 app = typer.Typer(help="FastRAG CLI", add_completion=False)
 console = Console()
@@ -162,19 +166,24 @@ def run(
     # Load plugins before config
     load_plugins(plugins)
     config: Config = load_config(config)
-    cache = inject(
-        ICache,
-        config.resources.cache.strategy,
-        lifespan=config.resources.cache.lifespan,
+    resources = load_resources(config)
+
+    ran = inject(
+        IRunner,
+        config.resources.sources.strategy,
+        **config.resources.sources.params or {},
+    ).run(
+        config.resources.sources.steps,
+        resources,
     )
 
-    ran = inject(IRunner, config.resources.sources.strategy).run(
-        config.resources.sources.steps,
-        cache,
-    )
-    ran = inject(IRunner, config.experiments.strategy).run(
+    ran = inject(
+        IRunner,
+        config.experiments.strategy,
+        **config.experiments.params or {},
+    ).run(
         config.experiments.steps,
-        cache,
+        resources,
         starting_step_number=ran,
     )
 
@@ -186,6 +195,8 @@ def load_config(path: Path) -> Config:
     load_env_file()
 
     config = inject(IConfigLoader, path.suffix).load(path)
+    Config.instance = config
+
     console.print(
         Panel(
             Pretty(config),
@@ -199,6 +210,30 @@ def load_config(path: Path) -> Config:
         )
     )
     return config
+
+
+def load_resources(config: Config) -> RuntimeResources:
+    embedding_config = config.experiments.steps["embedding"][0]
+    embedding_model = inject(IEmbeddings, embedding_config.strategy, **embedding_config.params)
+
+    return RuntimeResources(
+        cache=inject(
+            ICache,
+            config.resources.cache.strategy,
+            lifespan=config.resources.cache.lifespan,
+        ),
+        store=inject(
+            IVectorStore,
+            config.resources.store.strategy,
+            embedding_model=embedding_model,
+            **config.resources.store.params,
+        ),
+        llm=inject(
+            ILLM,
+            config.resources.llm.strategy,
+            **config.resources.llm.params,
+        ),
+    )
 
 
 def load_plugins(plugins: Path) -> None:

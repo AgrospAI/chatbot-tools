@@ -1,10 +1,12 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Callable, Iterable
+from typing import Awaitable, Callable, Iterable
 
 from fastrag.cache.entry import CacheEntry
 from fastrag.cache.filters import Filter
 from fastrag.plugins import PluginBase
+
+ContentsCallable = Callable[[], bytes | Awaitable[bytes]]
 
 
 @dataclass(frozen=True)
@@ -48,14 +50,14 @@ class ICache(PluginBase, ABC):
     async def get_or_create(
         self,
         uri: str,
-        contents: Callable[..., bytes],
+        contents: ContentsCallable,
         metadata: dict | None = None,
     ) -> tuple[bool, CacheEntry]:
         """Returns the cache entry from URI if it exists, otherwise creates it.
 
         Args:
             uri (str): URI to check (or create entry with)
-            contents (Callable[..., bytes]): callable that will read the contents to store.
+            contents (ContentsCallable): callable or awaitable callable that gives content.
             metadata (dict | None, optional): Additional metadata to store. Defaults to None.
 
         Returns:

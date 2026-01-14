@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import AsyncGenerator, ClassVar, override
 
 from fastrag.llms.llm import ILLM
@@ -10,7 +10,7 @@ class OpenAILLM(ILLM):
 
     supported: ClassVar[str] = "openai"
 
-    api_key: str
+    api_key: str = field(repr=False)
     base_url: str
     model_name: str
     temperature: float = 0.0

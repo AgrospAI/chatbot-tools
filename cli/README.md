@@ -103,7 +103,7 @@ class HttpFetcher(Task):
     _cached: bool = field(init=False, default=False, compare=False)
 
     @override
-    async def callback(self) -> AsyncGenerator[Event, None]:
+    async def run(self) -> AsyncGenerator[Event, None]:
         if self.cache.is_present(self.url):
             object.__setattr__(self, "_cached", True)
             return
@@ -176,14 +176,14 @@ As of the `callback` method, which is inherited from `Task`, it's the one suppos
 
 ```python
 @override
-async def callback(self) -> AsyncGenerator[Event, None]:
+async def run(self) -> AsyncGenerator[Event, None]:
     ...
 ```
 
 As shown in the type hinting, the method is expected to _yield_ events, we provide an event base class and some subclasses for each workflow step. These events are nothing but feedback to show in the terminal (behaviour defined in `Step`). In this shown example, we only show feedback upon failure.
 
 ```python
-async def callback(self) -> AsyncGenerator[Event, None]:
+async def run(self) -> AsyncGenerator[Event, None]:
     ...
     except Exception as e:
         yield Event(Event.Type.EXCEPTION, f"ERROR: {e}")
@@ -208,14 +208,14 @@ Apart from executing as supposed and giving feedback, a `Task` is expected to co
 Firstly, for skipping the execution if the expected result is already cached to save time and resources. Secondly, to cache the results to use in the next steps.
 
 ```python
-async def callback(self) -> AsyncGenerator[Event, None]:
+async def run(self) -> AsyncGenerator[Event, None]:
     if self.cache.is_present(self.url):
         object.__setattr__(self, "_cached", True)
         return
 ```
 
 ```python
-async def callback(self) -> AsyncGenerator[Event, None]:
+async def run(self) -> AsyncGenerator[Event, None]:
     ...
     await self.cache.create(
         self.url,
@@ -241,7 +241,7 @@ class HtmlParser(Task):
     filter: ClassVar[Filter] = MetadataFilter(step="fetching", format="html")
 
     @override
-    async def callback(
+    async def run(
         self,
         uri: str,
         entry: CacheEntry,
@@ -253,7 +253,7 @@ As we can see in the previous code, there are two main differences with the `Htt
 
 ```python
 @override
-async def callback(
+async def run(
     self,
     uri: str,
     entry: CacheEntry,

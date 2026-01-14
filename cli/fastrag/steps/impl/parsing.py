@@ -1,13 +1,9 @@
 from dataclasses import dataclass
-from typing import AsyncGenerator, ClassVar, override
+from typing import ClassVar, override
 
-from fastrag.cache.cache import ICache
 from fastrag.cache.filters import MetadataFilter
-from fastrag.events import Event
 from fastrag.helpers.filters import OrFilter
-from fastrag.plugins import inject
-from fastrag.steps.step import IStep
-from fastrag.steps.task import Task
+from fastrag.steps.step import IStep, Tasks
 
 
 @dataclass
@@ -16,14 +12,11 @@ class ParsingStep(IStep):
     description: ClassVar[str] = "PARSE"
 
     @override
-    async def get_tasks(
-        self, cache: ICache
-    ) -> AsyncGenerator[tuple[Task, list[AsyncGenerator[Event, None]]], None]:
-        for s in self.step:
-            instance = inject(Task, s.strategy, cache=cache, **s.params)
-            entries = await cache.get_entries(
-                instance.filter
-                & OrFilter([MetadataFilter(strategy=strat) for strat in s.params["use"]])
+    async def get_tasks(self) -> Tasks:
+        for idx, task in enumerate(self._tasks):
+            params = self.step[idx].params
+            entries = await self.cache.get_entries(
+                task.filter
+                & OrFilter([MetadataFilter(strategy=strat) for strat in params["use"]])
             )
-
-            yield (instance, [instance.callback(uri, entry) for uri, entry in entries])
+            yield (task, [task.run(uri, entry) for uri, entry in entries])

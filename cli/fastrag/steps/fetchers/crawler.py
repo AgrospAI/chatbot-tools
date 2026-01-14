@@ -1,6 +1,6 @@
 import asyncio
 from dataclasses import InitVar, dataclass, field
-from typing import AsyncGenerator, ClassVar, override
+from typing import ClassVar, override
 from urllib.parse import urljoin, urlparse
 from urllib.robotparser import RobotFileParser
 
@@ -12,7 +12,7 @@ from fastrag.helpers.url_field import URLField
 from fastrag.helpers.utils import normalize_url
 from fastrag.plugins import inject
 from fastrag.steps.fetchers.rate_limiting.rate_limiter import IRateLimiter
-from fastrag.steps.task import Task
+from fastrag.steps.task import Run, Task
 
 
 def is_same_domain(url_a: str, url_b: str) -> bool:
@@ -42,7 +42,7 @@ class CrawlerFetcher(Task):
         )
 
     @override
-    async def callback(self) -> AsyncGenerator[Event, None]:
+    async def run(self) -> Run:
         self._visited.clear()
 
         queue: asyncio.Queue[tuple[str, int]] = asyncio.Queue()

@@ -1,12 +1,14 @@
+import asyncio
 import hashlib
+import inspect
 import json
 import shutil
 from asyncio import Lock
 from dataclasses import InitVar, dataclass, field
 from pathlib import Path
-from typing import Callable, ClassVar, Iterable, override
+from typing import ClassVar, Iterable, override
 
-from fastrag.cache.cache import CacheEntry, ICache
+from fastrag.cache.cache import CacheEntry, ContentsCallable, ICache
 from fastrag.helpers import PosixTimestamp, timestamp
 from fastrag.helpers.filters import Filter
 
@@ -86,13 +88,20 @@ class LocalCache(ICache):
     async def get_or_create(
         self,
         uri: str,
-        contents: Callable[..., bytes],
+        contents: ContentsCallable,
         metadata: dict | None = None,
     ) -> tuple[bool, CacheEntry]:
         entry = await self.get(uri)
         if entry:
             return True, entry
-        return False, await self.create(uri, contents(), metadata)
+
+        result = contents()
+        if inspect.isawaitable(result):
+            data = await result
+        else:
+            data = result
+
+        return False, await self.create(uri, data, metadata)
 
     @override
     async def get(self, uri: str) -> CacheEntry | None:
