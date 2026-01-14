@@ -1,7 +1,6 @@
 import json
 import uuid
-from dataclasses import dataclass, field
-from functools import partial
+from dataclasses import InitVar, dataclass, field
 from typing import AsyncGenerator, ClassVar, override
 
 from langchain_experimental.text_splitter import SemanticChunker
@@ -21,11 +20,13 @@ class ParentChildChunker(Task):
     supported: ClassVar[str] = "ParentChild"
     filter: ClassVar[Filter] = MetadataFilter(step="parsing")
 
-    chunk_size: int = 500
-    embedding_model: str = "all-MiniLM-L6-v2"
+    embedding_model: InitVar[str] = "all-MiniLM-L6-v2"
+    _embedding_model: HuggingFaceEmbeddings = field(init=False, repr=False, hash=False)
 
-    _chunked: int = field(default=0, init=False, repr=False)
-    _cached: bool = field(default=False, init=False, repr=False)
+    def __post_init__(self, embedding_model: str) -> None:
+        model = HuggingFaceEmbeddings(model_name=embedding_model)
+
+        object.__setattr__(self, "_embedding_model", model)
 
     @override
     async def run(
@@ -35,46 +36,37 @@ class ParentChildChunker(Task):
     ) -> AsyncGenerator[Event, None]:
         existed, entries = await self.cache.get_or_create(
             uri=f"{entry.path}.chunk.json",
-            contents=partial(self.chunker_logic, uri, entry),
+            contents=lambda: self.chunker_logic(uri, entry),
             metadata={
                 "step": "chunking",
                 "strategy": ParentChildChunker.supported,
             },
         )
 
-        if existed:
-            object.__setattr__(self, "_cached", True)
-
         entries = json.loads(entries.content)
 
         if not self.results:
             self._set_results([])
 
-        object.__setattr__(self, "_chunked", len(entries))
         self._results.append(entries)
 
         status = "Cached" if existed else "Generated"
-        yield Event(Event.Type.PROGRESS, f"{status} {self._chunked} chunks for {entry.path}")
+        yield Event(Event.Type.PROGRESS, f"{status} {len(entries)} chunks for {entry.path}")
 
     @override
     def completed_callback(self) -> Event:
-        status = f"Chunking done{' (cached)' if self._cached else ''}"
-        return Event(
-            Event.Type.COMPLETED,
-            f"{status} {self._chunked} chunks",
-        )
+        return Event(Event.Type.COMPLETED, "Finished ParentChildChunking")
 
-    def chunker_logic(self, uri: str, entry: CacheEntry) -> bytes:
+    async def chunker_logic(self, uri: str, entry: CacheEntry) -> bytes:
         raw_text = entry.path.read_text(encoding="utf-8")
         text, raw_metadata = clean_markdown(raw_text)
         metadata = normalize_metadata(raw_metadata, uri)
 
-        embed_model = HuggingFaceEmbeddings(model_name=self.embedding_model)
         parent_splitter = MarkdownHeaderTextSplitter(
             headers_to_split_on=[("#", "header_1"), ("##", "header_2"), ("###", "header_3")]
         )
         child_splitter = SemanticChunker(
-            embeddings=embed_model, breakpoint_threshold_type="percentile"
+            embeddings=self._embedding_model, breakpoint_threshold_type="percentile"
         )
 
         all_chunks = []

@@ -3,6 +3,7 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from dataclasses import InitVar, dataclass, field
 from typing import TYPE_CHECKING, AsyncGenerator, ClassVar, TypeAlias, override
+from uuid import uuid4
 
 from rich.progress import Progress
 
@@ -103,6 +104,7 @@ class IStep(Loggable, PluginBase, ABC):
 
 @dataclass
 class IMultiStep(IStep):
+    experiment_hash: str = field(init=False, default_factory=uuid4)
     step: Steps = field(default_factory=list, repr=False)
 
     _tasks: list[IStep] = field(default_factory=list, init=False, hash=False, repr=False)
