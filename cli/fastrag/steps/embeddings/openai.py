@@ -1,45 +1,53 @@
 import json
-from dataclasses import dataclass, field
-from functools import partial
+from dataclasses import InitVar, dataclass, field
 from typing import ClassVar, override
 
-import httpx
+from langchain_core.documents import Document
 
 from fastrag.cache.entry import CacheEntry
 from fastrag.cache.filters import MetadataFilter
+from fastrag.embeddings import IEmbeddings
 from fastrag.events import Event
 from fastrag.helpers.filters import Filter
+from fastrag.plugins import inject
 from fastrag.steps.task import Run, Task
+
+
+def inject_embedder(*args, **kwargs) -> IEmbeddings:
+    return inject(IEmbeddings, "OpenAI-Simple", *args, **kwargs)
 
 
 @dataclass(frozen=True)
 class SelfHostedEmbeddings(Task):
-    supported: ClassVar[list[str]] = ["OpenAI-Simple", "openai", "openai-simple"]
+    supported: ClassVar[str] = ["OpenAI-Simple", "openai-simple"]
     filter: ClassVar[Filter] = MetadataFilter(step="chunking")
 
     model: str
-    api_key: str = field(repr=False)
-    url: str
-    batch_size: int = field(default=1)
+    api_key: InitVar[str] = field(repr=False)
+    url: InitVar[str]
+    batch_size: InitVar[int] = 1
 
-    _embedded: int = field(default=0, init=False, repr=False)
-    _cached: bool = field(default=False, init=False, repr=False)
+    _embedder: IEmbeddings | None = None
+
+    def __post_init__(self, api_key, url, batch_size):
+        embedder = inject_embedder(
+            model=self.model,
+            api_key=api_key,
+            url=url,
+            batch_size=batch_size,
+        )
+
+        object.__setattr__(self, "_embedder", embedder)
 
     @override
     async def run(self, uri: str, entry: CacheEntry) -> Run:
         existed, cached = await self.cache.get_or_create(
-            uri=f"{entry.path.resolve().as_uri()}.embedding.json",
+            uri=f"{entry.path.resolve().as_uri()}.{self.__class__.__name__}.{self.model}.embedding.json",
             contents=lambda: self.embedding_logic(entry),
-            metadata={
-                "step": "embedding",
-                "model": self.model,
-                "api": "ollama-openwebui-agrospai",
-            },
+            metadata={"step": "embedding"},
         )
 
         data = json.loads(cached.content)
-        object.__setattr__(self, "_embedded", len(data))
-        object.__setattr__(self, "_cached", existed)
         self._set_results(data)
 
         status = "Cached" if existed else "Generated"
@@ -47,8 +55,7 @@ class SelfHostedEmbeddings(Task):
 
     @override
     def completed_callback(self) -> Event:
-        status = f"Embedding done{' (cached)' if self._cached else ''}"
-        return Event(Event.Type.COMPLETED, f"{status} {self._embedded} vectors")
+        return Event(Event.Type.COMPLETED, "Completed SelfHostedEmbeddings")
 
     async def embedding_logic(self, entry: CacheEntry) -> bytes:
         raw_json = entry.path.read_text(encoding="utf-8")
@@ -57,43 +64,12 @@ class SelfHostedEmbeddings(Task):
         if not chunks:
             return json.dumps([]).encode("utf-8")
 
-        headers = {
-            "Content-Type": "application/json",
-            "Authorization": f"Bearer {self.api_key}",
-        }
+        documents = [Document(**chunk) for chunk in chunks]
+        total_vectors = await self._embedder.embed_documents(documents)
 
-        total_vectors = []
-        content_chunks = [c["content"] for c in chunks]
-
-        with httpx.Client(timeout=120.0) as client:
-            for i in range(0, len(content_chunks), self.batch_size):
-                # Send to embedding model by batches size
-                batch_texts = content_chunks[i : i + self.batch_size]
-
-                payload = {
-                    "model": self.model,
-                    "input": batch_texts,
-                }
-
-                try:
-                    response = client.post(self.url, headers=headers, json=payload)
-                    response.raise_for_status()
-
-                    result = response.json()
-                    batch_vectors = result.get("embeddings", [])
-
-                    if len(batch_vectors) != len(batch_texts):
-                        raise ValueError(
-                            f"Sent {len(batch_texts)} texts but got {len(batch_vectors)} vec"
-                        )
-
-                    total_vectors.extend(batch_vectors)
-
-                except Exception as e:
-                    raise RuntimeError(f"Embedding failed at chunk {i}: {e}")
+        await self.store.add_documents(documents, total_vectors)
 
         for i, chunk in enumerate(chunks):
             chunk["vector"] = total_vectors[i]
 
-        object.__setattr__(self, "_embedded", len(chunks))
         return json.dumps(chunks).encode("utf-8")

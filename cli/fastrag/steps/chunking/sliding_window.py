@@ -82,7 +82,7 @@ class SlidingWindowChunker(Task):
             all_chunks.append(
                 {
                     "chunk_id": str(uuid.uuid4()),
-                    "content": final_content,
+                    "page_content": final_content,
                     "metadata": {
                         **doc.metadata,
                         "chunk_index": i,

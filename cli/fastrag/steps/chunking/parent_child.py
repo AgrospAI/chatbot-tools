@@ -1,10 +1,9 @@
 import json
 import uuid
-from dataclasses import InitVar, dataclass, field
+from dataclasses import dataclass, field
 from typing import AsyncGenerator, ClassVar, override
 
 from langchain_experimental.text_splitter import SemanticChunker
-from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_text_splitters import MarkdownHeaderTextSplitter
 
 from fastrag.cache.entry import CacheEntry
@@ -12,8 +11,8 @@ from fastrag.cache.filters import MetadataFilter
 from fastrag.events import Event
 from fastrag.helpers.filters import Filter
 from fastrag.helpers.markdown_utils import clean_markdown, normalize_metadata
-from fastrag.steps.task import Task
 from fastrag.steps.chunking.ollama_adapter import OpenWebUIEmbeddings
+from fastrag.steps.task import Task
 
 
 @dataclass(frozen=True)
@@ -26,15 +25,15 @@ class ParentChildChunker(Task):
     _embedding_model: OpenWebUIEmbeddings = field(init=False, repr=False, hash=False)
 
     embedding_api_url: str = "https://chat.agrospai.udl.cat/ollama/api/embed"
-    embedding_api_key: str = "" 
-    embedding_model: InitVar[str] = "paraphrase-multilingual:latest"
+    embedding_api_key: str = ""
+    embedding_model: str = "paraphrase-multilingual:latest"
 
-    def __post_init__(self, embedding_model: str) -> None:
+    def __post_init__(self) -> None:
         # model = HuggingFaceEmbeddings(model_name=embedding_model)
         embed_model = OpenWebUIEmbeddings(
             base_url=self.embedding_api_url,
             api_key=self.embedding_api_key,
-            model=embedding_model
+            model=self.embedding_model,
         )
 
         object.__setattr__(self, "_embedding_model", embed_model)
@@ -46,7 +45,7 @@ class ParentChildChunker(Task):
         entry: CacheEntry,
     ) -> AsyncGenerator[Event, None]:
         existed, entries = await self.cache.get_or_create(
-            uri=f"{entry.path.resolve().as_uri()}.chunk.json",
+            uri=f"{entry.path.resolve().as_uri()}.{self.__class__.__name__}.{self.embedding_model}.chunk.json",
             contents=lambda: self.chunker_logic(uri, entry),
             metadata={
                 "step": "chunking",
@@ -72,7 +71,6 @@ class ParentChildChunker(Task):
         raw_text = entry.path.read_text(encoding="utf-8")
         text, raw_metadata = clean_markdown(raw_text)
         metadata = normalize_metadata(raw_metadata, uri)
-
 
         parent_splitter = MarkdownHeaderTextSplitter(
             headers_to_split_on=[("#", "header_1"), ("##", "header_2")]
@@ -105,7 +103,7 @@ class ParentChildChunker(Task):
             all_chunks.append(
                 {
                     "chunk_id": parent_id,
-                    "content": parent_content,
+                    "page_content": parent_content,
                     "metadata": final_metadata,
                     "level": "parent",
                     "parent_id": None,
@@ -116,7 +114,7 @@ class ParentChildChunker(Task):
                 all_chunks.append(
                     {
                         "chunk_id": str(uuid.uuid4()),
-                        "content": parent_content,
+                        "page_content": parent_content,
                         "metadata": {
                             **final_metadata,
                             "chunk_type": "child",
@@ -140,7 +138,7 @@ class ParentChildChunker(Task):
                 all_chunks.append(
                     {
                         "chunk_id": str(uuid.uuid4()),
-                        "content": child_content,
+                        "page_content": child_content,
                         "metadata": {
                             **final_metadata,
                             "chunk_type": "child",

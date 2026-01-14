@@ -1,5 +1,5 @@
 version = 1
-revision = 2
+revision = 3
 requires-python = ">=3.13"
 
 [[package]]
@@ -288,6 +288,7 @@ dependencies = [
     { name = "langchain-milvus" },
     { name = "langchain-openai" },
     { name = "langchain-text-splitters" },
+    { name = "pymilvus" },
     { name = "pymupdf-layout" },
     { name = "pymupdf4llm" },
     { name = "pypandoc" },
@@ -318,6 +319,7 @@ requires-dist = [
     { name = "langchain-milvus", specifier = ">=0.3.3" },
     { name = "langchain-openai", specifier = ">=1.1.7" },
     { name = "langchain-text-splitters", specifier = ">=1.1.0" },
+    { name = "pymilvus", extras = ["async"], specifier = ">=2.6.6" },
     { name = "pymupdf-layout", specifier = ">=1.26.6" },
     { name = "pymupdf4llm", specifier = ">=0.2.7" },
     { name = "pypandoc", specifier = ">=1.16.2" },

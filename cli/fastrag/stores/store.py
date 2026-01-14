@@ -55,3 +55,9 @@ class IVectorStore(PluginBase, ABC):
     async def collection_exists(self) -> bool:
         """Check if the collection exists"""
         pass
+
+    @abstractmethod
+    async def embed_query(self, text: str) -> list[float]:
+        """Embeds a single query."""
+
+        pass

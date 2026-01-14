@@ -22,6 +22,7 @@ dependencies = [
     "langchain-milvus>=0.3.3",
     "langchain-openai>=1.1.7",
     "langchain-text-splitters>=1.1.0",
+    "pymilvus[async]>=2.6.6",
     "pymupdf-layout>=1.26.6",
     "pymupdf4llm>=0.2.7",
     "pypandoc>=1.16.2",
