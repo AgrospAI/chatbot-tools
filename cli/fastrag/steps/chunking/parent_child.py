@@ -35,7 +35,7 @@ class ParentChildChunker(Task):
         entry: CacheEntry,
     ) -> AsyncGenerator[Event, None]:
         existed, entries = await self.cache.get_or_create(
-            uri=f"{entry.path}.chunk.json",
+            uri=f"{entry.path.resolve().as_uri()}.chunk.json",
             contents=lambda: self.chunker_logic(uri, entry),
             metadata={
                 "step": "chunking",

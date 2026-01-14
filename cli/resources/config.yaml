@@ -54,8 +54,8 @@ experiments:
       - strategy: OpenAI-Simple
         params:
           # model: mxbai-embed-large:latest
-          # model: nomic-embed-text-v2-moe:latest
-          model: paraphrase-multilingual:latest
+          model: nomic-embed-text-v2-moe:latest
+          # model: paraphrase-multilingual:latest
           api_key: ${CHAT_API_KEY}
           url: https://chat.agrospai.udl.cat/ollama/api/embed
     benchmarking:
