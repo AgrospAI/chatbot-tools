@@ -1,11 +1,7 @@
 from dataclasses import dataclass
-from typing import AsyncGenerator, ClassVar, override
+from typing import ClassVar, override
 
-from fastrag.cache.cache import ICache
-from fastrag.events import Event
-from fastrag.plugins import inject
-from fastrag.steps.step import IMultiStep, IStep
-from fastrag.steps.task import Task
+from fastrag.steps.step import IMultiStep
 
 
 @dataclass
@@ -14,22 +10,7 @@ class ExperimentsStep(IMultiStep):
     description: ClassVar[str] = "EXPERIMENTS"
 
     @override
-    def get_steps(self) -> list[IStep]:
-        return [
-            inject(
-                IStep,
-                strat,
-                progress=self.progress,
-                task_id=self.task_id,
-                step=step,
-            )
-            for strat, step in self.step.items()
-        ]
-
-    @override
-    async def get_tasks(
-        self, cache: ICache
-    ) -> AsyncGenerator[tuple[Task, list[AsyncGenerator[Event, None]]], None]:
-        for step in self.get_steps():
-            async for task, generators in step.get_tasks(cache):
+    async def get_tasks(self):
+        for task in self._tasks:
+            async for task, generators in task.get_tasks():
                 yield task, generators

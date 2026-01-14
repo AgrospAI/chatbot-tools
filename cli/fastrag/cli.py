@@ -168,11 +168,20 @@ def run(
         lifespan=config.resources.cache.lifespan,
     )
 
-    ran = inject(IRunner, config.resources.sources.strategy).run(
+    ran = inject(
+        IRunner,
+        config.resources.sources.strategy,
+        **config.resources.sources.params or {},
+    ).run(
         config.resources.sources.steps,
         cache,
     )
-    ran = inject(IRunner, config.experiments.strategy).run(
+
+    ran = inject(
+        IRunner,
+        config.experiments.strategy,
+        **config.experiments.params or {},
+    ).run(
         config.experiments.steps,
         cache,
         starting_step_number=ran,
@@ -186,6 +195,8 @@ def load_config(path: Path) -> Config:
     load_env_file()
 
     config = inject(IConfigLoader, path.suffix).load(path)
+    Config.instance = config
+
     console.print(
         Panel(
             Pretty(config),

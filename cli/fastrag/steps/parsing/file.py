@@ -34,7 +34,7 @@ class FileParser(Task):
     _parsed: int = field(default=0)
 
     @override
-    async def callback(
+    async def run(
         self,
         uri: str,
         entry: CacheEntry,

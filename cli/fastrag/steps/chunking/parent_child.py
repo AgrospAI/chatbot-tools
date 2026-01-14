@@ -24,16 +24,16 @@ class ParentChildChunker(Task):
     chunk_size: int = 500
     embedding_model: str = "all-MiniLM-L6-v2"
 
-    _chunked: int = field(default=0, init=False)
-    _cached: bool = field(default=False, init=False)
+    _chunked: int = field(default=0, init=False, repr=False)
+    _cached: bool = field(default=False, init=False, repr=False)
 
     @override
-    async def callback(
+    async def run(
         self,
         uri: str,
         entry: CacheEntry,
     ) -> AsyncGenerator[Event, None]:
-        existed, cached = await self.cache.get_or_create(
+        existed, entries = await self.cache.get_or_create(
             uri=f"{uri}.chunk.json",
             contents=partial(self.chunker_logic, uri, entry),
             metadata={
@@ -43,9 +43,15 @@ class ParentChildChunker(Task):
         )
 
         if existed:
-            entries = json.loads(cached.content)
-            object.__setattr__(self, "_chunked", len(entries))
             object.__setattr__(self, "_cached", True)
+
+        entries = json.loads(entries.content)
+
+        if not self.results:
+            self._set_results([])
+
+        object.__setattr__(self, "_chunked", len(entries))
+        self._results.append(entries)
 
         status = "Cached" if existed else "Generated"
         yield Event(Event.Type.PROGRESS, f"{status} {self._chunked} chunks for {uri}")

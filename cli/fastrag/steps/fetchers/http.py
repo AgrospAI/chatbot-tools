@@ -16,7 +16,7 @@ class HttpFetcher(Task):
     _cached: bool = field(init=False, default=False, hash=False, compare=False)
 
     @override
-    async def callback(self) -> AsyncGenerator[Event, None]:
+    async def run(self) -> AsyncGenerator[Event, None]:
         if self.cache.is_present(self.url):
             object.__setattr__(self, "_cached", True)
             return
@@ -28,7 +28,7 @@ class HttpFetcher(Task):
             yield Event(Event.Type.EXCEPTION, f"ERROR: {e}")
             return
 
-        await self.cache.create(
+        entry = await self.cache.create(
             self.url,
             res.text.encode(),
             {
@@ -37,6 +37,8 @@ class HttpFetcher(Task):
                 "strategy": HttpFetcher.supported,
             },
         )
+
+        self.result = entry.path
 
     @override
     def completed_callback(self) -> Event:

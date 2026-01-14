@@ -29,15 +29,16 @@ class PathFetcher(Task):
     path: PathField = PathField()
 
     @override
-    async def callback(self) -> AsyncGenerator[Event, None]:
+    async def run(self) -> AsyncGenerator[Event, None]:
         yield Event(
             Event.Type.PROGRESS,
             f"Copying local files ({humanize.naturalsize(self.path.stat().st_size)})",
         )
 
+        self._set_results([])
         try:
             for p in list_paths(self.path):
-                existed, _ = await self.cache.get_or_create(
+                existed, entry = await self.cache.get_or_create(
                     uri=p.resolve().as_uri(),
                     contents=p.read_bytes,
                     metadata={
@@ -46,6 +47,7 @@ class PathFetcher(Task):
                         "strategy": PathFetcher.supported,
                     },
                 )
+                self.results.append(entry.path)
                 yield Event(
                     Event.Type.PROGRESS,
                     (

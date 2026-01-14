@@ -17,7 +17,7 @@ class SelfHostedEmbeddings(Task):
     filter: ClassVar[Filter] = MetadataFilter(step="chunking")
 
     model: str
-    api_key: str
+    api_key: str = field(repr=False)
     url: str
     batch_size: int = 1
 
@@ -25,7 +25,7 @@ class SelfHostedEmbeddings(Task):
     _cached: bool = field(default=False, init=False)
 
     @override
-    async def callback(
+    async def run(
         self,
         uri: str,
         entry: CacheEntry,
@@ -40,10 +40,11 @@ class SelfHostedEmbeddings(Task):
             },
         )
 
-        if existed:
-            data = json.loads(cached.content)
-            object.__setattr__(self, "_embedded", len(data))
-            object.__setattr__(self, "_cached", True)
+        
+        data = json.loads(cached.content)
+        object.__setattr__(self, "_embedded", len(data))
+        object.__setattr__(self, "_cached", existed)
+        self._set_results(data)
         
         status = "Cached" if existed else "Generated"
         yield Event(Event.Type.PROGRESS, f"{status} embeddings for {uri}")

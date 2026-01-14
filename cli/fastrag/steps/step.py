@@ -1,24 +1,59 @@
+from __future__ import annotations
+
 from abc import ABC, abstractmethod
-from dataclasses import dataclass
-from typing import AsyncGenerator, ClassVar, override
+from dataclasses import InitVar, dataclass, field
+from typing import TYPE_CHECKING, Any, AsyncGenerator, ClassVar, override
 
 from rich.progress import Progress
 
 from fastrag.cache.cache import ICache
 from fastrag.config.config import Step, Steps
 from fastrag.events import Event
-from fastrag.plugins import PluginBase
+from fastrag.plugins import PluginBase, inject
 from fastrag.steps.logs import Loggable
-from fastrag.steps.task import Task
+
+if TYPE_CHECKING:
+    from fastrag.runner.experiment_runner import Experiment
+    from fastrag.steps.task import Task
 
 
 @dataclass
 class IStep(Loggable, PluginBase, ABC):
-    step: Step
-    progress: Progress
-    task_id: int
     description: ClassVar[str] = "UNKNOWN STEP"
-    _tasks: ClassVar[dict[Task, list[AsyncGenerator[Event, None]]]] = None
+
+    task_id: int = field(default=-1)
+    step: Step = field(default_factory=list)
+    cache: ICache = field(default=None, compare=False, repr=False)
+    progress: Progress = field(default=None, compare=False, repr=False)
+    _tasks: list[Task] = field(default_factory=list, init=False, hash=False, repr=False)
+
+    experiment: InitVar[Experiment | None] = None
+
+    def __post_init__(self, experiment: Experiment) -> None:
+        super().__post_init__()
+
+        from fastrag.steps.task import Task
+
+        self._tasks = [
+            inject(
+                Task,
+                s.strategy,
+                experiment=experiment,
+                cache=self.cache,
+                **s.params or {},
+            )
+            for s in self.step
+        ]
+
+    def get_results(self) -> dict[Task, any]:
+        """Get the sub-results of the subtasks that make this step
+
+        Returns:
+            dict[Task, any]: each task and their results
+        """
+        from fastrag.steps.task import Task
+
+        return {t: t.results for t in self._tasks if isinstance(t, Task)}
 
     def calculate_total(self) -> int:
         """Calculates the number of tasks to perform by this step
@@ -27,18 +62,6 @@ class IStep(Loggable, PluginBase, ABC):
             int: number of tasks to perform
         """
         return len(self.step) if self.step else 0
-
-    def completed_callback(self, task: Task) -> Event:
-        """Callback to call when the task has been completed
-
-        Args:
-            task (Task): completed task
-
-        Returns:
-            Event: Success event
-        """
-
-        return task.completed_callback()
 
     @override
     def log_verbose(self, event: Event) -> None:
@@ -62,7 +85,7 @@ class IStep(Loggable, PluginBase, ABC):
 
     @abstractmethod
     async def get_tasks(
-        self, cache: ICache
+        self,
     ) -> AsyncGenerator[tuple[Task, list[AsyncGenerator[Event, None]]], None]:
         """Generate a dict with the tasks to perform
 
@@ -75,14 +98,49 @@ class IStep(Loggable, PluginBase, ABC):
 
 @dataclass
 class IMultiStep(IStep):
-    step: Steps
+    step: Steps = field(default_factory=list, repr=False)
 
-    @abstractmethod
-    def get_steps(self) -> list[IStep]:
-        """Get the instances of the involved steps
+    _tasks: list[IStep] = field(default_factory=list, init=False, hash=False, repr=False)
+    results: str = field(default="")
+    experiment: InitVar[Experiment | None] = None
 
-        Returns:
-            list[IStep]: list of instances
-        """
+    def __post_init__(self, experiment: Experiment | None = None) -> None:
+        super(IStep, self).__post_init__()
 
-        raise NotImplementedError
+        if not experiment:
+            experiment = self
+
+        self._tasks = [
+            inject(
+                IStep,
+                strat,
+                experiment=self,
+                task_id=idx,
+                progress=self.progress,
+                step=step,
+                cache=self.cache,
+            )
+            for idx, (strat, step) in enumerate(self.step.items())
+        ]
+
+        lines = []
+
+        for task in self._tasks:
+            task_name = task.__class__.__name__
+            lines.append(f"  ● {task_name}")
+
+            for strat in task.step:
+                lines.append(f"      └─ {strat.strategy}")
+
+        self.results = f"Experiment #{self.task_id + 1}:\n{'\n'.join(lines)}"
+
+    def tasks(self, step: str) -> list[Task]:
+        tasks = []
+        for task in self._tasks:
+            if step not in task.supported:
+                continue
+            tasks.extend(task._tasks)
+        return tasks
+
+    def save_results(self, results: str) -> None:
+        self.results += results
