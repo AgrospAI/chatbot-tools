@@ -34,7 +34,7 @@ class ParentChildChunker(Task):
         entry: CacheEntry,
     ) -> AsyncGenerator[Event, None]:
         existed, entries = await self.cache.get_or_create(
-            uri=f"{uri}.chunk.json",
+            uri=f"{entry.path}.chunk.json",
             contents=partial(self.chunker_logic, uri, entry),
             metadata={
                 "step": "chunking",
@@ -54,7 +54,7 @@ class ParentChildChunker(Task):
         self._results.append(entries)
 
         status = "Cached" if existed else "Generated"
-        yield Event(Event.Type.PROGRESS, f"{status} {self._chunked} chunks for {uri}")
+        yield Event(Event.Type.PROGRESS, f"{status} {self._chunked} chunks for {entry.path}")
 
     @override
     def completed_callback(self) -> Event:

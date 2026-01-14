@@ -1,5 +1,6 @@
 import json
 import re
+from collections import defaultdict
 from dataclasses import dataclass, field
 from typing import ClassVar, Dict, List, override
 
@@ -11,6 +12,9 @@ from fastrag.steps.task import Run, Task
 
 
 def calculate_corpus_quality(docs: List[Document]) -> Dict:
+    if not docs:
+        return {}
+
     # 1. Calculate Global Statistics
     lengths = [len(d.page_content) for d in docs]
     stats = {"mean": np.mean(lengths), "std": np.std(lengths), "total_docs": len(docs)}
@@ -156,7 +160,7 @@ class ChunkQualityBenchmarking(Task):
                             },
                         )
                     )
-                    total += 1
+                total += 1
 
                 quality = calculate_corpus_quality(docs)
                 qualities.append(quality)
@@ -165,16 +169,16 @@ class ChunkQualityBenchmarking(Task):
                     Event.Type.PROGRESS, f"Calculated quality of {len(documents)} chunks"
                 )
 
-        overall = {}
+        overall = defaultdict(float)
         for quality in qualities:
             for k, v in quality.items():
-                overall[k] = overall.get(k, 0) + v
+                overall[f"{k}_mean"] += v
 
         for k, v in overall.items():
-            overall[k] = round(overall[k] / total, 3)
+            overall[k] = round(v / total, 3)
 
         self.experiment.save_results(
-            f"\nChunkQualityBenchmarking ({total} chunk): {json.dumps(overall, indent=4)}"
+            f"\nChunkQualityBenchmarking ({total} docs): {json.dumps(overall, indent=4)}"
         )
         object.__setattr__(self, "_quality", quality)
 
