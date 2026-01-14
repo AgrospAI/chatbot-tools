@@ -3,7 +3,7 @@ from typing import ClassVar, override
 
 from fastrag.cache.filters import MetadataFilter
 from fastrag.helpers.filters import OrFilter
-from fastrag.steps.step import IStep
+from fastrag.steps.step import IStep, Tasks
 
 
 @dataclass
@@ -12,7 +12,7 @@ class ParsingStep(IStep):
     description: ClassVar[str] = "PARSE"
 
     @override
-    async def get_tasks(self):
+    async def get_tasks(self) -> Tasks:
         for idx, task in enumerate(self._tasks):
             params = self.step[idx].params
             entries = await self.cache.get_entries(

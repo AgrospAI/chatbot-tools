@@ -2,13 +2,13 @@ import asyncio
 import re
 from dataclasses import InitVar, dataclass, field
 from difflib import SequenceMatcher
-from typing import AsyncGenerator, ClassVar, override
+from typing import ClassVar, override
 
 from fastrag.config.config import Config
 from fastrag.events import Event
 from fastrag.llms.llm import ILLM
 from fastrag.plugins import inject
-from fastrag.steps.task import Task
+from fastrag.steps.task import Run, Task
 
 
 @dataclass
@@ -81,7 +81,6 @@ class QuerySetBenchmarking(Task):
     questions: InitVar[list[list[str]]] = field(repr=False)
 
     _questions: list[Question] = field(init=False, repr=False, default_factory=list)
-    _llm: ILLM = field(init=False, default_factory=_inject, repr=False)
     _score: float = field(default=0.0, repr=False)
 
     def __post_init__(self, questions: list[list[str]]) -> None:
@@ -91,7 +90,7 @@ class QuerySetBenchmarking(Task):
             self._questions.append(question)
 
     @override
-    async def run(self) -> AsyncGenerator[Event, None]:
+    async def run(self) -> Run:
         async def process_question(question: Question) -> Question:
             # question.answer = await self._llm.generate(question.question)
             question.answer = "asd"

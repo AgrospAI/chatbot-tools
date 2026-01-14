@@ -2,13 +2,13 @@ import asyncio
 import re
 import xml.etree.ElementTree as ET
 from dataclasses import dataclass, field
-from typing import AsyncGenerator, ClassVar, override
+from typing import ClassVar, override
 
 import httpx
 
 from fastrag.events import Event
 from fastrag.helpers import URLField
-from fastrag.steps.task import Task
+from fastrag.steps.task import Run, Task
 
 
 @dataclass(frozen=True)
@@ -19,7 +19,7 @@ class SitemapXMLFetcher(Task):
     url: URLField = URLField()
 
     @override
-    async def run(self) -> AsyncGenerator[Event, None]:
+    async def run(self) -> Run:
         # 1. Fetch sitemap
         res = httpx.get(self.url)
         res.raise_for_status()

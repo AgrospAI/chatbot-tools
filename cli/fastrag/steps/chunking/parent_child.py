@@ -12,8 +12,8 @@ from fastrag.cache.entry import CacheEntry
 from fastrag.cache.filters import MetadataFilter
 from fastrag.events import Event
 from fastrag.helpers.filters import Filter
-from fastrag.steps.task import Task
 from fastrag.helpers.markdown_utils import clean_markdown, normalize_metadata
+from fastrag.steps.task import Task
 
 
 @dataclass(frozen=True)
@@ -64,7 +64,6 @@ class ParentChildChunker(Task):
             f"{status} {self._chunked} chunks",
         )
 
-
     def chunker_logic(self, uri: str, entry: CacheEntry) -> bytes:
         raw_text = entry.path.read_text(encoding="utf-8")
         text, raw_metadata = clean_markdown(raw_text)
@@ -85,17 +84,20 @@ class ParentChildChunker(Task):
             headers = [p_doc.metadata.get(k, "") for k in ["header_1", "header_2", "header_3"]]
             title_path = " > ".join(filter(None, headers))
 
-            context_header = f'Context: {title_path}'
-            if (metadata['description']):
-                context_header += f'\nSummary: {metadata["description"]}'
+            context_header = f"Context: {title_path}"
+            if metadata["description"]:
+                context_header += f"\nSummary: {metadata['description']}"
 
-            parent_content = (
-                f"{context_header}\n\n{p_doc.page_content}"
-            )
+            parent_content = f"{context_header}\n\n{p_doc.page_content}"
             parent_id = str(uuid.uuid4())
 
-            final_metadata = {**metadata, **p_doc.metadata, "chunk_type": "parent", "title_path": title_path}
-            
+            final_metadata = {
+                **metadata,
+                **p_doc.metadata,
+                "chunk_type": "parent",
+                "title_path": title_path,
+            }
+
             all_chunks.append(
                 {
                     "chunk_id": parent_id,

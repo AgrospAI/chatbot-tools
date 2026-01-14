@@ -1,7 +1,7 @@
 from dataclasses import dataclass, field
 from functools import partial
 from pathlib import Path
-from typing import AsyncGenerator, ClassVar, override
+from typing import ClassVar, override
 from urllib.parse import urljoin
 
 from bs4 import BeautifulSoup
@@ -11,7 +11,7 @@ from fastrag.cache.entry import CacheEntry
 from fastrag.cache.filters import MetadataFilter
 from fastrag.events import Event
 from fastrag.helpers.filters import Filter
-from fastrag.steps.task import Task
+from fastrag.steps.task import Run, Task
 
 
 def parse_to_md(path: Path, base_url: str) -> bytes:
@@ -36,11 +36,7 @@ class HtmlParser(Task):
     _parsed: int = field(default=0)
 
     @override
-    async def run(
-        self,
-        uri: str,
-        entry: CacheEntry,
-    ) -> AsyncGenerator[Event, None]:
+    async def run(self, uri: str, entry: CacheEntry) -> Run:
         existed, _ = await self.cache.get_or_create(
             uri=entry.path.resolve().as_uri(),
             contents=partial(parse_to_md, entry.path, uri),

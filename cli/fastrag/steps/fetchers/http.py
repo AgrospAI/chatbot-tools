@@ -1,11 +1,11 @@
 from dataclasses import dataclass, field
-from typing import AsyncGenerator, ClassVar, override
+from typing import ClassVar, override
 
 from httpx import AsyncClient
 
 from fastrag.events import Event
 from fastrag.helpers import URLField
-from fastrag.steps.task import Task
+from fastrag.steps.task import Run, Task
 
 
 @dataclass(frozen=True)
@@ -16,7 +16,7 @@ class HttpFetcher(Task):
     _cached: bool = field(init=False, default=False, hash=False, compare=False)
 
     @override
-    async def run(self) -> AsyncGenerator[Event, None]:
+    async def run(self) -> Run:
         if self.cache.is_present(self.url):
             object.__setattr__(self, "_cached", True)
             return

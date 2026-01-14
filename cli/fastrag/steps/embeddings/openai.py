@@ -1,14 +1,15 @@
 import json
-import httpx
 from dataclasses import dataclass, field
 from functools import partial
-from typing import AsyncGenerator, ClassVar, override
+from typing import ClassVar, override
+
+import httpx
 
 from fastrag.cache.entry import CacheEntry
 from fastrag.cache.filters import MetadataFilter
 from fastrag.events import Event
 from fastrag.helpers.filters import Filter
-from fastrag.steps.task import Task
+from fastrag.steps.task import Run, Task
 
 
 @dataclass(frozen=True)
@@ -19,17 +20,13 @@ class SelfHostedEmbeddings(Task):
     model: str
     api_key: str = field(repr=False)
     url: str
-    batch_size: int = 1
+    batch_size: int = field(default=1)
 
-    _embedded: int = field(default=0, init=False)
-    _cached: bool = field(default=False, init=False)
+    _embedded: int = field(default=0, init=False, repr=False)
+    _cached: bool = field(default=False, init=False, repr=False)
 
     @override
-    async def run(
-        self,
-        uri: str,
-        entry: CacheEntry,
-    ) -> AsyncGenerator[Event, None]:
+    async def run(self, uri: str, entry: CacheEntry) -> Run:
         existed, cached = await self.cache.get_or_create(
             uri=f"{uri}.embedding.json",
             contents=partial(self.embedding_logic, entry),
@@ -40,12 +37,11 @@ class SelfHostedEmbeddings(Task):
             },
         )
 
-        
         data = json.loads(cached.content)
         object.__setattr__(self, "_embedded", len(data))
         object.__setattr__(self, "_cached", existed)
         self._set_results(data)
-        
+
         status = "Cached" if existed else "Generated"
         yield Event(Event.Type.PROGRESS, f"{status} embeddings for {uri}")
 
@@ -57,15 +53,15 @@ class SelfHostedEmbeddings(Task):
     def embedding_logic(self, entry: CacheEntry) -> bytes:
         raw_json = entry.path.read_text(encoding="utf-8")
         chunks = json.loads(raw_json)
-        
+
         if not chunks:
             return json.dumps([]).encode("utf-8")
 
         headers = {
             "Content-Type": "application/json",
-            "Authorization": f"Bearer {self.api_key}"
+            "Authorization": f"Bearer {self.api_key}",
         }
-        
+
         total_vectors = []
         content_chunks = [c["content"] for c in chunks]
 
@@ -73,7 +69,7 @@ class SelfHostedEmbeddings(Task):
             for i in range(0, len(content_chunks), self.batch_size):
                 # Send to embedding model by batches size
                 batch_texts = content_chunks[i : i + self.batch_size]
-                
+
                 payload = {
                     "model": self.model,
                     "input": batch_texts,
@@ -82,15 +78,17 @@ class SelfHostedEmbeddings(Task):
                 try:
                     response = client.post(self.url, headers=headers, json=payload)
                     response.raise_for_status()
-                    
+
                     result = response.json()
                     batch_vectors = result.get("embeddings", [])
-                    
+
                     if len(batch_vectors) != len(batch_texts):
-                        raise ValueError(f"Sent {len(batch_texts)} texts but got {len(batch_vectors)} vectors.")
-                        
+                        raise ValueError(
+                            f"Sent {len(batch_texts)} texts but got {len(batch_vectors)} vec"
+                        )
+
                     total_vectors.extend(batch_vectors)
-                    
+
                 except Exception as e:
                     raise RuntimeError(f"Embedding failed at chunk {i}: {e}")
 

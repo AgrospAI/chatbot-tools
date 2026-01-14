@@ -12,11 +12,10 @@ from rich.progress import (
     TimeRemainingColumn,
 )
 
-from fastrag.cache.cache import ICache
 from fastrag.config.config import Steps
 from fastrag.plugins import inject
 from fastrag.runner.runner import IRunner
-from fastrag.steps.step import IStep
+from fastrag.steps.step import IStep, RuntimeResources
 
 
 @dataclass(frozen=True)
@@ -27,7 +26,7 @@ class Runner(IRunner):
     def run(
         self,
         steps: Steps,
-        cache: ICache,
+        resources: RuntimeResources,
         run_steps: int = -1,
         starting_step_number: int = 0,
     ) -> int:
@@ -47,7 +46,7 @@ class Runner(IRunner):
                     task_id=idx,
                     progress=progress,
                     step=steps[step],
-                    cache=cache,
+                    resources=resources,
                 )
                 for idx, step in enumerate(steps)
             ]
