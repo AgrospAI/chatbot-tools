@@ -27,17 +27,17 @@ class ParentChildChunker(Task):
 
     embedding_api_url: str = "https://chat.agrospai.udl.cat/ollama/api/embed"
     embedding_api_key: str = "" 
-    embedding_model: str = "paraphrase-multilingual:latest"
+    embedding_model: InitVar[str] = "paraphrase-multilingual:latest"
 
     def __post_init__(self, embedding_model: str) -> None:
         # model = HuggingFaceEmbeddings(model_name=embedding_model)
         embed_model = OpenWebUIEmbeddings(
             base_url=self.embedding_api_url,
             api_key=self.embedding_api_key,
-            model=self.embedding_model
+            model=embedding_model
         )
 
-        object.__setattr__(self, "_embedding_model", model)
+        object.__setattr__(self, "_embedding_model", embed_model)
 
     @override
     async def run(
