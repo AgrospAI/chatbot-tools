@@ -7,6 +7,8 @@ import { ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react"
 export type Chat = {
   chat_id: string
   created_at: string
+  ip?: string
+  country?: string
 }
 
 interface SortingProps {
@@ -23,6 +25,22 @@ export function getColumns(sorting: SortingProps): ColumnDef<Chat>[] {
       cell: ({ row }) => (
         <div className="truncate">{row.getValue("chat_id")}</div>
       ),
+    },
+    {
+      accessorKey: "ip",
+      header: "IP Address",
+      cell: ({ row }) => {
+        const ip = row.getValue("ip") as string | undefined
+        return <div>{ip || "N/A"}</div>
+      },
+    },
+    {
+      accessorKey: "country",
+      header: "Country",
+      cell: ({ row }) => {
+        const country = row.getValue("country") as string | undefined
+        return <div>{country || "N/A"}</div>
+      },
     },
     {
       accessorKey: "created_at",
