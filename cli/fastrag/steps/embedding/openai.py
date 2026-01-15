@@ -92,7 +92,7 @@ class OpenAISimple(Task):
         documents: list[Document],
         embeddings: list[list[float]],
     ) -> None:
-        if self.store.collection_exists():
+        if await self.store.collection_exists():
             # Skip upload because collection already exists
             return
 
