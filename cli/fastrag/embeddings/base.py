@@ -26,10 +26,12 @@ class IEmbeddings(PluginBase, ABC):
                         "Content-Type": "application/json",
                         "Authorization": f"Bearer {api_key}",
                     }
+                    limits = httpx.Limits(max_keepalive_connections=5, max_connections=10)
                     # We store the client on the base class to ensure it's a true singleton
                     IEmbeddings._client = httpx.AsyncClient(
-                        timeout=120.0,
+                        timeout=180.0,
                         headers=headers,
+                        limits=limits,
                     )
         return IEmbeddings._client
 
