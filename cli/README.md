@@ -47,6 +47,11 @@ To generate the [automatic documentation](USAGE.md)
 typer ./fastrag/__main__.py utils docs > USAGE.md
 ```
 
+## General Workflow
+
+![Workflow Diagram](resources/workflow.png "Workflow Diagram")
+
+
 ## Architecture
 
 The main benefit of using plugins is being able to expand the workflow execution capabilities, which requires to understand how it works, as of now, the core components forming FastRAG are:

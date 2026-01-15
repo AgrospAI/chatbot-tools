@@ -8,7 +8,6 @@ from fastrag.cache.entry import CacheEntry
 from fastrag.cache.filters import StepFilter
 from fastrag.events import Event
 from fastrag.helpers.filters import Filter
-from fastrag.steps.parsing.events import ParsingEvent
 from fastrag.steps.task import Task
 
 
@@ -44,7 +43,7 @@ class RecursiveChunker(Task):
         self,
         uri: str,
         entry: CacheEntry,
-    ) -> AsyncGenerator[ParsingEvent, None]:
+    ) -> AsyncGenerator[Event, None]:
         existed, _ = await self.cache.get_or_create(
             uri=f"{entry.path.resolve().as_uri()}.{self.__class__.__name__}.{self.chunk_size}.chunk.json",
             contents=partial(chunk_md, entry.path, self.chunk_size),
@@ -56,14 +55,14 @@ class RecursiveChunker(Task):
             },
         )
 
-        yield ParsingEvent(
-            ParsingEvent.Type.PROGRESS,
+        yield Event(
+            Event.Type.PROGRESS,
             ("Cached" if existed else "Chunking") + f" Markdown {uri}",
         )
 
     @override
     def completed_callback(self) -> Event:
-        return ParsingEvent(
-            ParsingEvent.Type.COMPLETED,
+        return Event(
+            Event.Type.COMPLETED,
             "Chunked Markdown documents with RecursiveChunker",
         )

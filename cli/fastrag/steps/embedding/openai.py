@@ -92,10 +92,6 @@ class OpenAISimple(Task):
         documents: list[Document],
         embeddings: list[list[float]],
     ) -> None:
-        if await self.store.collection_exists(self.experiment.experiment_hash):
-            # Skip upload because collection already exists
-            return
-
         await self.store.add_documents(
             documents,
             embeddings,
