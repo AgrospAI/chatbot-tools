@@ -56,6 +56,7 @@ class OpenAIEmbeddings(IEmbeddings):
             for attempt in range(self.max_attempts):
                 try:
                     batch_results = await self._embed(batch)
+                    break
                 except Exception as e:
                     if attempt < self.max_attempts - 1:
                         wait_time = (attempt + 1) * 2

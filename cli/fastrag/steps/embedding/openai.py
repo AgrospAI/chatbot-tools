@@ -55,7 +55,7 @@ class OpenAISimple(Task):
                 vectors.append(chunk.pop("vector"))
                 documents.append(Document(**chunk))
 
-            self.upload_embeddings(documents, vectors)
+            await self.upload_embeddings(documents, vectors)
             yield Event(
                 Event.Type.PROGRESS,
                 f"Re-uploaded embeddings to {self.experiment.experiment_hash}",

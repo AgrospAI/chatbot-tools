@@ -30,7 +30,7 @@ resources:
           params:
             url: https://agrospai.udl.cat
             workers: 5
-            depth: 3
+            depth: 1
             delay: 0
       parsing:
         - strategy: HtmlParser
@@ -60,7 +60,7 @@ experiments:
     embedding:
       - strategy: OpenAI-Simple
         params:
-          model: paraphrase-multilingual:latest
+          model: nomic-embed-text-v2-moe:latest
           api_key: ${CHAT_API_KEY}
           url: https://chat.agrospai.udl.cat/ollama/api/embed
     benchmarking:
@@ -68,8 +68,8 @@ experiments:
         params:
           questions:
             - [
-                "Who are the members of Universitat de Lleida's (UdL) project AgrospAI?",
-                "Does not list individual members"
+                "Who is the staff of the agrospai project?",
+                "Roberto Garcia Gonzalez"
               ]
             - [
                 "What technologies does AgrospAI use to make payments",
