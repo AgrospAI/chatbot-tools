@@ -127,8 +127,36 @@ class QuerySetBenchmarking(Task):
                 prompt = build_prompt(context, question.question)
                 return await self.llm.generate(prompt)
 
+            # Step 1: Generate initial answer
             question.answer = await generate()
-            question.score = score_answer(question)
+
+            # Step 2: Initial scoring
+            initial_score = score_answer(question)
+            question.score = initial_score
+
+            # Step 3: Fallback LLM scoring if score < 0.5
+            if initial_score < 0.5:
+                fallback_prompt = f"""
+                You are an expert evaluator. Given the question and the proposed answer,
+                provide a score between 0.0 and 1.0 indicating the quality of the answer.
+
+                Question: {question.question}
+                Answer: {question.answer}
+
+                Only return a single number between 0 and 1.
+                """
+                fallback_score_str = await self.llm.generate(fallback_prompt)
+
+                try:
+                    llm_score = float(re.findall(r"\d*\.?\d+", fallback_score_str)[0])
+                    llm_score = max(0.0, min(1.0, llm_score))  # clamp to [0,1]
+
+                    # Combine scores with a weight
+                    weight = 0.7
+                    question.score = weight * llm_score + (1 - weight) * initial_score
+                except (IndexError, ValueError):
+                    question.score = initial_score
+
             return question
 
         tasks = [process_question(question) for question in self._questions]
@@ -138,7 +166,9 @@ class QuerySetBenchmarking(Task):
             yield Event(Event.Type.PROGRESS, f"\n{a}")
 
         overall_score = sum(a.score for a in answers) / len(answers)
-        self.experiment.save_results(f"\nQuerySetBenchmarking overall score: {overall_score}")
+        self.experiment.save_results(
+            f"\nQuerySetBenchmarking overall score: {round(overall_score, 3)}"
+        )
 
         if self._questions:
             object.__setattr__(self, "_score", overall_score)

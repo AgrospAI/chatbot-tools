@@ -65,10 +65,10 @@ experiments:
           questions:
             - [
                 "Who are the members of Universitat de Lleida's (UdL) project AgrospAI?",
-                "Does not list individual members",
+                "Does not list individual members"
               ]
             - [
                 "What technologies does AgrospAI use to make payments",
-                "Smart Contracts"
+                "Smart Contracts", "Blockchain"
               ]
       - strategy: ChunkQuality

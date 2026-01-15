@@ -160,7 +160,9 @@ class IMultiStep(IStep):
             for strat in task.step:
                 lines.append(f"\t└─ {strat.strategy}")
 
-        self.results = f"Experiment #{self.task_id + 1} | Experiment {self.experiment_hash} :\n{'\n'.join(lines)}"
+        self.results = (
+            f"Experiment #{self.task_id + 1} | {self.experiment_hash} :\n{'\n'.join(lines)}"
+        )
 
     def tasks(self, step: str) -> list[Task]:
         tasks = []
