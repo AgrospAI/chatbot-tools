@@ -1,28 +1,12 @@
-from abc import ABC, abstractmethod
-
 import requests
 
-from fastrag.plugins import PluginBase
+from fastrag.embeddings.base import IEmbeddings
 
 
-class IEmbeddings(PluginBase, ABC):
-    """Abstract interface for embedding models"""
+class OllamaEmbeddings(IEmbeddings):
+    """Ollama-compatible embedding model"""
 
-    @abstractmethod
-    def embed_documents(self, texts: list[str]) -> list[list[float]]:
-        """Embeds a list of documents."""
-        pass
-
-    @abstractmethod
-    def embed_query(self, text: str) -> list[float]:
-        """Embeds a single query."""
-        pass
-
-
-class SelfHostedEmbeddings(IEmbeddings):
-    """Self-hosted OpenAI-compatible embedding model"""
-
-    supported: list[str] = ["OpenAI-Simple", "openai", "openai-simple"]
+    supported: list[str] = ["OllamaEmbeddings"]
 
     def __init__(self, url: str, api_key: str, model: str):
         self.api_url = url
@@ -37,7 +21,7 @@ class SelfHostedEmbeddings(IEmbeddings):
         data = {"model": self.model, "input": input_text}
         response = requests.post(self.api_url, headers=headers, json=data)
         response.raise_for_status()
-        return response.json()["data"][0]["embedding"]
+        return response.json()["embeddings"][0]
 
     def embed_documents(self, texts: list[str]) -> list[list[float]]:
         """Embeds a list of documents."""

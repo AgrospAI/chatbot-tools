@@ -1,4 +1,5 @@
 import asyncio
+import json
 import re
 from dataclasses import InitVar, dataclass, field
 from difflib import SequenceMatcher
@@ -66,12 +67,36 @@ def score_answer(question: Question) -> float:
     return max(0.0, min(1.0, best_score))
 
 
+def build_prompt(context: str, question: str) -> str:
+    """
+    Construye el prompt RAG para el LLM.
+    """
+    return f"""
+    You are a helpful assistant and expert in data spaces.
+
+    Always use inline references in the form [<NUMBER OF DOCUMENT>](ref:<NUMBER OF DOCUMENT>)
+    ONLY if you use information from a document. For example, if you use the information from
+    Document[3], you should write [3](ref:3) at the end of the sentence where you used that
+    information.
+    Give a precise, accurate and structured answer without repeating the question.
+    
+    These are the documents:
+    {context}
+
+    Question:
+    {question}
+
+    Answer:
+    """.strip()
+
+
 @dataclass(frozen=True)
 class QuerySetBenchmarking(Task):
     supported: ClassVar[str] = "QuerySet"
     questions: InitVar[list[list[str]]] = field(repr=False)
 
     _questions: list[Question] = field(init=False, repr=False, default_factory=list)
+
     _score: float = field(default=0.0, repr=False)
 
     def __post_init__(self, questions: list[list[str]]) -> None:
@@ -83,8 +108,23 @@ class QuerySetBenchmarking(Task):
     @override
     async def run(self) -> Run:
         async def process_question(question: Question) -> Question:
-            # question.answer = await self._llm.generate(question.question)
-            question.answer = "asd"
+            query_embedding = await self.store.embed_query(question.question)
+
+            # Search for similar documents
+            results = await self.store.similarity_search(
+                query=question.question, query_embedding=query_embedding, k=5
+            )
+
+            context_parts = [
+                f"Document[{i}]: {doc.page_content}" for i, doc in enumerate(results)
+            ]
+            context = "\n\n".join(context_parts)
+
+            async def generate():
+                prompt = build_prompt(context, question.question)
+                return await self.llm.generate(prompt)
+
+            question.answer = await generate()
             question.score = score_answer(question)
             return question
 

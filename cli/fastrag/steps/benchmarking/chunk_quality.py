@@ -152,7 +152,7 @@ class ChunkQualityBenchmarking(Task):
                 for doc in documents:
                     docs.append(
                         Document(
-                            page_content=doc["content"],
+                            page_content=doc["page_content"],
                             metadata={
                                 **doc["metadata"],
                                 "chunk_id": doc["chunk_id"],

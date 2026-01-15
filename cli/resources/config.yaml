@@ -7,6 +7,7 @@ resources:
       collection_name: testing
       user: ${MILVUS_USER}
       password: ${MILVUS_PASSWORD}
+      dimension: 768
   llm:
     strategy: openai
     params:
@@ -57,6 +58,11 @@ experiments:
           chunk_size: 1200
           chunk_overlap: 200
     embedding:
+      # - strategy: OllamaEmbeddings
+      #   params:
+      #     model: paraphrase-multilingual:latest
+      #     api_key: ${CHAT_API_KEY}
+      #     url: https://chat.agrospai.udl.cat/ollama/api/embed
       - strategy: OpenAI-Simple
         params:
           model: paraphrase-multilingual:latest
@@ -73,5 +79,8 @@ experiments:
       - strategy: QuerySet
         params:
           questions:
-            - ["Who are the members of Universitat de Lleida's (UdL) project AgrospAI?", "Roberto García González, Rosa Maria Gil, Jordi García Ventura, Zihan Chen, Christian López García, Claudia Colàs Torres, Aleix Segura Paz, Pol Jaimejuan Caubet, Joan Piñot Murillo"]
+            - [
+                "Who are the members of Universitat de Lleida's (UdL) project AgrospAI?",
+                "Roberto García González, Rosa Maria Gil, Jordi García Ventura, Zihan Chen, Christian López García, Claudia Colàs Torres, Aleix Segura Paz, Pol Jaimejuan Caubet, Joan Piñot Murillo",
+              ]
       - strategy: ChunkQuality

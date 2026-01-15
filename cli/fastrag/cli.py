@@ -78,7 +78,7 @@ def serve(
     cfg = load_config(config)
 
     # Import and initialize serve module
-    from fastrag.serve import init_serve, start_server
+    from fastrag import init_serve, start_server
 
     # Initialize the server with config
     init_serve(cfg)

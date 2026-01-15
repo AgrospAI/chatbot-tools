@@ -3,14 +3,8 @@
   "name": "chat",
   "title": "Chat",
   "description": "A customizable chat component.",
-  "dependencies": [
-    "class-variance-authority",
-    "lucide-react"
-  ],
-  "registryDependencies": [
-    "button",
-    "avatar"
-  ],
+  "dependencies": ["class-variance-authority", "lucide-react"],
+  "registryDependencies": ["button", "avatar"],
   "files": [
     {
       "path": "src/registry/new-york/chat/components/chat/autosize-textarea.tsx",

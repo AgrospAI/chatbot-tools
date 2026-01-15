@@ -78,7 +78,7 @@ class SlidingWindowChunker(Task):
 
             all_chunks.append({
                 "chunk_id": str(uuid.uuid4()),
-                "content": chunk_content,
+                "page_content": chunk_content,
                 "metadata": {
                     **metadata,
                     "chunk_index": i,

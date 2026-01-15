@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, Any, AsyncGenerator, TypeAlias
 from fastrag.cache.cache import ICache
 from fastrag.cache.entry import CacheEntry
 from fastrag.events import Event
+from fastrag.llms.llm import ILLM
 from fastrag.plugins import PluginBase
 from fastrag.steps.step import RuntimeResources
 from fastrag.stores.store import IVectorStore
@@ -32,7 +33,7 @@ class Task(PluginBase, ABC):
         return self.resources.store
 
     @property
-    def llm(self) -> IVectorStore:
+    def llm(self) -> ILLM:
         return self.resources.llm
 
     @property

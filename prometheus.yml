@@ -1,0 +1,20 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    monitor: 'fastrag-monitor'
+
+scrape_configs:
+- job_name: 'fastrag-api'
+  scrape_interval: 5s
+  metrics_path: '/metrics'
+  scheme: 'http'
+  static_configs:
+  - targets: [ 'fastrag-api:8000' ]
+  # Note: Bearer token should be provided via file or command line flag
+  # For docker-compose, we'll use a mounted token file
+  bearer_token_file: /etc/prometheus/bearer_token
+  relabel_configs:
+  - source_labels: [ __address__ ]
+    target_label: instance
+    replacement: 'fastrag-api'

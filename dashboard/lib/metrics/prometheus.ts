@@ -1,0 +1,432 @@
+import { env } from "@/env"
+import { buildMockDashboardMetrics } from "@/lib/metrics/mock"
+import {
+  DashboardMetrics,
+  LatencyMetrics,
+  MetricState,
+  ModelUsageMetrics,
+  RateLimitingMetrics,
+  ServiceHealthMetrics,
+  TrafficMetrics,
+} from "@/lib/metrics/types"
+
+type QueryRangeResponse = {
+  status: "success" | "error"
+  data?: {
+    resultType: string
+    result: Array<{
+      metric: Record<string, string>
+      values: Array<[number, string]>
+    }>
+  }
+  error?: string
+}
+
+type QueryInstantResponse = {
+  status: "success" | "error"
+  data?: {
+    resultType: string
+    result: Array<{
+      metric: Record<string, string>
+      value: [number, string]
+    }>
+  }
+  error?: string
+}
+
+type GetDashboardMetricsOptions = {
+  useMock?: boolean
+  rangeHours?: number
+  stepSeconds?: number
+}
+
+const DEFAULT_RANGE_HOURS = 24
+const DEFAULT_STEP_SECONDS = 4 * 60 * 60
+
+const PROM_QUERIES = {
+  requestsPerSecond: "sum(rate(http_requests_total[5m]))",
+  concurrentRequests: "sum(active_requests)",
+  pendingRequests: "sum(pending_requests)",
+  latencyP50:
+    "histogram_quantile(0.5, sum(rate(http_request_duration_seconds_bucket[5m])) by (le))",
+  latencyP90:
+    "histogram_quantile(0.9, sum(rate(http_request_duration_seconds_bucket[5m])) by (le))",
+  latencyP99:
+    "histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket[5m])) by (le))",
+  tokensIn: "sum(rate(model_tokens_in_total[5m]))",
+  tokensOut: "sum(rate(model_tokens_out_total[5m]))",
+  rateLimitAllowed: "sum(rate(rate_limit_allowed_total[5m]))",
+  rateLimitRejected: "sum(rate(rate_limit_rejected_total[5m]))",
+  uptime: "avg_over_time(service_uptime[1h])",
+  errorRate:
+    "sum(rate(http_requests_errors_total[5m])) / sum(rate(http_requests_total[5m]))",
+  liveness: "up",
+}
+
+async function queryRange(
+  query: string,
+  baseUrl: string,
+  token: string | undefined,
+  start: Date,
+  end: Date,
+  stepSeconds: number,
+): Promise<Array<{ timestamp: number; value: number }>> {
+  const searchParams = new URLSearchParams({
+    query,
+    start: Math.floor(start.getTime() / 1000).toString(),
+    end: Math.floor(end.getTime() / 1000).toString(),
+    step: stepSeconds.toString(),
+  })
+
+  const response = await fetch(
+    `${baseUrl}/api/v1/query_range?${searchParams.toString()}`,
+    {
+      headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+      cache: "no-store",
+    },
+  )
+
+  if (!response.ok) {
+    throw new Error(`Prometheus range query failed (${response.status})`)
+  }
+
+  const payload = (await response.json()) as QueryRangeResponse
+  if (payload.status !== "success" || !payload.data) {
+    throw new Error(payload.error ?? "Prometheus range query did not succeed")
+  }
+
+  const values = payload.data.result[0]?.values ?? []
+  return values.map(([timestamp, raw]) => ({
+    timestamp,
+    value: Number(raw),
+  }))
+}
+
+async function queryInstant(
+  query: string,
+  baseUrl: string,
+  token: string | undefined,
+): Promise<number> {
+  const searchParams = new URLSearchParams({ query })
+  const response = await fetch(
+    `${baseUrl}/api/v1/query?${searchParams.toString()}`,
+    {
+      headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+      cache: "no-store",
+    },
+  )
+
+  if (!response.ok) {
+    throw new Error(`Prometheus instant query failed (${response.status})`)
+  }
+
+  const payload = (await response.json()) as QueryInstantResponse
+  if (payload.status !== "success" || !payload.data) {
+    throw new Error(payload.error ?? "Prometheus instant query did not succeed")
+  }
+
+  const value = payload.data.result[0]?.value?.[1]
+  return Number(value ?? 0)
+}
+
+function formatTimestampToHour(tsSeconds: number): string {
+  const date = new Date(tsSeconds * 1000)
+  const hours = date.getUTCHours().toString().padStart(2, "0")
+  return `${hours}:00`
+}
+
+function average(values: number[]): number {
+  if (!values.length) return 0
+  return values.reduce((sum, value) => sum + value, 0) / values.length
+}
+
+async function fetchTrafficMetrics(
+  baseUrl: string,
+  token: string | undefined,
+  start: Date,
+  end: Date,
+  stepSeconds: number,
+): Promise<TrafficMetrics> {
+  const series = await queryRange(
+    PROM_QUERIES.requestsPerSecond,
+    baseUrl,
+    token,
+    start,
+    end,
+    stepSeconds,
+  )
+
+  const concurrent = await queryInstant(
+    PROM_QUERIES.concurrentRequests,
+    baseUrl,
+    token,
+  )
+  const pending = await queryInstant(
+    PROM_QUERIES.pendingRequests,
+    baseUrl,
+    token,
+  )
+
+  return {
+    summary: {
+      requestsPerSec: Number(
+        average(series.map(point => point.value)).toFixed(0),
+      ),
+      concurrent,
+      pending,
+    },
+    series: series.map(point => ({
+      time: formatTimestampToHour(point.timestamp),
+      requests: point.value,
+      concurrent,
+      pending,
+    })),
+  }
+}
+
+async function fetchLatencyMetrics(
+  baseUrl: string,
+  token: string | undefined,
+  start: Date,
+  end: Date,
+  stepSeconds: number,
+): Promise<LatencyMetrics> {
+  const [p50Series, p90Series, p99Series] = await Promise.all([
+    queryRange(
+      PROM_QUERIES.latencyP50,
+      baseUrl,
+      token,
+      start,
+      end,
+      stepSeconds,
+    ),
+    queryRange(
+      PROM_QUERIES.latencyP90,
+      baseUrl,
+      token,
+      start,
+      end,
+      stepSeconds,
+    ),
+    queryRange(
+      PROM_QUERIES.latencyP99,
+      baseUrl,
+      token,
+      start,
+      end,
+      stepSeconds,
+    ),
+  ])
+
+  const series = p50Series.map((p50Point, index) => ({
+    time: formatTimestampToHour(p50Point.timestamp),
+    p50: p50Point.value,
+    p90: p90Series[index]?.value ?? p50Point.value,
+    p99: p99Series[index]?.value ?? p50Point.value,
+  }))
+
+  return {
+    summary: {
+      p50: Number((p50Series.at(-1)?.value ?? 0).toFixed(0)),
+      p90: Number((p90Series.at(-1)?.value ?? 0).toFixed(0)),
+      p99: Number((p99Series.at(-1)?.value ?? 0).toFixed(0)),
+    },
+    series,
+  }
+}
+
+async function fetchModelUsageMetrics(
+  baseUrl: string,
+  token: string | undefined,
+  start: Date,
+  end: Date,
+  stepSeconds: number,
+): Promise<ModelUsageMetrics> {
+  const [inputSeries, outputSeries] = await Promise.all([
+    queryRange(PROM_QUERIES.tokensIn, baseUrl, token, start, end, stepSeconds),
+    queryRange(PROM_QUERIES.tokensOut, baseUrl, token, start, end, stepSeconds),
+  ])
+
+  const series = inputSeries.map((point, index) => ({
+    time: formatTimestampToHour(point.timestamp),
+    input: point.value,
+    output: outputSeries[index]?.value ?? 0,
+  }))
+
+  return {
+    summary: {
+      inputTokens: Number((inputSeries.at(-1)?.value ?? 0).toFixed(0)),
+      outputTokens: Number((outputSeries.at(-1)?.value ?? 0).toFixed(0)),
+    },
+    series,
+  }
+}
+
+async function fetchRateLimitingMetrics(
+  baseUrl: string,
+  token: string | undefined,
+  start: Date,
+  end: Date,
+  stepSeconds: number,
+): Promise<RateLimitingMetrics> {
+  const [allowedSeries, rejectedSeries] = await Promise.all([
+    queryRange(
+      PROM_QUERIES.rateLimitAllowed,
+      baseUrl,
+      token,
+      start,
+      end,
+      stepSeconds,
+    ),
+    queryRange(
+      PROM_QUERIES.rateLimitRejected,
+      baseUrl,
+      token,
+      start,
+      end,
+      stepSeconds,
+    ),
+  ])
+
+  const series = allowedSeries.map((point, index) => ({
+    time: formatTimestampToHour(point.timestamp),
+    allowed: point.value,
+    rejected: rejectedSeries[index]?.value ?? 0,
+  }))
+
+  return {
+    summary: {
+      requestsPerIpAvg: Number(
+        average(allowedSeries.map(p => p.value)).toFixed(0),
+      ),
+      rejected: Number((rejectedSeries.at(-1)?.value ?? 0).toFixed(0)),
+    },
+    series,
+  }
+}
+
+async function fetchServiceHealthMetrics(
+  baseUrl: string,
+  token: string | undefined,
+): Promise<ServiceHealthMetrics> {
+  const [uptime, errorRate, liveness] = await Promise.all([
+    queryInstant(PROM_QUERIES.uptime, baseUrl, token),
+    queryInstant(PROM_QUERIES.errorRate, baseUrl, token),
+    queryInstant(PROM_QUERIES.liveness, baseUrl, token),
+  ])
+
+  const healthStatus = errorRate > 0.05 ? "warning" : "healthy"
+  return {
+    metrics: [
+      {
+        label: "Uptime",
+        value: `${(uptime * 100).toFixed(2)}%`,
+        status: "healthy",
+      },
+      {
+        label: "Liveness",
+        value: liveness > 0 ? "Active" : "Down",
+        status: liveness > 0 ? "healthy" : "critical",
+      },
+      {
+        label: "Error Rate",
+        value: `${(errorRate * 100).toFixed(2)}%`,
+        status: healthStatus,
+      },
+    ],
+  }
+}
+
+function fromSettled<T>(
+  result: PromiseSettledResult<T>,
+  fallback: MetricState<T>,
+): MetricState<T> {
+  if (result.status === "fulfilled") {
+    return { data: result.value }
+  }
+  const message =
+    result.reason instanceof Error
+      ? result.reason.message
+      : typeof result.reason === "string"
+        ? result.reason
+        : "Unable to load data"
+
+  return {
+    data: fallback.data,
+    error: message,
+  }
+}
+
+export async function getDashboardMetrics(
+  options: GetDashboardMetricsOptions = {},
+): Promise<DashboardMetrics> {
+  const {
+    useMock = env.METRICS_USE_MOCK,
+    rangeHours = DEFAULT_RANGE_HOURS,
+    stepSeconds = DEFAULT_STEP_SECONDS,
+  } = options
+  const mock = buildMockDashboardMetrics()
+
+  const baseUrl = env.PROMETHEUS_BASE_URL
+  const token = env.PROMETHEUS_BEARER_TOKEN
+
+  console.log("Use mock metrics:", useMock)
+
+  if (!useMock && !baseUrl) {
+    const missingConfigError = !baseUrl
+      ? "Prometheus URL not configured. Serving mock data."
+      : undefined
+
+    return {
+      traffic: {
+        ...mock.traffic,
+        error: missingConfigError ?? mock.traffic.error,
+      },
+      latency: {
+        ...mock.latency,
+        error: missingConfigError ?? mock.latency.error,
+      },
+      modelUsage: {
+        ...mock.modelUsage,
+        error: missingConfigError ?? mock.modelUsage.error,
+      },
+      rateLimiting: {
+        ...mock.rateLimiting,
+        error: missingConfigError ?? mock.rateLimiting.error,
+      },
+      serviceHealth: {
+        ...mock.serviceHealth,
+        error: missingConfigError ?? mock.serviceHealth.error,
+      },
+    }
+  }
+
+  if (!baseUrl) {
+    return mock
+  }
+
+  const end = new Date()
+  const start = new Date(end.getTime() - rangeHours * 60 * 60 * 1000)
+
+  const [
+    trafficResult,
+    latencyResult,
+    modelUsageResult,
+    rateLimitingResult,
+    serviceHealthResult,
+  ] = await Promise.allSettled([
+    fetchTrafficMetrics(baseUrl, token, start, end, stepSeconds),
+    fetchLatencyMetrics(baseUrl, token, start, end, stepSeconds),
+    fetchModelUsageMetrics(baseUrl, token, start, end, stepSeconds),
+    fetchRateLimitingMetrics(baseUrl, token, start, end, stepSeconds),
+    fetchServiceHealthMetrics(baseUrl, token),
+  ])
+
+  return {
+    traffic: fromSettled(trafficResult, mock.traffic),
+    latency: fromSettled(latencyResult, mock.latency),
+    modelUsage: fromSettled(modelUsageResult, mock.modelUsage),
+    rateLimiting: fromSettled(rateLimitingResult, mock.rateLimiting),
+    serviceHealth: fromSettled(serviceHealthResult, mock.serviceHealth),
+  }
+}
