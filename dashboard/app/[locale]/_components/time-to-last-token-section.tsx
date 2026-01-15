@@ -12,7 +12,7 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from "@/components/ui/chart"
-import { MetricState, TrafficMetrics } from "@/lib/metrics/types"
+import { MetricState, TimeToTokenMetrics } from "@/lib/metrics/types"
 import { useExtracted } from "next-intl"
 import {
   Area,
@@ -23,11 +23,13 @@ import {
   YAxis,
 } from "recharts"
 
-type TrafficSectionProps = {
-  metrics: MetricState<TrafficMetrics>
+type TimeToLastTokenSectionProps = {
+  metrics: MetricState<TimeToTokenMetrics>
 }
 
-export function TrafficSection({ metrics }: TrafficSectionProps) {
+export function TimeToLastTokenSection({
+  metrics,
+}: TimeToLastTokenSectionProps) {
   const t = useExtracted()
   const summary = metrics.data?.summary
   const series = metrics.data?.series ?? []
@@ -35,23 +37,31 @@ export function TrafficSection({ metrics }: TrafficSectionProps) {
   return (
     <Card className="border-border">
       <CardHeader>
-        <CardTitle className="text-foreground">{t("Traffic")}</CardTitle>
+        <CardTitle className="text-foreground">
+          {t("Time to Last Token")}
+        </CardTitle>
         <CardDescription className="text-muted-foreground">
-          {t("Request volume and concurrency")}
+          {t("Full LLM response time percentiles (seconds)")}
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="mb-6 grid grid-cols-2 gap-4">
+        <div className="mb-6 grid grid-cols-3 gap-4">
           <div className="space-y-1">
-            <p className="text-xs text-muted-foreground">{t("Requests/sec")}</p>
+            <p className="text-xs text-muted-foreground">P50</p>
             <p className="text-xl font-semibold text-foreground">
-              {summary?.requestsPerSec?.toLocaleString() ?? "--"}
+              {summary ? `${summary.p50.toFixed(2)}s` : "--"}
             </p>
           </div>
           <div className="space-y-1">
-            <p className="text-xs text-muted-foreground">{t("Concurrent")}</p>
+            <p className="text-xs text-muted-foreground">P90</p>
             <p className="text-xl font-semibold text-foreground">
-              {summary?.concurrent?.toLocaleString() ?? "--"}
+              {summary ? `${summary.p90.toFixed(2)}s` : "--"}
+            </p>
+          </div>
+          <div className="space-y-1">
+            <p className="text-xs text-muted-foreground">P99</p>
+            <p className="text-xl font-semibold text-foreground">
+              {summary ? `${summary.p99.toFixed(2)}s` : "--"}
             </p>
           </div>
         </div>
@@ -62,35 +72,23 @@ export function TrafficSection({ metrics }: TrafficSectionProps) {
         ) : (
           <ChartContainer
             config={{
-              requests: {
-                label: "Requests",
-                color: "var(--chart-1)",
+              p50: {
+                label: "P50",
+                color: "var(--chart-3)",
+              },
+              p90: {
+                label: "P90",
+                color: "var(--chart-2)",
+              },
+              p99: {
+                label: "P99",
+                color: "var(--chart-4)",
               },
             }}
             className="h-[200px] w-full aspect-auto"
           >
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={series}>
-                <defs>
-                  <linearGradient
-                    id="colorRequests"
-                    x1="0"
-                    y1="0"
-                    x2="0"
-                    y2="1"
-                  >
-                    <stop
-                      offset="5%"
-                      stopColor="var(--chart-1)"
-                      stopOpacity={0.3}
-                    />
-                    <stop
-                      offset="95%"
-                      stopColor="var(--chart-1)"
-                      stopOpacity={0}
-                    />
-                  </linearGradient>
-                </defs>
                 <CartesianGrid
                   strokeDasharray="3 3"
                   stroke="var(--border)"
@@ -105,10 +103,27 @@ export function TrafficSection({ metrics }: TrafficSectionProps) {
                 <ChartTooltip content={<ChartTooltipContent />} />
                 <Area
                   type="monotone"
-                  dataKey="requests"
-                  stroke="var(--chart-1)"
-                  fill="url(#colorRequests)"
-                  strokeWidth={2}
+                  dataKey="p50"
+                  stroke="var(--chart-3)"
+                  fill="var(--chart-3)"
+                  fillOpacity={0.2}
+                  isAnimationActive={false}
+                />
+                <Area
+                  type="monotone"
+                  dataKey="p90"
+                  stroke="var(--chart-2)"
+                  fill="var(--chart-2)"
+                  fillOpacity={0.2}
+                  isAnimationActive={false}
+                />
+                <Area
+                  type="monotone"
+                  dataKey="p99"
+                  stroke="var(--chart-4)"
+                  fill="var(--chart-4)"
+                  fillOpacity={0.2}
+                  isAnimationActive={false}
                 />
               </AreaChart>
             </ResponsiveContainer>

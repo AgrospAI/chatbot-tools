@@ -1,7 +1,10 @@
-import { LatencySection } from "@/app/[locale]/_components/latency-section"
+import { AnswerLengthSection } from "@/app/[locale]/_components/answer-length-section"
 import { ModelUsageSection } from "@/app/[locale]/_components/model-usage-section"
+import { QuestionLengthSection } from "@/app/[locale]/_components/question-length-section"
 import { RateLimitingSection } from "@/app/[locale]/_components/rate-limiting-section"
 import { ServiceHealthSection } from "@/app/[locale]/_components/service-health-section"
+import { TimeToFirstTokenSection } from "@/app/[locale]/_components/time-to-first-token-section"
+import { TimeToLastTokenSection } from "@/app/[locale]/_components/time-to-last-token-section"
 import { TrafficSection } from "@/app/[locale]/_components/traffic-section"
 import { PageHeader } from "@/components/page-header"
 import { getDashboardMetrics } from "@/lib/metrics/prometheus"
@@ -17,17 +20,20 @@ export default async function Home() {
           title={t("Service Observability")}
           description={t("Real-time monitoring and metrics")}
         />
-
-        {/* Dashboard Grid */}
         <div className="grid gap-4 sm:gap-6">
           <ServiceHealthSection metrics={metrics.serviceHealth} />
+          <TrafficSection metrics={metrics.traffic} />
           <div className="grid gap-4 sm:gap-6 lg:grid-cols-2">
-            <TrafficSection metrics={metrics.traffic} />
-            <LatencySection metrics={metrics.latency} />
+            <TimeToFirstTokenSection metrics={metrics.timeToFirstToken} />
+            <TimeToLastTokenSection metrics={metrics.timeToLastToken} />
           </div>
           <div className="grid gap-4 sm:gap-6 lg:grid-cols-2">
             <RateLimitingSection metrics={metrics.rateLimiting} />
             <ModelUsageSection metrics={metrics.modelUsage} />
+          </div>
+          <div className="grid gap-4 sm:gap-6 lg:grid-cols-2">
+            <QuestionLengthSection metrics={metrics.questionLength} />
+            <AnswerLengthSection metrics={metrics.answerLength} />
           </div>
         </div>
       </div>

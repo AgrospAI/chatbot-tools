@@ -12,7 +12,7 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from "@/components/ui/chart"
-import { LatencyMetrics, MetricState } from "@/lib/metrics/types"
+import { MetricState, TimeToTokenMetrics } from "@/lib/metrics/types"
 import { useExtracted } from "next-intl"
 import {
   Area,
@@ -23,11 +23,13 @@ import {
   YAxis,
 } from "recharts"
 
-type LatencySectionProps = {
-  metrics: MetricState<LatencyMetrics>
+type TimeToFirstTokenSectionProps = {
+  metrics: MetricState<TimeToTokenMetrics>
 }
 
-export function LatencySection({ metrics }: LatencySectionProps) {
+export function TimeToFirstTokenSection({
+  metrics,
+}: TimeToFirstTokenSectionProps) {
   const t = useExtracted()
   const summary = metrics.data?.summary
   const series = metrics.data?.series ?? []
@@ -35,9 +37,11 @@ export function LatencySection({ metrics }: LatencySectionProps) {
   return (
     <Card className="border-border">
       <CardHeader>
-        <CardTitle className="text-foreground">{t("Latency")}</CardTitle>
+        <CardTitle className="text-foreground">
+          {t("Time to First Token")}
+        </CardTitle>
         <CardDescription className="text-muted-foreground">
-          {t("Response time percentiles (ms)")}
+          {t("LLM response latency percentiles (seconds)")}
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -45,19 +49,19 @@ export function LatencySection({ metrics }: LatencySectionProps) {
           <div className="space-y-1">
             <p className="text-xs text-muted-foreground">P50</p>
             <p className="text-xl font-semibold text-foreground">
-              {summary ? `${summary.p50.toFixed(0)}ms` : "--"}
+              {summary ? `${summary.p50.toFixed(2)}s` : "--"}
             </p>
           </div>
           <div className="space-y-1">
             <p className="text-xs text-muted-foreground">P90</p>
             <p className="text-xl font-semibold text-foreground">
-              {summary ? `${summary.p90.toFixed(0)}ms` : "--"}
+              {summary ? `${summary.p90.toFixed(2)}s` : "--"}
             </p>
           </div>
           <div className="space-y-1">
             <p className="text-xs text-muted-foreground">P99</p>
             <p className="text-xl font-semibold text-foreground">
-              {summary ? `${summary.p99.toFixed(0)}ms` : "--"}
+              {summary ? `${summary.p99.toFixed(2)}s` : "--"}
             </p>
           </div>
         </div>
@@ -99,11 +103,11 @@ export function LatencySection({ metrics }: LatencySectionProps) {
                 <ChartTooltip content={<ChartTooltipContent />} />
                 <Area
                   type="monotone"
-                  dataKey="p99"
-                  stroke="var(--chart-4)"
-                  fill="var(--chart-4)"
+                  dataKey="p50"
+                  stroke="var(--chart-3)"
+                  fill="var(--chart-3)"
                   fillOpacity={0.2}
-                  strokeWidth={2}
+                  isAnimationActive={false}
                 />
                 <Area
                   type="monotone"
@@ -111,15 +115,15 @@ export function LatencySection({ metrics }: LatencySectionProps) {
                   stroke="var(--chart-2)"
                   fill="var(--chart-2)"
                   fillOpacity={0.2}
-                  strokeWidth={2}
+                  isAnimationActive={false}
                 />
                 <Area
                   type="monotone"
-                  dataKey="p50"
-                  stroke="var(--chart-3)"
-                  fill="var(--chart-3)"
+                  dataKey="p99"
+                  stroke="var(--chart-4)"
+                  fill="var(--chart-4)"
                   fillOpacity={0.2}
-                  strokeWidth={2}
+                  isAnimationActive={false}
                 />
               </AreaChart>
             </ResponsiveContainer>

@@ -12,7 +12,7 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from "@/components/ui/chart"
-import { MetricState, TrafficMetrics } from "@/lib/metrics/types"
+import { MetricState, TokenLengthMetrics } from "@/lib/metrics/types"
 import { useExtracted } from "next-intl"
 import {
   Area,
@@ -23,11 +23,11 @@ import {
   YAxis,
 } from "recharts"
 
-type TrafficSectionProps = {
-  metrics: MetricState<TrafficMetrics>
+type QuestionLengthSectionProps = {
+  metrics: MetricState<TokenLengthMetrics>
 }
 
-export function TrafficSection({ metrics }: TrafficSectionProps) {
+export function QuestionLengthSection({ metrics }: QuestionLengthSectionProps) {
   const t = useExtracted()
   const summary = metrics.data?.summary
   const series = metrics.data?.series ?? []
@@ -35,23 +35,19 @@ export function TrafficSection({ metrics }: TrafficSectionProps) {
   return (
     <Card className="border-border">
       <CardHeader>
-        <CardTitle className="text-foreground">{t("Traffic")}</CardTitle>
+        <CardTitle className="text-foreground">
+          {t("Question Length")}
+        </CardTitle>
         <CardDescription className="text-muted-foreground">
-          {t("Request volume and concurrency")}
+          {t("Average question size in characters")}
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="mb-6 grid grid-cols-2 gap-4">
+        <div className="mb-6">
           <div className="space-y-1">
-            <p className="text-xs text-muted-foreground">{t("Requests/sec")}</p>
+            <p className="text-xs text-muted-foreground">{t("Average")}</p>
             <p className="text-xl font-semibold text-foreground">
-              {summary?.requestsPerSec?.toLocaleString() ?? "--"}
-            </p>
-          </div>
-          <div className="space-y-1">
-            <p className="text-xs text-muted-foreground">{t("Concurrent")}</p>
-            <p className="text-xl font-semibold text-foreground">
-              {summary?.concurrent?.toLocaleString() ?? "--"}
+              {summary ? `${summary.average.toFixed(0)} chars` : "--"}
             </p>
           </div>
         </div>
@@ -62,8 +58,8 @@ export function TrafficSection({ metrics }: TrafficSectionProps) {
         ) : (
           <ChartContainer
             config={{
-              requests: {
-                label: "Requests",
+              value: {
+                label: "Length",
                 color: "var(--chart-1)",
               },
             }}
@@ -71,26 +67,6 @@ export function TrafficSection({ metrics }: TrafficSectionProps) {
           >
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={series}>
-                <defs>
-                  <linearGradient
-                    id="colorRequests"
-                    x1="0"
-                    y1="0"
-                    x2="0"
-                    y2="1"
-                  >
-                    <stop
-                      offset="5%"
-                      stopColor="var(--chart-1)"
-                      stopOpacity={0.3}
-                    />
-                    <stop
-                      offset="95%"
-                      stopColor="var(--chart-1)"
-                      stopOpacity={0}
-                    />
-                  </linearGradient>
-                </defs>
                 <CartesianGrid
                   strokeDasharray="3 3"
                   stroke="var(--border)"
@@ -105,10 +81,11 @@ export function TrafficSection({ metrics }: TrafficSectionProps) {
                 <ChartTooltip content={<ChartTooltipContent />} />
                 <Area
                   type="monotone"
-                  dataKey="requests"
+                  dataKey="value"
                   stroke="var(--chart-1)"
-                  fill="url(#colorRequests)"
-                  strokeWidth={2}
+                  fill="var(--chart-1)"
+                  fillOpacity={0.2}
+                  isAnimationActive={false}
                 />
               </AreaChart>
             </ResponsiveContainer>

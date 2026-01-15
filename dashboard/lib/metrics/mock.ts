@@ -6,6 +6,9 @@ import {
   RateLimitingMetrics,
   ServiceHealthMetrics,
   TrafficMetrics,
+  TimeToTokenMetrics,
+  TokenLengthMetrics,
+  RejectedRequestsMetrics,
 } from "@/lib/metrics/types"
 
 const mockTraffic: MetricState<TrafficMetrics> = {
@@ -88,6 +91,90 @@ const mockServiceHealth: MetricState<ServiceHealthMetrics> = {
   },
 }
 
+const mockTimeToFirstToken: MetricState<TimeToTokenMetrics> = {
+  data: {
+    summary: {
+      p50: 0.34,
+      p90: 0.72,
+      p99: 1.25,
+    },
+    series: [
+      { time: "00:00", p50: 0.28, p90: 0.58, p99: 0.98 },
+      { time: "04:00", p50: 0.32, p90: 0.64, p99: 1.05 },
+      { time: "08:00", p50: 0.38, p90: 0.76, p99: 1.28 },
+      { time: "12:00", p50: 0.34, p90: 0.72, p99: 1.25 },
+      { time: "16:00", p50: 0.3, p90: 0.68, p99: 1.18 },
+      { time: "20:00", p50: 0.29, p90: 0.61, p99: 1.02 },
+    ],
+  },
+}
+
+const mockTimeToLastToken: MetricState<TimeToTokenMetrics> = {
+  data: {
+    summary: {
+      p50: 2.15,
+      p90: 4.32,
+      p99: 8.45,
+    },
+    series: [
+      { time: "00:00", p50: 1.98, p90: 3.98, p99: 7.82 },
+      { time: "04:00", p50: 2.08, p90: 4.12, p99: 8.05 },
+      { time: "08:00", p50: 2.22, p90: 4.45, p99: 8.68 },
+      { time: "12:00", p50: 2.15, p90: 4.32, p99: 8.45 },
+      { time: "16:00", p50: 2.05, p90: 4.15, p99: 8.25 },
+      { time: "20:00", p50: 2.02, p90: 4.08, p99: 8.12 },
+    ],
+  },
+}
+
+const mockQuestionLength: MetricState<TokenLengthMetrics> = {
+  data: {
+    summary: {
+      average: 187,
+    },
+    series: [
+      { time: "00:00", value: 156 },
+      { time: "04:00", value: 168 },
+      { time: "08:00", value: 192 },
+      { time: "12:00", value: 187 },
+      { time: "16:00", value: 178 },
+      { time: "20:00", value: 165 },
+    ],
+  },
+}
+
+const mockAnswerLength: MetricState<TokenLengthMetrics> = {
+  data: {
+    summary: {
+      average: 523,
+    },
+    series: [
+      { time: "00:00", value: 478 },
+      { time: "04:00", value: 492 },
+      { time: "08:00", value: 548 },
+      { time: "12:00", value: 523 },
+      { time: "16:00", value: 512 },
+      { time: "20:00", value: 485 },
+    ],
+  },
+}
+
+const mockRejectedRequests: MetricState<RejectedRequestsMetrics> = {
+  data: {
+    summary: {
+      totalRejected: 24,
+    },
+    series: [
+      { time: "00:00", rejected: 4 },
+      { time: "04:00", rejected: 3 },
+      { time: "08:00", rejected: 8 },
+      { time: "12:00", rejected: 24 },
+      { time: "16:00", rejected: 18 },
+      { time: "20:00", rejected: 12 },
+    ],
+  },
+}
+
 export function buildMockDashboardMetrics(): DashboardMetrics {
   return {
     traffic: mockTraffic,
@@ -95,5 +182,10 @@ export function buildMockDashboardMetrics(): DashboardMetrics {
     modelUsage: mockModelUsage,
     rateLimiting: mockRateLimiting,
     serviceHealth: mockServiceHealth,
+    timeToFirstToken: mockTimeToFirstToken,
+    timeToLastToken: mockTimeToLastToken,
+    questionLength: mockQuestionLength,
+    answerLength: mockAnswerLength,
+    rejectedRequests: mockRejectedRequests,
   }
 }
