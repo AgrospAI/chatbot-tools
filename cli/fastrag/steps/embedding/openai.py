@@ -44,7 +44,7 @@ class OpenAISimple(Task):
         existed, cached = await self.cache.get_or_create(
             uri=f"{entry.path.resolve().as_uri()}.{self.__class__.__name__}.{self.model}.embedding.json",
             contents=lambda: self.embedding_logic(entry),
-            metadata={"step": "embedding"},
+            metadata={"step": "embedding", "experiment": self.experiment.experiment_hash},
         )
 
         data = json.loads(cached.content)
@@ -55,7 +55,7 @@ class OpenAISimple(Task):
                 vectors.append(chunk.pop("vector"))
                 documents.append(Document(**chunk))
 
-            self.upload_embeddings(documents, vectors)
+            await self.upload_embeddings(documents, vectors)
             yield Event(
                 Event.Type.PROGRESS,
                 f"Re-uploaded embeddings to {self.experiment.experiment_hash}",
@@ -92,7 +92,7 @@ class OpenAISimple(Task):
         documents: list[Document],
         embeddings: list[list[float]],
     ) -> None:
-        if await self.store.collection_exists():
+        if await self.store.collection_exists(self.experiment.experiment_hash):
             # Skip upload because collection already exists
             return
 

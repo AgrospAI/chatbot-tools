@@ -30,7 +30,7 @@ resources:
           params:
             url: https://agrospai.udl.cat
             workers: 5
-            depth: 3
+            depth: 1
             delay: 0
       parsing:
         - strategy: HtmlParser
@@ -48,11 +48,11 @@ experiments:
     max_concurrent: 3
   steps:
     chunking:
-      # - strategy: ParentChild
-      #   params:
-      #     embedding_model: "paraphrase-multilingual:latest"
-      #     embedding_api_url: "https://chat.agrospai.udl.cat/ollama/api/embed"
-      #     embedding_api_key: ${CHAT_API_KEY}
+      - strategy: ParentChild
+        params:
+          embedding_model: "paraphrase-multilingual:latest"
+          embedding_api_url: "https://chat.agrospai.udl.cat/ollama/api/embed"
+          embedding_api_key: ${CHAT_API_KEY}
       - strategy: SlidingWindow
         params:
           chunk_size: 1200
@@ -60,7 +60,7 @@ experiments:
     embedding:
       - strategy: OpenAI-Simple
         params:
-          model: paraphrase-multilingual:latest
+          model: nomic-embed-text-v2-moe:latest
           api_key: ${CHAT_API_KEY}
           url: https://chat.agrospai.udl.cat/ollama/api/embed
     benchmarking:
@@ -68,11 +68,11 @@ experiments:
         params:
           questions:
             - [
-                "Who are the members of Universitat de Lleida's (UdL) project AgrospAI?",
-                "Does not list individual members",
+                "Who is the staff of the agrospai project?",
+                "Roberto Garcia Gonzalez"
               ]
             - [
                 "What technologies does AgrospAI use to make payments",
-                "Smart Contracts"
+                "Smart Contracts", "Blockchain"
               ]
       - strategy: ChunkQuality

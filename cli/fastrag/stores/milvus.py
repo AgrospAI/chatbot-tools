@@ -2,6 +2,7 @@ import os
 from dataclasses import dataclass, field
 from typing import ClassVar, List, override
 
+os.environ["GRPC_VERBOSITY"] = "ERROR"
 os.environ["GRPC_DNS_RESOLVER"] = "native"
 from pymilvus import AsyncMilvusClient, DataType
 

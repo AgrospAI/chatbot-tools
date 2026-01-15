@@ -14,11 +14,6 @@ uv add fastrag-cli
 
 Generally to use the CLI you will need a configuration file. The default plugins provide a `yaml` configuration reader, but it can be of any format, as long as you provide an `IConfigLoader` that can handle it.
 
-To run fastrag with our default toy workflow with verbosity.
-
-```bash
-fastrag run -v
-```
 
 To run your own configuration workflow `config.yaml` with verbosity.
 
@@ -26,28 +21,22 @@ To run your own configuration workflow `config.yaml` with verbosity.
 fastrag run -v config.yaml
 ```
 
-To run your own configuration workflow `config.yaml` and stop execution after _Step 1_.
-
-```bash
-fastrag run -v config.yaml --step 1
-```
-
 Delete the cached files after all these executions (with prompt)
 
 ```bash
-fastrag clean
+fastrag clean config.yaml
 ```
 
 Delete the cached files (without prompt)
 
 ```bash
-fastrag clean -y
+fastrag clean -y config.yaml
 ```
 
 To serve the inference endpoints
 
 ```bash
-fastrag serve
+fastrag serve config.yaml
 ```
 
 ## Documentation
@@ -81,13 +70,20 @@ The main benefit of using plugins is being able to expand the workflow execution
       - `HtmlParser (supported=["HtmlParser"])`
       - `FileParser (supported=["FileParser"])`
     - `Chunking`:
+      - `ParentChildChunker (supported=["ParentChild"])`
+      - `RecursiveChunker (supported=["RecursiveChunker"])`
+      - `SlidingWindowChunker (supported=["SlidingWindow"])`
     - `Embedding`:
+      - `OpenAISimple (supported=["OpenAI-Simple", "openai-simple"])`
     - `Benchmarking`:
+      - `ChunkQualityBenchmarking (supported=["ChunkQuality"])`
+      - `QuerySetBenchmarking (supported=["QuerySet"])`
+    
 
 Providing a new implementation for any of these components is as easy as inheriting from them and executing _fastRAG_ with the plugin base dir as:
 
 ```bash
-fastrag run --plugins <IMPLEMENTATION_DIR> -v
+fastrag run config.yaml --plugins <IMPLEMENTATION_DIR> -v
 ```
 
 ### Implementing Tasks
@@ -99,11 +95,11 @@ The most generic components are Tasks, since they do from fetching from a URL, t
 class HttpFetcher(Task):
     supported: ClassVar[str] = "URL"
 
-    url: URLField = URLField() # Basically a string with validation
-    _cached: bool = field(init=False, default=False, compare=False)
+    url: URLField = URLField()
+    _cached: bool = field(init=False, default=False, hash=False, compare=False)
 
     @override
-    async def run(self) -> AsyncGenerator[Event, None]:
+    async def run(self) -> Run:
         if self.cache.is_present(self.url):
             object.__setattr__(self, "_cached", True)
             return
@@ -115,12 +111,17 @@ class HttpFetcher(Task):
             yield Event(Event.Type.EXCEPTION, f"ERROR: {e}")
             return
 
-        await self.cache.create(
+        entry = await self.cache.create(
             self.url,
             res.text.encode(),
-            "fetching",
-            {"format": "html", "strategy": HttpFetcher.supported},
+            {
+                "step": "fetching",
+                "format": "html",
+                "strategy": HttpFetcher.supported,
+            },
         )
+
+        self.result = entry.path
 
     @override
     def completed_callback(self) -> Event:
@@ -142,6 +143,11 @@ class HttpFetcher(Task):
 class HttpFetcher(Task):
     # It supports using both URL or HTTP
     supported: str = ["URL", "HTTP"]
+
+@dataclass(frozen=True)
+class HttpFetcher(Task):
+    # The same but with dataclasses
+    supported: ClassVar[str] = "URL"
 ```
 
 This `supported` attribute is the one that must match the configuration step strategy and will be used when deciding which implementation to use.
@@ -172,7 +178,7 @@ steps:
 
 #### Task Methods
 
-As of the `callback` method, which is inherited from `Task`, it's the one supposed to do the heavy-lifting. There are two cases, the shown, which is the simpler, where it does not recieve any parameters, and another on which will be discussed later.
+As of the `run` method, which is inherited from `Task`, it's the one supposed to do the heavy-lifting. There are two cases, the shown, which is the simpler, where it does not recieve any parameters, and another on which will be discussed later.
 
 ```python
 @override
