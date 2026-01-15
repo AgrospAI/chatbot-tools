@@ -1,4 +1,5 @@
 import json
+import asyncio
 from dataclasses import dataclass, field
 from functools import partial
 from typing import ClassVar, override
@@ -11,7 +12,6 @@ from fastrag.events import Event
 from fastrag.helpers.filters import Filter
 from fastrag.steps.task import Run, Task
 
-
 @dataclass(frozen=True)
 class SelfHostedEmbeddings(Task):
     supported: ClassVar[list[str]] = ["OpenAI-Simple", "openai", "openai-simple"]
@@ -20,7 +20,7 @@ class SelfHostedEmbeddings(Task):
     model: str
     api_key: str = field(repr=False)
     url: str
-    batch_size: int = field(default=1)
+    batch_size: int = field(default=5)
 
     _embedded: int = field(default=0, init=False, repr=False)
     _cached: bool = field(default=False, init=False, repr=False)
@@ -62,10 +62,12 @@ class SelfHostedEmbeddings(Task):
             "Authorization": f"Bearer {self.api_key}",
         }
 
-        total_vectors = []
+        result_vectors = []
         content_chunks = [c["content"] for c in chunks]
 
-        async with httpx.AsyncClient(timeout=120.0) as client:
+        limits = httpx.Limits(max_keepalive_connections=5, max_connections=10)
+        
+        async with httpx.AsyncClient(timeout=180.0, limits=limits) as client:
             for i in range(0, len(content_chunks), self.batch_size):
                 # Send to embedding model by batches size
                 batch_texts = content_chunks[i : i + self.batch_size]
@@ -75,25 +77,34 @@ class SelfHostedEmbeddings(Task):
                     "input": batch_texts,
                 }
 
-                try:
-                    response = await client.post(self.url, headers=headers, json=payload)
-                    response.raise_for_status()
+                for attempt in range(3):
+                    try:
+                        response = await client.post(self.url, headers=headers, json=payload)
+                        response.raise_for_status()
 
-                    result = response.json()
-                    batch_vectors = result.get("embeddings", [])
+                        result = response.json()
+                        batch_vectors = result.get("embeddings", [])
+                        
+                        if len(batch_vectors) != len(batch_texts):
+                            raise ValueError(f"Sent {len(batch_texts)} texts, received {len(batch_vectors)} vectors.")
 
-                    if len(batch_vectors) != len(batch_texts):
-                        raise ValueError(
-                            f"Sent {len(batch_texts)} texts but got {len(batch_vectors)} vec"
-                        )
+                        if not batch_vectors:
+                             raise ValueError(f"Server returned empty list. Response: {result}")
 
-                    total_vectors.extend(batch_vectors)
+                        result_vectors.extend(batch_vectors)
+                        await asyncio.sleep(0.5) 
+                        break
 
-                except Exception as e:
-                    raise RuntimeError(f"Embedding failed at chunk {i}: {e}")
+                    except Exception as e:
+                        if attempt < 2:
+                            wait_time = (attempt + 1) * 2
+                            print(f"Error in batch {i}, retrying in {wait_time}s... ({e})")
+                            await asyncio.sleep(wait_time)
+                        else:
+                            raise RuntimeError(f"Permanent failure in batch {i}: {e}")
 
         for i, chunk in enumerate(chunks):
-            chunk["vector"] = total_vectors[i]
+            chunk["vector"] = result_vectors[i]
 
-        object.__setattr__(self, "_embedded", len(chunks))
+        object.__setattr__(self, "_embedded", len(result_vectors))
         return json.dumps(chunks).encode("utf-8")
