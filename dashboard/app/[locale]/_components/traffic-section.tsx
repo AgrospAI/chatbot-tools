@@ -41,7 +41,7 @@ export function TrafficSection({ metrics }: TrafficSectionProps) {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="mb-6 grid grid-cols-3 gap-4">
+        <div className="mb-6 grid grid-cols-2 gap-4">
           <div className="space-y-1">
             <p className="text-xs text-muted-foreground">{t("Requests/sec")}</p>
             <p className="text-xl font-semibold text-foreground">
@@ -52,12 +52,6 @@ export function TrafficSection({ metrics }: TrafficSectionProps) {
             <p className="text-xs text-muted-foreground">{t("Concurrent")}</p>
             <p className="text-xl font-semibold text-foreground">
               {summary?.concurrent?.toLocaleString() ?? "--"}
-            </p>
-          </div>
-          <div className="space-y-1">
-            <p className="text-xs text-muted-foreground">{t("Pending")}</p>
-            <p className="text-xl font-semibold text-foreground">
-              {summary?.pending?.toLocaleString() ?? "--"}
             </p>
           </div>
         </div>

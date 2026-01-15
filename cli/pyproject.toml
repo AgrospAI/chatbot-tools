@@ -1,6 +1,6 @@
 [project]
 name = "fastrag-cli"
-version = "0.1.6"
+version = "0.1.7"
 description = "CLI tool to manage the lifecycle of a RAG"
 readme = "README.md"
 authors = [
@@ -38,6 +38,8 @@ dependencies = [
     "sqlalchemy>=2.0.45",
     "typer>=0.20.0",
     "uvicorn>=0.40.0",
+    "slowapi>=0.1.9",
+    "geoip2>=5.2.0",
 ]
 
 [project.scripts]
@@ -73,7 +75,7 @@ packages = ["fastrag"]
 include = ["fastrag", "resources"]
 
 [tool.bumpversion]
-current_version = "0.1.6"
+current_version = "0.1.7"
 PyPI = "https://pypi.org/project/fastrag-cli/"
 allow_dirty = true
 

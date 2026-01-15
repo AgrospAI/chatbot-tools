@@ -14,34 +14,46 @@ from sqlalchemy import (
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 
-from .database import Base
+from fastrag.config.settings import settings
 
+from .database import get_db
 
-class Chat(Base):
-    __tablename__ = "chat"
+_, _, Base = get_db(settings)
 
-    chat_id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    created_at = Column(DateTime(timezone=True), nullable=False, default=datetime.utcnow)
-    messages = relationship("ChatMessage", back_populates="chat", cascade="all, delete-orphan")
+if Base is not None:
 
+    class Chat(Base):
+        __tablename__ = "chat"
+        chat_id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+        created_at = Column(DateTime(timezone=True), nullable=False, default=datetime.utcnow)
+        ip = Column(Text, nullable=True)
+        country = Column(Text, nullable=True)
+        messages = relationship(
+            "ChatMessage", back_populates="chat", cascade="all, delete-orphan"
+        )
 
-class ChatMessage(Base):
-    __tablename__ = "chat_message"
+    class ChatMessage(Base):
+        __tablename__ = "chat_message"
+        message_id = Column(BigInteger, primary_key=True, autoincrement=True)
+        chat_id = Column(
+            UUID(as_uuid=True),
+            ForeignKey("chat.chat_id", ondelete="CASCADE"),
+            nullable=False,
+            index=True,
+        )
+        role = Column(Text, nullable=False)
+        content = Column(Text, nullable=False)
+        created_at = Column(DateTime(timezone=True), nullable=False, default=datetime.utcnow)
+        sources = Column(ARRAY(Text), nullable=True)
+        chat = relationship("Chat", back_populates="messages")
+        __table_args__ = (
+            CheckConstraint("role IN ('user', 'assistant', 'system')", name="role_check"),
+            Index("ix_chat_message_chat_id_created_at", "chat_id", "created_at"),
+        )
+else:
 
-    message_id = Column(BigInteger, primary_key=True, autoincrement=True)
-    chat_id = Column(
-        UUID(as_uuid=True),
-        ForeignKey("chat.chat_id", ondelete="CASCADE"),
-        nullable=False,
-        index=True,
-    )
-    role = Column(Text, nullable=False)
-    content = Column(Text, nullable=False)
-    created_at = Column(DateTime(timezone=True), nullable=False, default=datetime.utcnow)
-    sources = Column(ARRAY(Text), nullable=True)
-    chat = relationship("Chat", back_populates="messages")
+    class Chat:
+        pass
 
-    __table_args__ = (
-        CheckConstraint("role IN ('user', 'assistant', 'system')", name="role_check"),
-        Index("ix_chat_message_chat_id_created_at", "chat_id", "created_at"),
-    )
+    class ChatMessage:
+        pass
