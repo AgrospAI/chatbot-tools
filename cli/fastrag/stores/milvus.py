@@ -26,7 +26,7 @@ class MilvusVectorStore(IVectorStore):
     # Internal state
     _client: any = field(default=None, repr=False, init=False)
 
-    async def _get_client(self) -> AsyncMilvusClient:
+    async def _get_client(self, collection_name: str | None = None) -> AsyncMilvusClient:
         """Initialize the true Async Milvus Client"""
         if self._client is None:
             # MilvusClientAsync expects a uri string
@@ -34,13 +34,20 @@ class MilvusVectorStore(IVectorStore):
             token = f"{self.user}:{self.password}" if self.user else ""
 
             client = AsyncMilvusClient(uri=uri, token=token)
-            await self._ensure_collection(client)
+            await self._ensure_collection(client, collection_name)
+
             self._client = client
         return self._client
 
-    async def _ensure_collection(self, client: AsyncMilvusClient):
+    async def _ensure_collection(
+        self,
+        client: AsyncMilvusClient,
+        collection_name: str | None = None,
+    ):
         """Creates collection matching the docs_chatbot schema exactly."""
-        exists = await client.has_collection(self.collection_name)
+        collection_name = self._get_collection(collection_name)
+
+        exists = await client.has_collection(collection_name)
         if not exists:
             schema = client.create_schema(
                 auto_id=True,  # Matches autoID: true in your schema
@@ -73,15 +80,21 @@ class MilvusVectorStore(IVectorStore):
 
             # 4. Create and Load
             await client.create_collection(
-                collection_name=self.collection_name, schema=schema, index_params=index_params
+                collection_name=collection_name,
+                schema=schema,
+                index_params=index_params,
             )
-            await client.load_collection(self.collection_name)
+            await client.load_collection(collection_name)
 
     @override
     async def add_documents(
-        self, documents: List[Document], embeddings: List[List[float]]
+        self,
+        documents: List[Document],
+        embeddings: List[List[float]],
+        collection_name: str | None = None,
     ) -> List[str]:
-        client = await self._get_client()
+        collection_name = self._get_collection(collection_name)
+        client = await self._get_client(collection_name)
 
         # Data mapping for Milvus
         data = [
@@ -89,17 +102,23 @@ class MilvusVectorStore(IVectorStore):
             for i, doc in enumerate(documents)
         ]
 
-        res = await client.insert(collection_name=self.collection_name, data=data)
+        res = await client.insert(collection_name=collection_name, data=data)
         return [str(i) for i in res.get("ids", [])]
 
     @override
     async def similarity_search(
-        self, query: str, query_embedding: List[float], k: int = 5
+        self,
+        query: str,
+        query_embedding: List[float],
+        k: int = 5,
+        collection_name: str | None = None,
     ) -> List[Document]:
-        client = await self._get_client()
+        collection_name = self._get_collection(collection_name)
+
+        client = await self._get_client(collection_name)
 
         res = await client.search(
-            collection_name=self.collection_name,
+            collection_name=collection_name,
             anns_field="vector",
             data=[query_embedding],
             search_params={"metric_type": "L2", "params": {}},
@@ -119,18 +138,25 @@ class MilvusVectorStore(IVectorStore):
         return docs
 
     @override
-    async def collection_exists(self) -> bool:
-        client = await self._get_client()
-        return await client.has_collection(self.collection_name)
+    async def collection_exists(self, collection_name: str | None = None) -> bool:
+        collection_name = self._get_collection(collection_name)
+
+        client = await self._get_client(collection_name)
+        return await client.has_collection(collection_name)
 
     @override
-    async def delete_collection(self) -> None:
+    async def delete_collection(self, collection_name: str | None = None) -> None:
         """Required implementation: Drops the collection from Milvus"""
-        client = await self._get_client()
-        if await client.has_collection(self.collection_name):
-            await client.drop_collection(self.collection_name)
+        collection_name = self._get_collection(collection_name)
+
+        client = await self._get_client(collection_name)
+        if await client.has_collection(collection_name):
+            await client.drop_collection(collection_name)
 
     @override
     async def embed_query(self, text: str) -> List[float]:
         """Required implementation: Delegates to the assigned embedding model"""
         return await self.embedding_model.embed_query(text)
+
+    def _get_collection(self, collection_name: str | None) -> str:
+        return collection_name if collection_name else self.collection_name

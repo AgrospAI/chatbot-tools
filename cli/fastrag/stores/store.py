@@ -17,13 +17,17 @@ class IVectorStore(PluginBase, ABC):
 
     @abstractmethod
     async def add_documents(
-        self, documents: List[Document], embeddings: List[List[float]]
+        self,
+        documents: List[Document],
+        embeddings: List[List[float]],
+        collection_name: str | None = None,
     ) -> List[str]:
         """Add documents with their embeddings to the store.
 
         Args:
             documents: List of documents to store
             embeddings: Corresponding embeddings for each document
+            collection_name: Collection to add documents to
 
         Returns:
             List of document IDs
@@ -32,7 +36,11 @@ class IVectorStore(PluginBase, ABC):
 
     @abstractmethod
     async def similarity_search(
-        self, query: str, query_embedding: List[float], k: int = 5
+        self,
+        query: str,
+        query_embedding: List[float],
+        k: int = 5,
+        collection_name: str | None = None,
     ) -> List[Document]:
         """Search for similar documents.
 
@@ -40,6 +48,7 @@ class IVectorStore(PluginBase, ABC):
             query: The query text (for logging/reference)
             query_embedding: The embedding vector of the query
             k: Number of results to return
+            collection_name: Collection to add documents to
 
         Returns:
             List of similar documents
@@ -47,12 +56,12 @@ class IVectorStore(PluginBase, ABC):
         pass
 
     @abstractmethod
-    async def delete_collection(self) -> None:
+    async def delete_collection(self, collection_name: str | None = None) -> None:
         """Delete the entire collection"""
         pass
 
     @abstractmethod
-    async def collection_exists(self) -> bool:
+    async def collection_exists(self, collection_name: str | None = None) -> bool:
         """Check if the collection exists"""
         pass
 

@@ -14,6 +14,3 @@ class EmbeddingStep(IStep):
         for task in self._tasks:
             entries = await self.cache.get_entries(task.filter)
             yield (task, [task.run(uri, entry) for uri, entry in entries])
-
-        # Upload embeddings
-        # self.resources.store.add_documents()
