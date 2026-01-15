@@ -48,6 +48,19 @@ class OpenAISimple(Task):
         )
 
         data = json.loads(cached.content)
+        if existed and data:
+            vectors = []
+            documents = []
+            for chunk in data:
+                vectors.append(chunk.pop("vector"))
+                documents.append(Document(**chunk))
+
+            self.upload_embeddings(documents, vectors)
+            yield Event(
+                Event.Type.PROGRESS,
+                f"Re-uploaded embeddings to {self.experiment.experiment_hash}",
+            )
+
         self._set_results(data)
 
         status = "Cached" if existed else "Generated"
@@ -67,9 +80,24 @@ class OpenAISimple(Task):
         documents = [Document(**chunk) for chunk in chunks]
         total_vectors = await self._embedder.embed_documents(documents)
 
-        await self.store.add_documents(documents, total_vectors)
+        await self.upload_embeddings(documents, total_vectors)
 
         for i, chunk in enumerate(chunks):
             chunk["vector"] = total_vectors[i]
 
         return json.dumps(chunks).encode("utf-8")
+
+    async def upload_embeddings(
+        self,
+        documents: list[Document],
+        embeddings: list[list[float]],
+    ) -> None:
+        if await self.store.collection_exists():
+            # Skip upload because collection already exists
+            return
+
+        await self.store.add_documents(
+            documents,
+            embeddings,
+            self.experiment.experiment_hash,
+        )

@@ -112,7 +112,10 @@ class QuerySetBenchmarking(Task):
 
             # Search for similar documents
             results = await self.store.similarity_search(
-                query=question.question, query_embedding=query_embedding, k=5
+                query=question.question,
+                query_embedding=query_embedding,
+                k=5,
+                collection_name=self.experiment.experiment_hash,
             )
 
             context_parts = [
@@ -132,7 +135,7 @@ class QuerySetBenchmarking(Task):
         answers = await asyncio.gather(*tasks)
 
         for a in answers:
-            yield Event(Event.Type.PROGRESS, f"Question: {a.question}, LLM: {a.answer}")
+            yield Event(Event.Type.PROGRESS, f"\n{a}")
 
         overall_score = sum(a.score for a in answers) / len(answers)
         self.experiment.save_results(f"\nQuerySetBenchmarking overall score: {overall_score}")
