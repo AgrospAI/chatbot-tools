@@ -54,14 +54,9 @@ experiments:
           embedding_api_url: https://chat.agrospai.udl.cat/ollama/api/embed
           embedding_api_key: ${CHAT_API_KEY}
     embedding:
-      # - strategy: OllamaEmbeddings
-      #   params:
-      #     model: paraphrase-multilingual:latest
-      #     api_key: ${CHAT_API_KEY}
-      #     url: https://chat.agrospai.udl.cat/ollama/api/embed
       - strategy: OpenAI-Simple
         params:
-          model: paraphrase-multilingual:latest
+          model: nomic-embed-text-v2-moe:latest
           api_key: ${CHAT_API_KEY}
           url: https://chat.agrospai.udl.cat/ollama/api/embed
     benchmarking:
@@ -70,6 +65,10 @@ experiments:
           questions:
             - [
                 "Who are the members of Universitat de Lleida's (UdL) project AgrospAI?",
-                "Roberto García González, Rosa Maria Gil, Jordi García Ventura, Zihan Chen, Christian López García, Claudia Colàs Torres, Aleix Segura Paz, Pol Jaimejuan Caubet, Joan Piñot Murillo",
+                "Does not list individual members",
+              ]
+            - [
+                "What technologies does AgrospAI use to make payments",
+                "Smart Contracts"
               ]
       - strategy: ChunkQuality

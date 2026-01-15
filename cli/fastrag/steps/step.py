@@ -1,9 +1,13 @@
 from __future__ import annotations
 
+import base64
+import json
+import random
+import string
+import uuid
 from abc import ABC, abstractmethod
-from dataclasses import InitVar, dataclass, field
+from dataclasses import InitVar, asdict, dataclass, field
 from typing import TYPE_CHECKING, AsyncGenerator, ClassVar, TypeAlias, override
-from uuid import uuid4
 
 from rich.progress import Progress
 
@@ -102,21 +106,36 @@ class IStep(Loggable, PluginBase, ABC):
         raise NotImplementedError
 
 
+ALPHANUM_UNDERSCORE = string.ascii_letters + string.digits + "_"
+
+
+def generate_alphanum_id(experiment: IMultiStep, length: int = 22) -> str:
+    # Deterministic path
+    if experiment is not None:
+        # Serialize and to bytes the experiment steps as seed
+
+        rng = random.Random(repr(experiment).encode("utf-8"))
+        return "".join(rng.choice(ALPHANUM_UNDERSCORE) for _ in range(length))
+
+    # Non-deterministic path (UUID-based)
+    raw = uuid.uuid4().bytes
+    encoded = base64.urlsafe_b64encode(raw).decode("ascii")
+    return encoded.rstrip("=").replace("-", "_")[:length]
+
+
 @dataclass
 class IMultiStep(IStep):
-    experiment_hash: str = field(init=False, default_factory=uuid4)
-    step: Steps = field(default_factory=list, repr=False)
-
-    _tasks: list[IStep] = field(default_factory=list, init=False, hash=False, repr=False)
-    results: str = field(default="")
-
     experiment: InitVar[any] = None
+
+    experiment_hash: str = field(init=False, default="")
+    step: Steps = field(default_factory=dict, repr=False)
+    results: str = field(default="", repr=False)
+    _tasks: list[IStep] = field(default_factory=list, init=False, hash=False, repr=False)
 
     def __post_init__(self, experiment: Experiment | None = None) -> None:
         super(IStep, self).__post_init__()
 
-        if not experiment:
-            experiment = self
+        experiment = experiment if experiment else self
 
         self._tasks = [
             inject(
@@ -131,6 +150,8 @@ class IMultiStep(IStep):
             for idx, (strat, step) in enumerate(self.step.items())
         ]
 
+        self.experiment_hash = generate_alphanum_id(experiment)
+
         lines = []
         for task in self._tasks:
             task_name = task.__class__.__name__
@@ -139,7 +160,7 @@ class IMultiStep(IStep):
             for strat in task.step:
                 lines.append(f"\t└─ {strat.strategy}")
 
-        self.results = f"Experiment #{self.task_id + 1}:\n{'\n'.join(lines)}"
+        self.results = f"Experiment #{self.task_id + 1} | Experiment {self.experiment_hash} :\n{'\n'.join(lines)}"
 
     def tasks(self, step: str) -> list[Task]:
         tasks = []
