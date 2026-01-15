@@ -1,16 +1,47 @@
+import uuid
 from datetime import datetime
 
-from sqlalchemy import Column, DateTime, String, Text
+from sqlalchemy import (
+    ARRAY,
+    BigInteger,
+    CheckConstraint,
+    Column,
+    DateTime,
+    ForeignKey,
+    Index,
+    Text,
+)
+from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.orm import relationship
 
 from .database import Base
+
+
+class Chat(Base):
+    __tablename__ = "chat"
+
+    chat_id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    created_at = Column(DateTime(timezone=True), nullable=False, default=datetime.utcnow)
+    messages = relationship("ChatMessage", back_populates="chat", cascade="all, delete-orphan")
 
 
 class ChatMessage(Base):
     __tablename__ = "chat_message"
 
-    id = Column(String, primary_key=True, index=True, nullable=False, unique=True, default=None)
-    chat_id = Column(String, index=True, nullable=False)
-    message = Column(Text, nullable=False)
-    role = Column(String, nullable=False)
-    meta = Column(Text, nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    message_id = Column(BigInteger, primary_key=True, autoincrement=True)
+    chat_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey("chat.chat_id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    role = Column(Text, nullable=False)
+    content = Column(Text, nullable=False)
+    created_at = Column(DateTime(timezone=True), nullable=False, default=datetime.utcnow)
+    sources = Column(ARRAY(Text), nullable=True)
+    chat = relationship("Chat", back_populates="messages")
+
+    __table_args__ = (
+        CheckConstraint("role IN ('user', 'assistant', 'system')", name="role_check"),
+        Index("ix_chat_message_chat_id_created_at", "chat_id", "created_at"),
+    )
