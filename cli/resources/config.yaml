@@ -20,17 +20,17 @@ resources:
         # - strategy: Path
         #   params:
         #     path: ./resources/test/
-        - strategy: SitemapXML
-          params:
-            url: https://agrospai.udl.cat/sitemap.xml
-            regex:
-              - https?://[^/]+/docs/
-        # - strategy: Crawling
+        # - strategy: SitemapXML
         #   params:
-        #     url: https://agrospai.udl.cat
-        #     workers: 5
-        #     depth: 3
-        #     delay: 0
+        #     url: https://agrospai.udl.cat/sitemap.xml
+        #     regex:
+        #       - https?://[^/]+/docs/
+        - strategy: Crawling
+          params:
+            url: https://agrospai.udl.cat
+            workers: 5
+            depth: 3
+            delay: 0
       parsing:
         - strategy: HtmlParser
           params:
@@ -47,21 +47,26 @@ experiments:
     max_concurrent: 3
   steps:
     chunking:
-      - strategy: ParentChild
+      # - strategy: ParentChild
+      #   params:
+      #     embedding_model: "paraphrase-multilingual:latest"
+      #     embedding_api_url: "https://chat.agrospai.udl.cat/ollama/api/embed"
+      #     embedding_api_key: ${CHAT_API_KEY}
+      - strategy: SlidingWindow
         params:
-          chunk_size: 500
-          embedding_model: "paraphrase-multilingual:latest"
-          embedding_api_url: "https://chat.agrospai.udl.cat/ollama/api/embed"
-          embedding_api_key: ${CHAT_API_KEY}
+          chunk_size: 1200
+          chunk_overlap: 200
     embedding:
       - strategy: OpenAI-Simple
         params:
           model: paraphrase-multilingual:latest
+          # model: nomic-embed-text-v2-moe:latest
           api_key: ${CHAT_API_KEY}
           url: https://chat.agrospai.udl.cat/ollama/api/embed
       - strategy: openai-simple
         params:
           model: paraphrase-multilingual:latest
+          # model: nomic-embed-text-v2-moe:latest
           api_key: ${CHAT_API_KEY}
           url: https://chat.agrospai.udl.cat/ollama/api/embed
     benchmarking:
