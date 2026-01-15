@@ -25,6 +25,8 @@ class SQLAlchemyChatRepository:
             return {
                 "chat_id": str(getattr(chat, "chat_id", chat_id)),
                 "created_at": getattr(chat, "created_at", None),
+                "ip": getattr(chat, "ip", None),
+                "country": getattr(chat, "country", None),
                 "messages": [
                     {
                         "message_id": getattr(msg, "message_id", None),
@@ -46,6 +48,8 @@ class SQLAlchemyChatRepository:
         content: str,
         role: str,
         sources: Optional[List[str]] = None,
+        ip: Optional[str] = None,
+        country: Optional[str] = None,
     ) -> None:
         _, SessionLocal, _ = get_db(settings)
         if SessionLocal is None:
@@ -57,6 +61,10 @@ class SQLAlchemyChatRepository:
                 chat = Chat()
                 if hasattr(chat, "chat_id"):
                     chat.chat_id = chat_id
+                if hasattr(chat, "ip"):
+                    chat.ip = ip
+                if hasattr(chat, "country"):
+                    chat.country = country
                 session.add(chat)
                 session.flush()
             chat_msg = ChatMessage()
@@ -97,6 +105,8 @@ class SQLAlchemyChatRepository:
             return {
                 "items": [
                     {
+                        "ip": getattr(chat, "ip", None),
+                        "country": getattr(chat, "country", None),
                         "chat_id": str(getattr(chat, "chat_id", None)),
                         "created_at": getattr(chat, "created_at", None),
                     }

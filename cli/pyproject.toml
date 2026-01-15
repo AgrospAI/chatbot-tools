@@ -39,6 +39,7 @@ dependencies = [
     "typer>=0.20.0",
     "uvicorn>=0.40.0",
     "slowapi>=0.1.9",
+    "geoip2>=5.2.0",
 ]
 
 [project.scripts]

@@ -26,6 +26,8 @@ if Base is not None:
         __tablename__ = "chat"
         chat_id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
         created_at = Column(DateTime(timezone=True), nullable=False, default=datetime.utcnow)
+        ip = Column(Text, nullable=True)
+        country = Column(Text, nullable=True)
         messages = relationship(
             "ChatMessage", back_populates="chat", cascade="all, delete-orphan"
         )

@@ -17,7 +17,9 @@ def get_all_chats(
     sort_order: str = Query("desc", description="Sort order: 'asc' or 'desc'"),
 ):
     """Get all chats (no messages) with pagination and sorting."""
-    return chat_repo.get_chats(page=page, page_size=page_size, sort_by=sort_by, sort_order=sort_order)
+    return chat_repo.get_chats(
+        page=page, page_size=page_size, sort_by=sort_by, sort_order=sort_order
+    )
 
 
 @router.get("/chats/{chat_id}")

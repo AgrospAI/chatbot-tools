@@ -6,6 +6,7 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
 from fastrag.serve.db import get_chat_repository, init_db
+from fastrag.serve.geolocalization import get_country_from_ip
 from fastrag.serve.monitoring.metrics import (
     http_request_errors_total,
     http_requests_in_flight,
@@ -73,8 +74,13 @@ async def ask_question(
     requests_per_ip_total.labels(client_ip).inc()
     llm_question_length.observe(len(req.question))
 
-    # Save user message
-    chat_repo.save_message(chat_id=chat_id, content=req.question, role="user")
+    # Get country from IP
+    country = get_country_from_ip(client_ip)
+
+    # Save user message (this will create the chat with IP and country if it doesn't exist)
+    chat_repo.save_message(
+        chat_id=chat_id, content=req.question, role="user", ip=client_ip, country=country
+    )
 
     query_embedding = await embedding_model.embed_query(req.question)
 
