@@ -3,8 +3,17 @@
   "name": "chat",
   "title": "Chat",
   "description": "A customizable chat component.",
-  "dependencies": ["class-variance-authority", "lucide-react"],
-  "registryDependencies": ["button", "avatar"],
+  "dependencies": [
+    "class-variance-authority",
+    "lucide-react",
+    "react-markdown",
+    "remark-gfm",
+    "react-syntax-highlighter"
+  ],
+  "registryDependencies": [
+    "button",
+    "avatar"
+  ],
   "files": [
     {
       "path": "src/registry/new-york/chat/components/chat/autosize-textarea.tsx",
@@ -50,6 +59,16 @@
       "path": "src/registry/new-york/chat/hooks/useMediaQuery.ts",
       "content": "import { useMemo, useSyncExternalStore } from \"react\"\n\nfunction getMediaQueryList(query: string) {\n  if (\n    typeof window === \"undefined\" ||\n    typeof window.matchMedia !== \"function\"\n  ) {\n    return null\n  }\n  return window.matchMedia(query)\n}\n\nexport function useMediaQuery(query: string) {\n  const normalizedQuery = useMemo(\n    () =>\n      query.startsWith(\"@media\")\n        ? query.substring(\"@media\".length, query.length)\n        : query,\n    [query],\n  )\n\n  const subscribe = (onStoreChange: () => void) => {\n    const mediaQueryList = getMediaQueryList(normalizedQuery)\n    if (!mediaQueryList) return () => {}\n\n    // Keep state in sync with native media query changes.\n    const handler = () => onStoreChange()\n    mediaQueryList.addEventListener(\"change\", handler)\n    return () => mediaQueryList.removeEventListener(\"change\", handler)\n  }\n\n  const getSnapshot = () => getMediaQueryList(normalizedQuery)?.matches ?? false\n  const getServerSnapshot = () => false\n\n  return useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot)\n}\n\nexport default useMediaQuery\n",
       "type": "registry:hook"
+    },
+    {
+      "path": "src/registry/new-york/chat/components/chat/markdown/markdown.tsx",
+      "content": "import styles from \"./markdown.module.css\"\nimport { cn } from \"@/lib/utils\"\nimport ReactMarkdown from \"react-markdown\"\nimport { Prism as SyntaxHighlighter } from \"react-syntax-highlighter\"\nimport darkStyle from \"react-syntax-highlighter/dist/esm/styles/prism/one-dark\"\nimport lightStyle from \"react-syntax-highlighter/dist/esm/styles/prism/one-light\"\nimport remarkGfm from \"remark-gfm\"\n\ninterface Props {\n  theme?: \"light\" | \"dark\"\n  children?: string\n  className?: string\n  references?: Array<string>\n}\n\nexport default function Markdown({\n  theme = \"light\",\n  children,\n  className,\n  references = [],\n}: Props) {\n  const hlStyle = theme === \"dark\" ? darkStyle : lightStyle\n\n  return (\n    <div\n      className={cn(\n        \"prose dark:prose-invert flex max-h-fit w-full flex-col\",\n        styles.markdown,\n        className,\n      )}\n    >\n      <ReactMarkdown\n        remarkPlugins={[remarkGfm]}\n        rehypePlugins={[]}\n        urlTransform={uri => uri}\n        components={{\n          code(props) {\n            const { children, className, ...rest } = props\n            const match = /language-(\\w+)/.exec(className ?? \"\")\n            return match ? (\n              <SyntaxHighlighter\n                {...rest}\n                PreTag=\"div\"\n                ref={undefined}\n                language={match[1]}\n                style={hlStyle}\n                customStyle={{\n                  margin: 0,\n                }}\n              >\n                {String(children).replace(/\\n$/, \"\")}\n              </SyntaxHighlighter>\n            ) : (\n              <code {...rest} className={className}>\n                {children}\n              </code>\n            )\n          },\n          a: ({ href, children }) => {\n            if (href?.startsWith(\"ref:\")) {\n              const id = parseInt(href.slice(4))\n              const url = references[id]\n\n              if (!url) return <span>{children}</span>\n\n              return (\n                <a\n                  href={url}\n                  target=\"_blank\"\n                  rel=\"noopener noreferrer\"\n                  className=\"ref-button\"\n                >\n                  {children}\n                </a>\n              )\n            }\n\n            return <a href={href}>{children}</a>\n          },\n        }}\n      >\n        {children}\n      </ReactMarkdown>\n    </div>\n  )\n}\n",
+      "type": "registry:component"
+    },
+    {
+      "path": "src/registry/new-york/chat/components/chat/markdown/markdown.module.css",
+      "content": ".markdown ul {\n  display: flex;\n  flex-direction: column;\n  margin-top: 0.25rem;\n  margin-bottom: 0.25rem;\n  list-style-type: disc;\n  padding-left: 1rem;\n}\n.markdown ol {\n  margin-top: 0.25rem;\n  margin-bottom: 0.75rem;\n  list-style-type: decimal;\n  padding-left: 1rem;\n}\n.markdown a {\n  color: #3b82f6; /* Tailwind's blue-500 */\n}\n.markdown pre {\n  margin: 0;\n  border: 0;\n  background-color: var(--background);\n  padding: 0;\n}\n.markdown p {\n  margin-bottom: 0.75rem;\n}\n.markdown h1 {\n  margin-bottom: 1rem;\n  font-size: 1.25rem;\n  line-height: 1.25;\n}\n.markdown h2 {\n  margin-bottom: 1.5rem;\n  font-size: 1.125rem;\n  line-height: 1.25;\n}\n.markdown h3 {\n  margin-bottom: 1rem;\n  font-size: 1rem;\n  font-weight: bold;\n  line-height: 1.25;\n}\n.markdown h4 {\n  margin-bottom: 1rem;\n  font-size: 1rem;\n  line-height: 1.25;\n}\n.markdown h5 {\n  margin-bottom: 0.5rem;\n  font-size: 0.875rem;\n  line-height: 1.25;\n}\n.markdown h6 {\n  margin-bottom: 0.5rem;\n  font-size: 0.75rem;\n  line-height: 1.25;\n}\n.markdown hr {\n  margin: 0;\n}\n",
+      "type": "registry:component"
     }
   ],
   "type": "registry:component"

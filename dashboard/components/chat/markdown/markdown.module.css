@@ -1,0 +1,60 @@
+.markdown ul {
+  display: flex;
+  flex-direction: column;
+  margin-top: 0.25rem;
+  margin-bottom: 0.25rem;
+  list-style-type: disc;
+  padding-left: 1rem;
+}
+.markdown ol {
+  margin-top: 0.25rem;
+  margin-bottom: 0.75rem;
+  list-style-type: decimal;
+  padding-left: 1rem;
+}
+.markdown a {
+  color: #3b82f6; /* Tailwind's blue-500 */
+}
+.markdown pre {
+  margin: 0;
+  border: 0;
+  background-color: var(--background);
+  padding: 0;
+}
+.markdown p {
+  margin-bottom: 0.75rem;
+}
+.markdown h1 {
+  margin-bottom: 1rem;
+  font-size: 1.25rem;
+  line-height: 1.25;
+}
+.markdown h2 {
+  margin-bottom: 1.5rem;
+  font-size: 1.125rem;
+  line-height: 1.25;
+}
+.markdown h3 {
+  margin-bottom: 1rem;
+  font-size: 1rem;
+  font-weight: bold;
+  line-height: 1.25;
+}
+.markdown h4 {
+  margin-bottom: 1rem;
+  font-size: 1rem;
+  line-height: 1.25;
+}
+.markdown h5 {
+  margin-bottom: 0.5rem;
+  font-size: 0.875rem;
+  line-height: 1.25;
+}
+.markdown h6 {
+  margin-bottom: 0.5rem;
+  font-size: 0.75rem;
+  line-height: 1.25;
+}
+.markdown hr {
+  margin: 0;
+}

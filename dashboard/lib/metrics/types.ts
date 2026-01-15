@@ -73,10 +73,53 @@ export type ServiceHealthMetrics = {
   metrics: ServiceHealthMetric[]
 }
 
+export type TimeToTokenPoint = {
+  time: string
+  p50: number
+  p90: number
+  p99: number
+}
+
+export type TimeToTokenMetrics = {
+  summary: {
+    p50: number
+    p90: number
+    p99: number
+  }
+  series: TimeToTokenPoint[]
+}
+
+export type TokenLengthPoint = {
+  time: string
+  value: number
+}
+
+export type TokenLengthMetrics = {
+  summary: {
+    average: number
+  }
+  series: TokenLengthPoint[]
+}
+
+export type RejectedRequestsMetrics = {
+  summary: {
+    totalRejected: number
+  }
+  series: Array<{
+    time: string
+    rejected: number
+  }>
+}
+
 export type DashboardMetrics = {
   traffic: MetricState<TrafficMetrics>
   latency: MetricState<LatencyMetrics>
   modelUsage: MetricState<ModelUsageMetrics>
   rateLimiting: MetricState<RateLimitingMetrics>
   serviceHealth: MetricState<ServiceHealthMetrics>
+  timeToFirstToken: MetricState<TimeToTokenMetrics>
+  timeToLastToken: MetricState<TimeToTokenMetrics>
+  questionLength: MetricState<TokenLengthMetrics>
+  answerLength: MetricState<TokenLengthMetrics>
+  rejectedRequests: MetricState<RejectedRequestsMetrics>
 }

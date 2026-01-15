@@ -11,7 +11,7 @@ import {
   ExpandableChatFooter,
   ExpandableChatHeader,
 } from "@/registry/new-york/chat/components/chat/expandable-chat"
-import Markdown from "@/registry/new-york/chatbot/components/chatbot/markdown/markdown"
+import Markdown from "@/registry/new-york/chat/components/chat/markdown/markdown"
 import PromptSuggestions from "@/registry/new-york/chatbot/components/chatbot/prompt-suggestions"
 import { Send, Trash } from "lucide-react"
 import { useState } from "react"
@@ -109,6 +109,17 @@ export default function Chatbot({
       while (true) {
         const { value, done } = await reader.read()
         if (done) {
+          setMessages(prev => {
+            const lastIndex = prev.length - 1
+            return prev.map((msg, i) =>
+              i === lastIndex
+                ? {
+                    ...msg,
+                    pending: false,
+                  }
+                : msg,
+            )
+          })
           break
         }
         buffer += decoder.decode(value, { stream: true })
@@ -136,9 +147,10 @@ export default function Chatbot({
         }
 
         if (content) {
-          setMessages(prev =>
-            prev.map((msg, i) => {
-              const isLastMessage = i === prev.length - 1
+          setMessages(prev => {
+            const lastIndex = prev.length - 1
+            return prev.map((msg, i) => {
+              const isLastMessage = i === lastIndex
               if (!isLastMessage || msg.role !== "bot") return msg
 
               return {
@@ -146,20 +158,26 @@ export default function Chatbot({
                 message: content,
                 sources: [...(msg.sources || []), ...sources],
               }
-            }),
-          )
+            })
+          })
           setIsLoading(false)
         }
       }
     } catch (error) {
       console.error("Error during fetch:", error)
-      botMessage.message = genericErrorAnswer
+      setMessages(prev => {
+        const lastIndex = prev.length - 1
+        return prev.map((msg, i) =>
+          i === lastIndex
+            ? {
+                ...msg,
+                message: genericErrorAnswer,
+                pending: false,
+              }
+            : msg,
+        )
+      })
     } finally {
-      setMessages(prev =>
-        prev.map((msg, i) =>
-          i === prev.length - 1 ? { ...msg, pending: false } : msg,
-        ),
-      )
       setIsLoading(false)
       setIsStreaming(false)
     }

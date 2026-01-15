@@ -50,6 +50,7 @@ class ParentChildChunker(Task):
             metadata={
                 "step": "chunking",
                 "strategy": ParentChildChunker.supported,
+                "experiment": self.experiment.experiment_hash,
             },
         )
 

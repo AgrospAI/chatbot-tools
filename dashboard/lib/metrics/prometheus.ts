@@ -8,6 +8,9 @@ import {
   RateLimitingMetrics,
   ServiceHealthMetrics,
   TrafficMetrics,
+  TimeToTokenMetrics,
+  TokenLengthMetrics,
+  RejectedRequestsMetrics,
 } from "@/lib/metrics/types"
 
 type QueryRangeResponse = {
@@ -45,8 +48,9 @@ const DEFAULT_STEP_SECONDS = 4 * 60 * 60
 
 const PROM_QUERIES = {
   requestsPerSecond: "sum(rate(http_requests_total[5m]))",
-  concurrentRequests: "sum(active_requests)",
-  pendingRequests: "sum(pending_requests)",
+  concurrentRequests: "sum(http_requests_in_flight)",
+  rejectedRequests: "sum(rate(rejected_requests_total[5m]))",
+  requestsPerIp: "sum(rate(requests_per_ip_total[5m]))",
   latencyP50:
     "histogram_quantile(0.5, sum(rate(http_request_duration_seconds_bucket[5m])) by (le))",
   latencyP90:
@@ -55,11 +59,25 @@ const PROM_QUERIES = {
     "histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket[5m])) by (le))",
   tokensIn: "sum(rate(model_tokens_in_total[5m]))",
   tokensOut: "sum(rate(model_tokens_out_total[5m]))",
-  rateLimitAllowed: "sum(rate(rate_limit_allowed_total[5m]))",
-  rateLimitRejected: "sum(rate(rate_limit_rejected_total[5m]))",
-  uptime: "avg_over_time(service_uptime[1h])",
+  timeToFirstTokenP50:
+    "histogram_quantile(0.5, sum(rate(llm_time_to_first_token_seconds_bucket[5m])) by (le))",
+  timeToFirstTokenP90:
+    "histogram_quantile(0.9, sum(rate(llm_time_to_first_token_seconds_bucket[5m])) by (le))",
+  timeToFirstTokenP99:
+    "histogram_quantile(0.99, sum(rate(llm_time_to_first_token_seconds_bucket[5m])) by (le))",
+  timeToLastTokenP50:
+    "histogram_quantile(0.5, sum(rate(llm_time_to_last_token_seconds_bucket[5m])) by (le))",
+  timeToLastTokenP90:
+    "histogram_quantile(0.9, sum(rate(llm_time_to_last_token_seconds_bucket[5m])) by (le))",
+  timeToLastTokenP99:
+    "histogram_quantile(0.99, sum(rate(llm_time_to_last_token_seconds_bucket[5m])) by (le))",
+  questionLengthAvg:
+    "avg_over_time(llm_question_length_chars_sum[1h]) / avg_over_time(llm_question_length_chars_count[1h])",
+  answerLengthAvg:
+    "avg_over_time(llm_answer_length_chars_sum[1h]) / avg_over_time(llm_answer_length_chars_count[1h])",
+  uptime: "avg_over_time(up[1h])",
   errorRate:
-    "sum(rate(http_requests_errors_total[5m])) / sum(rate(http_requests_total[5m]))",
+    "sum(rate(http_request_errors_total[5m])) / sum(rate(http_requests_total[5m]))",
   liveness: "up",
 }
 
@@ -161,11 +179,6 @@ async function fetchTrafficMetrics(
     baseUrl,
     token,
   )
-  const pending = await queryInstant(
-    PROM_QUERIES.pendingRequests,
-    baseUrl,
-    token,
-  )
 
   return {
     summary: {
@@ -173,13 +186,13 @@ async function fetchTrafficMetrics(
         average(series.map(point => point.value)).toFixed(0),
       ),
       concurrent,
-      pending,
+      pending: 0,
     },
     series: series.map(point => ({
       time: formatTimestampToHour(point.timestamp),
       requests: point.value,
       concurrent,
-      pending,
+      pending: 0,
     })),
   }
 }
@@ -269,37 +282,27 @@ async function fetchRateLimitingMetrics(
   end: Date,
   stepSeconds: number,
 ): Promise<RateLimitingMetrics> {
-  const [allowedSeries, rejectedSeries] = await Promise.all([
-    queryRange(
-      PROM_QUERIES.rateLimitAllowed,
-      baseUrl,
-      token,
-      start,
-      end,
-      stepSeconds,
-    ),
-    queryRange(
-      PROM_QUERIES.rateLimitRejected,
-      baseUrl,
-      token,
-      start,
-      end,
-      stepSeconds,
-    ),
-  ])
+  const requestsPerIpSeries = await queryRange(
+    PROM_QUERIES.requestsPerIp,
+    baseUrl,
+    token,
+    start,
+    end,
+    stepSeconds,
+  )
 
-  const series = allowedSeries.map((point, index) => ({
+  const series = requestsPerIpSeries.map(point => ({
     time: formatTimestampToHour(point.timestamp),
     allowed: point.value,
-    rejected: rejectedSeries[index]?.value ?? 0,
+    rejected: 0,
   }))
 
   return {
     summary: {
       requestsPerIpAvg: Number(
-        average(allowedSeries.map(p => p.value)).toFixed(0),
+        average(requestsPerIpSeries.map(p => p.value)).toFixed(0),
       ),
-      rejected: Number((rejectedSeries.at(-1)?.value ?? 0).toFixed(0)),
+      rejected: 0,
     },
     series,
   }
@@ -334,6 +337,189 @@ async function fetchServiceHealthMetrics(
         status: healthStatus,
       },
     ],
+  }
+}
+
+async function fetchTimeToFirstTokenMetrics(
+  baseUrl: string,
+  token: string | undefined,
+  start: Date,
+  end: Date,
+  stepSeconds: number,
+): Promise<TimeToTokenMetrics> {
+  const [p50Series, p90Series, p99Series] = await Promise.all([
+    queryRange(
+      PROM_QUERIES.timeToFirstTokenP50,
+      baseUrl,
+      token,
+      start,
+      end,
+      stepSeconds,
+    ),
+    queryRange(
+      PROM_QUERIES.timeToFirstTokenP90,
+      baseUrl,
+      token,
+      start,
+      end,
+      stepSeconds,
+    ),
+    queryRange(
+      PROM_QUERIES.timeToFirstTokenP99,
+      baseUrl,
+      token,
+      start,
+      end,
+      stepSeconds,
+    ),
+  ])
+
+  const series = p50Series.map((p50Point, index) => ({
+    time: formatTimestampToHour(p50Point.timestamp),
+    p50: p50Point.value,
+    p90: p90Series[index]?.value ?? p50Point.value,
+    p99: p99Series[index]?.value ?? p50Point.value,
+  }))
+
+  return {
+    summary: {
+      p50: Number((p50Series.at(-1)?.value ?? 0).toFixed(2)),
+      p90: Number((p90Series.at(-1)?.value ?? 0).toFixed(2)),
+      p99: Number((p99Series.at(-1)?.value ?? 0).toFixed(2)),
+    },
+    series,
+  }
+}
+
+async function fetchTimeToLastTokenMetrics(
+  baseUrl: string,
+  token: string | undefined,
+  start: Date,
+  end: Date,
+  stepSeconds: number,
+): Promise<TimeToTokenMetrics> {
+  const [p50Series, p90Series, p99Series] = await Promise.all([
+    queryRange(
+      PROM_QUERIES.timeToLastTokenP50,
+      baseUrl,
+      token,
+      start,
+      end,
+      stepSeconds,
+    ),
+    queryRange(
+      PROM_QUERIES.timeToLastTokenP90,
+      baseUrl,
+      token,
+      start,
+      end,
+      stepSeconds,
+    ),
+    queryRange(
+      PROM_QUERIES.timeToLastTokenP99,
+      baseUrl,
+      token,
+      start,
+      end,
+      stepSeconds,
+    ),
+  ])
+
+  const series = p50Series.map((p50Point, index) => ({
+    time: formatTimestampToHour(p50Point.timestamp),
+    p50: p50Point.value,
+    p90: p90Series[index]?.value ?? p50Point.value,
+    p99: p99Series[index]?.value ?? p50Point.value,
+  }))
+
+  return {
+    summary: {
+      p50: Number((p50Series.at(-1)?.value ?? 0).toFixed(2)),
+      p90: Number((p90Series.at(-1)?.value ?? 0).toFixed(2)),
+      p99: Number((p99Series.at(-1)?.value ?? 0).toFixed(2)),
+    },
+    series,
+  }
+}
+
+async function fetchQuestionLengthMetrics(
+  baseUrl: string,
+  token: string | undefined,
+  start: Date,
+  end: Date,
+  stepSeconds: number,
+): Promise<TokenLengthMetrics> {
+  const series = await queryRange(
+    PROM_QUERIES.questionLengthAvg,
+    baseUrl,
+    token,
+    start,
+    end,
+    stepSeconds,
+  )
+
+  return {
+    summary: {
+      average: Number(average(series.map(p => p.value)).toFixed(0)),
+    },
+    series: series.map(point => ({
+      time: formatTimestampToHour(point.timestamp),
+      value: point.value,
+    })),
+  }
+}
+
+async function fetchAnswerLengthMetrics(
+  baseUrl: string,
+  token: string | undefined,
+  start: Date,
+  end: Date,
+  stepSeconds: number,
+): Promise<TokenLengthMetrics> {
+  const series = await queryRange(
+    PROM_QUERIES.answerLengthAvg,
+    baseUrl,
+    token,
+    start,
+    end,
+    stepSeconds,
+  )
+
+  return {
+    summary: {
+      average: Number(average(series.map(p => p.value)).toFixed(0)),
+    },
+    series: series.map(point => ({
+      time: formatTimestampToHour(point.timestamp),
+      value: point.value,
+    })),
+  }
+}
+
+async function fetchRejectedRequestsMetrics(
+  baseUrl: string,
+  token: string | undefined,
+  start: Date,
+  end: Date,
+  stepSeconds: number,
+): Promise<RejectedRequestsMetrics> {
+  const series = await queryRange(
+    PROM_QUERIES.rejectedRequests,
+    baseUrl,
+    token,
+    start,
+    end,
+    stepSeconds,
+  )
+
+  return {
+    summary: {
+      totalRejected: Number((series.at(-1)?.value ?? 0).toFixed(0)),
+    },
+    series: series.map(point => ({
+      time: formatTimestampToHour(point.timestamp),
+      rejected: point.value,
+    })),
   }
 }
 
@@ -398,6 +584,26 @@ export async function getDashboardMetrics(
         ...mock.serviceHealth,
         error: missingConfigError ?? mock.serviceHealth.error,
       },
+      timeToFirstToken: {
+        ...mock.timeToFirstToken,
+        error: missingConfigError ?? mock.timeToFirstToken.error,
+      },
+      timeToLastToken: {
+        ...mock.timeToLastToken,
+        error: missingConfigError ?? mock.timeToLastToken.error,
+      },
+      questionLength: {
+        ...mock.questionLength,
+        error: missingConfigError ?? mock.questionLength.error,
+      },
+      answerLength: {
+        ...mock.answerLength,
+        error: missingConfigError ?? mock.answerLength.error,
+      },
+      rejectedRequests: {
+        ...mock.rejectedRequests,
+        error: missingConfigError ?? mock.rejectedRequests.error,
+      },
     }
   }
 
@@ -414,12 +620,22 @@ export async function getDashboardMetrics(
     modelUsageResult,
     rateLimitingResult,
     serviceHealthResult,
+    timeToFirstTokenResult,
+    timeToLastTokenResult,
+    questionLengthResult,
+    answerLengthResult,
+    rejectedRequestsResult,
   ] = await Promise.allSettled([
     fetchTrafficMetrics(baseUrl, token, start, end, stepSeconds),
     fetchLatencyMetrics(baseUrl, token, start, end, stepSeconds),
     fetchModelUsageMetrics(baseUrl, token, start, end, stepSeconds),
     fetchRateLimitingMetrics(baseUrl, token, start, end, stepSeconds),
     fetchServiceHealthMetrics(baseUrl, token),
+    fetchTimeToFirstTokenMetrics(baseUrl, token, start, end, stepSeconds),
+    fetchTimeToLastTokenMetrics(baseUrl, token, start, end, stepSeconds),
+    fetchQuestionLengthMetrics(baseUrl, token, start, end, stepSeconds),
+    fetchAnswerLengthMetrics(baseUrl, token, start, end, stepSeconds),
+    fetchRejectedRequestsMetrics(baseUrl, token, start, end, stepSeconds),
   ])
 
   return {
@@ -428,5 +644,16 @@ export async function getDashboardMetrics(
     modelUsage: fromSettled(modelUsageResult, mock.modelUsage),
     rateLimiting: fromSettled(rateLimitingResult, mock.rateLimiting),
     serviceHealth: fromSettled(serviceHealthResult, mock.serviceHealth),
+    timeToFirstToken: fromSettled(
+      timeToFirstTokenResult,
+      mock.timeToFirstToken,
+    ),
+    timeToLastToken: fromSettled(timeToLastTokenResult, mock.timeToLastToken),
+    questionLength: fromSettled(questionLengthResult, mock.questionLength),
+    answerLength: fromSettled(answerLengthResult, mock.answerLength),
+    rejectedRequests: fromSettled(
+      rejectedRequestsResult,
+      mock.rejectedRequests,
+    ),
   }
 }

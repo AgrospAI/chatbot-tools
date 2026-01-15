@@ -60,8 +60,14 @@ def evaluate_relative_quality(doc: Document, stats: dict) -> float:
     """
     length = len(doc.page_content)
 
+    mean = stats.get("mean", 0.0)
+    std = stats.get("std", 0.0)
+
     # Calculate Z-score: (x - mean) / std
-    z_score = (length - stats["mean"]) / stats["std"]
+    if std == 0 or np.isnan(std):
+        z_score = 0.0  # No deviation possible
+    else:
+        z_score = (length - mean) / std
 
     # 1. Length Consistency Score
     # We want chunks to be within -1.0 and +1.5 standard deviations.
@@ -137,8 +143,6 @@ def evaluate_document_quality(doc: Document) -> float:
 class ChunkQualityBenchmarking(Task):
     supported: ClassVar[str] = "ChunkQuality"
 
-    _quality: dict = field(default_factory=dict, repr=False)
-
     @override
     async def run(self) -> Run:
         chunking_tasks = self.experiment.tasks("chunking")
@@ -149,17 +153,12 @@ class ChunkQualityBenchmarking(Task):
         for task in chunking_tasks:
             for documents in task.results:
                 docs = []
+
+                if not documents:
+                    continue
+
                 for doc in documents:
-                    docs.append(
-                        Document(
-                            page_content=doc["page_content"],
-                            metadata={
-                                **doc["metadata"],
-                                "chunk_id": doc["chunk_id"],
-                                "level": doc["level"],
-                            },
-                        )
-                    )
+                    docs.append(Document(**doc))
                 total += 1
 
                 quality = calculate_corpus_quality(docs)
@@ -180,8 +179,7 @@ class ChunkQualityBenchmarking(Task):
         self.experiment.save_results(
             f"\nChunkQualityBenchmarking ({total} docs): {json.dumps(overall, indent=4)}"
         )
-        object.__setattr__(self, "_quality", quality)
 
     @override
     def completed_callback(self) -> Event:
-        return Event(Event.Type.COMPLETED, f"Overall chunking quality {self._quality}")
+        return Event(Event.Type.COMPLETED, "Finished ChunkQualityBenchmarking")

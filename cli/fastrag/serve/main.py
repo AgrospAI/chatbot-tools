@@ -4,17 +4,20 @@ from pathlib import Path
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from slowapi.errors import RateLimitExceeded
 
 from fastrag import ILLM, Config
 from fastrag.config.env import load_env_file
 from fastrag.config.loaders.loader import IConfigLoader
 from fastrag.embeddings import IEmbeddings
 from fastrag.plugins import import_plugins, inject
+from fastrag.serve.rate_limiter import custom_rate_limit_handler, limiter
 from fastrag.settings import DEFAULT_CONFIG
 from fastrag.stores.store import IVectorStore
 
 from .dependencies import set_dependencies
 from .endpoints.ask import router as ask_router
+from .endpoints.chats import router as chats_router
 from .endpoints.healthz import router as health_router
 from .endpoints.metrics import router as metrics_router
 
@@ -56,6 +59,10 @@ def init_serve(app_config: Config) -> None:
 
 def _make_app() -> FastAPI:
     app = FastAPI(lifespan=lifespan)
+    app.state.limiter = limiter
+
+    app.add_exception_handler(RateLimitExceeded, custom_rate_limit_handler)
+
     origins = ["*"]
     app.add_middleware(
         CORSMiddleware,
@@ -64,9 +71,11 @@ def _make_app() -> FastAPI:
         allow_methods=["*"],
         allow_headers=["*"],
     )
+
     app.include_router(health_router)
     app.include_router(metrics_router)
     app.include_router(ask_router)
+    app.include_router(chats_router)
     return app
 
 
@@ -101,7 +110,6 @@ def start_server(host: str = "0.0.0.0", port: int = 8000, reload: bool = False):
         uvicorn.run(
             create_app(),
             host=host,
-            port=port,
             reload=False,
         )
 

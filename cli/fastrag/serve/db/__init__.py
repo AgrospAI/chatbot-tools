@@ -1,9 +1,13 @@
-from .database import Base, engine
+from fastrag.config import settings
+
+from .database import get_db
 from .repositories.sqlalchemy_repository import SQLAlchemyChatRepository
 
 
 def init_db():
-    Base.metadata.create_all(bind=engine)
+    engine, _, Base = get_db(settings)
+    if Base is not None:
+        Base.metadata.create_all(bind=engine)
 
 
 def get_chat_repository():

@@ -1,19 +1,20 @@
 from __future__ import annotations
 
 import base64
-import json
 import random
 import string
 import uuid
 from abc import ABC, abstractmethod
-from dataclasses import InitVar, asdict, dataclass, field
+from dataclasses import InitVar, dataclass, field
 from typing import TYPE_CHECKING, AsyncGenerator, ClassVar, TypeAlias, override
 
 from rich.progress import Progress
 
 from fastrag.cache.cache import ICache
+from fastrag.cache.filters import MetadataFilter
 from fastrag.config.config import Step, Steps
 from fastrag.events import Event
+from fastrag.helpers.filters import Filter
 from fastrag.llms.llm import ILLM
 from fastrag.plugins import PluginBase, inject
 from fastrag.steps.logs import Loggable
@@ -37,6 +38,8 @@ Tasks: TypeAlias = AsyncGenerator[tuple["Task", list[AsyncGenerator[Event, None]
 @dataclass
 class IStep(Loggable, PluginBase, ABC):
     description: ClassVar[str] = "UNKNOWN STEP"
+
+    filter: Filter | None = field(init=False, repr=False, hash=False, compare=False)
 
     task_id: int = field(default=-1)
     step: Step = field(default_factory=list)
@@ -152,6 +155,9 @@ class IMultiStep(IStep):
 
         self.experiment_hash = generate_alphanum_id(experiment)
 
+        for task in self._tasks:
+            task.filter = MetadataFilter(experiment=experiment.experiment_hash)
+
         lines = []
         for task in self._tasks:
             task_name = task.__class__.__name__
@@ -160,7 +166,9 @@ class IMultiStep(IStep):
             for strat in task.step:
                 lines.append(f"\t└─ {strat.strategy}")
 
-        self.results = f"Experiment #{self.task_id + 1} | Experiment {self.experiment_hash} :\n{'\n'.join(lines)}"
+        self.results = (
+            f"Experiment #{self.task_id + 1} | {self.experiment_hash} :\n{'\n'.join(lines)}"
+        )
 
     def tasks(self, step: str) -> list[Task]:
         tasks = []
