@@ -1,6 +1,6 @@
 [project]
 name = "fastrag-cli"
-version = "0.1.7"
+version = "0.1.8"
 description = "CLI tool to manage the lifecycle of a RAG"
 readme = "README.md"
 authors = [
@@ -75,7 +75,7 @@ packages = ["fastrag"]
 include = ["fastrag", "resources"]
 
 [tool.bumpversion]
-current_version = "0.1.7"
+current_version = "0.1.8"
 PyPI = "https://pypi.org/project/fastrag-cli/"
 allow_dirty = true
 
