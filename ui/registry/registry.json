@@ -9,7 +9,13 @@
       "title": "Chat",
       "description": "A customizable chat component.",
       "registryDependencies": ["button", "avatar"],
-      "dependencies": ["class-variance-authority", "lucide-react"],
+      "dependencies": [
+        "class-variance-authority",
+        "lucide-react",
+        "react-markdown",
+        "remark-gfm",
+        "react-syntax-highlighter"
+      ],
       "files": [
         {
           "path": "src/registry/new-york/chat/components/chat/autosize-textarea.tsx",
@@ -46,6 +52,14 @@
         {
           "path": "src/registry/new-york/chat/hooks/useMediaQuery.ts",
           "type": "registry:hook"
+        },
+        {
+          "path": "src/registry/new-york/chat/components/chat/markdown/markdown.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "src/registry/new-york/chat/components/chat/markdown/markdown.module.css",
+          "type": "registry:component"
         }
       ]
     },
@@ -58,12 +72,7 @@
         "button",
         "https://agrospai.github.io/chatbot-tools/r/chat.json"
       ],
-      "dependencies": [
-        "lucide-react",
-        "react-markdown",
-        "remark-gfm",
-        "react-syntax-highlighter"
-      ],
+      "dependencies": ["lucide-react"],
       "files": [
         {
           "path": "src/registry/new-york/chatbot/components/chatbot/chatbot.tsx",
@@ -71,14 +80,6 @@
         },
         {
           "path": "src/registry/new-york/chatbot/components/chatbot/prompt-suggestions.tsx",
-          "type": "registry:component"
-        },
-        {
-          "path": "src/registry/new-york/chatbot/components/chatbot/markdown/markdown.tsx",
-          "type": "registry:component"
-        },
-        {
-          "path": "src/registry/new-york/chatbot/components/chatbot/markdown/markdown.module.css",
           "type": "registry:component"
         }
       ]

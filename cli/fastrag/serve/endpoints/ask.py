@@ -51,9 +51,11 @@ async def ask_question(
     config=Depends(get_config),
     embedding_model=Depends(get_embedding_model),
 ) -> StreamingResponse:
-    # Save user message
-    chat_repo.save_message(chat_id=chat_id, message=req.question, role="user")
-    query_embedding = embedding_model.embed_query(req.question)
+    # # Save user message
+    chat_repo.save_message(chat_id=chat_id, content=req.question, role="user")
+
+    query_embedding = await embedding_model.embed_query(req.question)
+
     results = await vector_store.similarity_search(
         query=req.question, query_embedding=query_embedding, k=5
     )
@@ -64,10 +66,14 @@ async def ask_question(
     async def generate():
         yield f"data: {json.dumps({'type': 'sources', 'data': sources_metadata})}\n\n"
         prompt = build_prompt(context, req.question)
+        
+        answer = ""
         async for token in llm.stream(prompt):
-            # Save each token as assistant message (optional: could save only final answer)
-            chat_repo.save_message(chat_id=chat_id, message=token, role="assistant")
+            answer += token
             yield f"data: {json.dumps({'type': 'token', 'data': token})}\n\n"
+        chat_repo.save_message(
+            chat_id=chat_id, content=answer, role="assistant", sources=sources_metadata
+        )
 
     return StreamingResponse(
         content=generate(),

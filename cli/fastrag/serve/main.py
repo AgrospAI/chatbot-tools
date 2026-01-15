@@ -15,6 +15,7 @@ from fastrag.stores.store import IVectorStore
 
 from .dependencies import set_dependencies
 from .endpoints.ask import router as ask_router
+from .endpoints.chats import router as chats_router
 from .endpoints.healthz import router as health_router
 from .endpoints.metrics import router as metrics_router
 
@@ -64,9 +65,11 @@ def _make_app() -> FastAPI:
         allow_methods=["*"],
         allow_headers=["*"],
     )
+
     app.include_router(health_router)
     app.include_router(metrics_router)
     app.include_router(ask_router)
+    app.include_router(chats_router)
     return app
 
 
