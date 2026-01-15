@@ -36,6 +36,7 @@ class SlidingWindowChunker(Task):
                 "strategy": "SlidingWindow",
                 "size": self.chunk_size,
                 "overlap": self.chunk_overlap,
+                "experiment": self.experiment.experiment_hash,
             },
         )
 

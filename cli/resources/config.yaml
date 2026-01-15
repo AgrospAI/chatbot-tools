@@ -48,11 +48,11 @@ experiments:
     max_concurrent: 3
   steps:
     chunking:
-      # - strategy: ParentChild
-      #   params:
-      #     embedding_model: "paraphrase-multilingual:latest"
-      #     embedding_api_url: "https://chat.agrospai.udl.cat/ollama/api/embed"
-      #     embedding_api_key: ${CHAT_API_KEY}
+      - strategy: ParentChild
+        params:
+          embedding_model: "paraphrase-multilingual:latest"
+          embedding_api_url: "https://chat.agrospai.udl.cat/ollama/api/embed"
+          embedding_api_key: ${CHAT_API_KEY}
       - strategy: SlidingWindow
         params:
           chunk_size: 1200

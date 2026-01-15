@@ -44,7 +44,7 @@ class OpenAISimple(Task):
         existed, cached = await self.cache.get_or_create(
             uri=f"{entry.path.resolve().as_uri()}.{self.__class__.__name__}.{self.model}.embedding.json",
             contents=lambda: self.embedding_logic(entry),
-            metadata={"step": "embedding"},
+            metadata={"step": "embedding", "experiment": self.experiment.experiment_hash},
         )
 
         data = json.loads(cached.content)

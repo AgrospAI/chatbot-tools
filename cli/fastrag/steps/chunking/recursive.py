@@ -29,10 +29,6 @@ def chunk_md(path: Path, chunk_size: int) -> list[str]:
                 chunks.append(current_chunk)
             current_chunk = paragraph
 
-    # Print chunks
-    for chunk in chunks:
-        print(f"Chunk ({len(chunk)} chars):\n{chunk}\n{'-' * 40}\n")
-
     return json.dumps({"chunks": chunks}).encode("utf-8")
 
 
@@ -53,7 +49,11 @@ class RecursiveChunker(Task):
             uri=f"{entry.path.resolve().as_uri()}.{self.__class__.__name__}.{self.chunk_size}.chunk.json",
             contents=partial(chunk_md, entry.path, self.chunk_size),
             step="chunking",
-            metadata={"source": uri, "strategy": RecursiveChunker.supported},
+            metadata={
+                "source": uri,
+                "strategy": RecursiveChunker.supported,
+                "experiment": self.experiment.experiment_hash,
+            },
         )
 
         yield ParsingEvent(
