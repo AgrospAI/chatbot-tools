@@ -63,7 +63,7 @@ class SelfHostedEmbeddings(Task):
         }
 
         result_vectors = []
-        content_chunks = [c["content"] for c in chunks]
+        content_chunks = [c["page_content"] for c in chunks]
 
         limits = httpx.Limits(max_keepalive_connections=5, max_connections=10)
         
