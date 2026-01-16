@@ -368,3 +368,11 @@ async def get_tasks(self) -> Tasks:
         entries = await self.cache.get_entries(self.filter & task.filter)
         yield (task, [task.run(uri, entry) for uri, entry in entries])
 ```
+
+### Development
+
+Fill the database
+
+```bash
+uv run fastrag/serve/scripts/seed_chat_data.py
+```
