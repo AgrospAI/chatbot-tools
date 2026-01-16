@@ -4,12 +4,12 @@ from pathlib import Path
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from langchain_core.embeddings import Embeddings
 from slowapi.errors import RateLimitExceeded
 
 from fastrag import ILLM, Config
 from fastrag.config.env import load_env_file
 from fastrag.config.loaders.loader import IConfigLoader
-from fastrag.embeddings import IEmbeddings
 from fastrag.plugins import import_plugins, inject
 from fastrag.serve.rate_limiter import custom_rate_limit_handler, limiter
 from fastrag.settings import DEFAULT_CONFIG
@@ -46,7 +46,7 @@ def init_serve(app_config: Config) -> None:
     if "embedding" not in config.experiments.steps.keys():
         raise ValueError("Embedding configuration is required for vector store")
     embedding_config = config.experiments.steps["embedding"][0]
-    embedding_model = inject(IEmbeddings, embedding_config.strategy, **embedding_config.params)
+    embedding_model = inject(Embeddings, embedding_config.strategy, **embedding_config.params)
     vector_store = inject(
         IVectorStore,
         config.resources.store.strategy,

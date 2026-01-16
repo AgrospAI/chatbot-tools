@@ -51,7 +51,7 @@ class RecursiveChunker(Task):
             metadata={
                 "source": uri,
                 "strategy": RecursiveChunker.supported,
-                "experiment": self.experiment.experiment_hash,
+                "experiment": self.experiment.hash,
             },
         )
 

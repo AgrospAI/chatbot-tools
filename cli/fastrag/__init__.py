@@ -5,7 +5,7 @@ from fastrag.config import (
     IConfigLoader,
     load_env_file,
 )
-from fastrag.embeddings import IEmbeddings
+from fastrag.embeddings import OpenAIEmbeddings
 from fastrag.helpers import PathField, URLField, version
 from fastrag.llms import ILLM
 from fastrag.plugins import PluginRegistry, import_plugins, inject
@@ -28,11 +28,11 @@ __all__ = [
     IStep,
     IConfigLoader,
     IRunner,
-    IEmbeddings,
     IVectorStore,
     ILLM,
     DEFAULT_CONFIG,
     load_env_file,
     init_serve,
     start_server,
+    OpenAIEmbeddings,
 ]

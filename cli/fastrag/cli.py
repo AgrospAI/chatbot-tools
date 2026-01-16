@@ -4,6 +4,7 @@ from typing import Annotated
 
 import humanize
 import typer
+from langchain_core.embeddings import Embeddings
 from rich.console import Console
 from rich.panel import Panel
 from rich.pretty import Pretty
@@ -20,10 +21,9 @@ from fastrag import (
     version,
 )
 from fastrag.cache.cache import ICache
-from fastrag.embeddings import IEmbeddings
 from fastrag.llms.llm import ILLM
 from fastrag.steps.logs import Loggable
-from fastrag.steps.step import RuntimeResources
+from fastrag.steps.resources import RuntimeResources
 from fastrag.stores.store import IVectorStore
 
 app = typer.Typer(help="FastRAG CLI", add_completion=False)
@@ -214,7 +214,7 @@ def load_config(path: Path) -> Config:
 
 def load_resources(config: Config) -> RuntimeResources:
     embedding_config = config.experiments.steps["embedding"][0]
-    embedding_model = inject(IEmbeddings, embedding_config.strategy, **embedding_config.params)
+    embedding_model = inject(Embeddings, embedding_config.strategy, **embedding_config.params)
 
     return RuntimeResources(
         cache=inject(

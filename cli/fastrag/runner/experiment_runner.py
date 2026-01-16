@@ -3,20 +3,14 @@ from dataclasses import InitVar, dataclass, field
 from itertools import product
 from typing import ClassVar, override
 
-from rich.progress import (
-    BarColumn,
-    MofNCompleteColumn,
-    Progress,
-    TextColumn,
-    TimeElapsedColumn,
-    TimeRemainingColumn,
-)
-
 from fastrag.config.config import Steps
-from fastrag.helpers.experiments import Experiments
+from fastrag.helpers.experiments import Experiment
 from fastrag.plugins import inject
 from fastrag.runner.runner import IRunner
-from fastrag.steps.step import IMultiStep, RuntimeResources
+from fastrag.steps.resources import RuntimeResources
+from fastrag.steps.step import IStep
+from fastrag.steps.step_group import IMultiStep
+from fastrag.steps.task import Task
 
 
 @dataclass(frozen=True)
@@ -25,7 +19,6 @@ class ExperimentsRunner(IRunner):
 
     max_concurrent: InitVar[int] = field(default=5)
 
-    _benchmarking_steps: Steps | None = field(default=None, init=False, repr=False)
     _semaphore: asyncio.Semaphore | None = field(default=None, init=False, repr=False)
 
     def __post_init__(self, max_concurrent: int) -> None:
@@ -39,19 +32,10 @@ class ExperimentsRunner(IRunner):
         resources: RuntimeResources,
         starting_step_number: int = 0,
     ) -> int:
-        with Progress(
-            TextColumn("[progress.percentage]{task.description} {task.percentage:>3.0f}%"),
-            BarColumn(),
-            MofNCompleteColumn(),
-            TextColumn("•"),
-            TimeElapsedColumn(),
-            TextColumn("•"),
-            TimeRemainingColumn(),
-        ) as progress:
+        with self.progress_bar() as progress:
             is_benchmarking = "benchmarking" in steps.keys()
             if is_benchmarking:
                 benchmarking = steps.pop("benchmarking")
-                object.__setattr__(self, "_benchmarking_steps", benchmarking)
 
             step_names = list(steps.keys())
             strategy_lists = [steps[name] for name in step_names]
@@ -64,19 +48,51 @@ class ExperimentsRunner(IRunner):
                 total=len(experiment_combinations),
             )
 
-            experiments: Experiments = []
-            for idx, combination in enumerate(experiment_combinations):
-                step_dict = {
-                    step_names[i]: [strategy] for i, strategy in enumerate(combination)
-                }
-                step_dict["benchmarking"] = benchmarking
+            experiments: list[Experiment] = []
+
+            for idx, strategies in enumerate(experiment_combinations):
+                # From the different combinations of steps => Experiments
+                step_dict = {}
+
+                for step_idx, (name, strat) in enumerate(zip(step_names, strategies)):
+                    task = inject(
+                        Task,
+                        strat.strategy,
+                        resources=resources,
+                        **strat.params or {},
+                    )
+
+                    step_dict[name] = inject(
+                        IStep,
+                        name,
+                        task_id=step_idx,
+                        tasks=[task],  # exactly ONE task
+                        resources=resources,
+                        progress=progress,
+                    )
+
+                if is_benchmarking:
+                    tasks = [
+                        inject(Task, s.strategy, resources=resources, **s.params or {})
+                        for s in benchmarking
+                    ]
+
+                    step_dict["benchmarking"] = inject(
+                        IStep,
+                        "benchmarking",
+                        task_id=len(step_names),
+                        tasks=tasks,
+                        resources=resources,
+                        progress=progress,
+                    )
+
                 experiments.append(
                     inject(
                         IMultiStep,
                         "experiments",
                         task_id=idx,
                         progress=progress,
-                        step=step_dict,
+                        steps=step_dict,
                         resources=resources,
                     )
                 )

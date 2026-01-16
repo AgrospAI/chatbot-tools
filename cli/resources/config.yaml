@@ -50,9 +50,9 @@ experiments:
     chunking:
       - strategy: ParentChild
         params:
-          embedding_model: "paraphrase-multilingual:latest"
-          embedding_api_url: "https://chat.agrospai.udl.cat/ollama/api/embed"
-          embedding_api_key: ${CHAT_API_KEY}
+          model_name: paraphrase-multilingual:latest
+          url: https://chat.agrospai.udl.cat/ollama/api/embed
+          api_key: ${CHAT_API_KEY}
       - strategy: SlidingWindow
         params:
           chunk_size: 1200

@@ -11,5 +11,5 @@ class BenchmarkingStep(IStep):
 
     @override
     async def get_tasks(self) -> Tasks:
-        for task in self._tasks:
+        for task in self.tasks:
             yield (task, [task.run()])

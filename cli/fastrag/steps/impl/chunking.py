@@ -11,6 +11,6 @@ class ChunkingStep(IStep):
 
     @override
     async def get_tasks(self) -> Tasks:
-        for task in self._tasks:
-            entries = await self.cache.get_entries(task.filter)
+        for task in self.tasks:
+            entries = await self.resources.cache.get_entries(task.filter)
             yield (task, [task.run(uri, entry) for uri, entry in entries])

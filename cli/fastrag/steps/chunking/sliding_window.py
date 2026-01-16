@@ -10,8 +10,8 @@ from fastrag.cache.entry import CacheEntry
 from fastrag.cache.filters import MetadataFilter
 from fastrag.events import Event
 from fastrag.helpers.filters import Filter
-from fastrag.helpers.markdown_utils import clean_markdown, normalize_metadata
-from fastrag.steps.task import Task
+from fastrag.steps.chunking.markdown_utils import clean_markdown, normalize_metadata
+from fastrag.steps.task import Run, Task
 
 
 @dataclass(frozen=True)
@@ -23,11 +23,7 @@ class SlidingWindowChunker(Task):
     chunk_overlap: int = 200
 
     @override
-    async def run(
-        self,
-        uri: str,
-        entry: CacheEntry,
-    ) -> AsyncGenerator[Event, None]:
+    async def run(self, uri: str, entry: CacheEntry) -> Run:
         existed, entries = await self.cache.get_or_create(
             uri=f"{entry.path.resolve().as_uri()}.{self.__class__.__name__}.chunk.json",
             contents=partial(self.chunker_logic, uri, entry),
@@ -36,7 +32,7 @@ class SlidingWindowChunker(Task):
                 "strategy": "SlidingWindow",
                 "size": self.chunk_size,
                 "overlap": self.chunk_overlap,
-                "experiment": self.experiment.experiment_hash,
+                "experiment": self.experiment.hash,
             },
         )
 
@@ -45,10 +41,13 @@ class SlidingWindowChunker(Task):
         if not self.results:
             self._set_results([])
 
-        self._results.append(data)
+        self._results.extend(data)
 
         status = "Cached" if existed else "Generated"
-        yield Event(Event.Type.PROGRESS, f"{status} {len(data)} chunks for {entry.path}")
+        yield Event(
+            Event.Type.PROGRESS,
+            f"{self.__class__.__name__} {status} {len(data)} chunks for {entry.path}",
+        )
 
     @override
     def completed_callback(self) -> Event:

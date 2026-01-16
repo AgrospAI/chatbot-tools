@@ -151,22 +151,13 @@ class ChunkQualityBenchmarking(Task):
         total = 0
 
         for task in chunking_tasks:
-            for documents in task.results:
-                docs = []
+            documents = [Document(**doc) for doc in task.results]
+            total += 1
 
-                if not documents:
-                    continue
+            quality = calculate_corpus_quality(documents)
+            qualities.append(quality)
 
-                for doc in documents:
-                    docs.append(Document(**doc))
-                total += 1
-
-                quality = calculate_corpus_quality(docs)
-                qualities.append(quality)
-
-                yield Event(
-                    Event.Type.PROGRESS, f"Calculated quality of {len(documents)} chunks"
-                )
+            yield Event(Event.Type.PROGRESS, f"Calculated quality of {len(documents)} chunks")
 
         overall = defaultdict(float)
         for quality in qualities:

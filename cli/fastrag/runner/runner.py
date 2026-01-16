@@ -1,8 +1,17 @@
 from abc import ABC, abstractmethod
 
+from rich.progress import (
+    BarColumn,
+    MofNCompleteColumn,
+    Progress,
+    TextColumn,
+    TimeElapsedColumn,
+    TimeRemainingColumn,
+)
+
 from fastrag.config.config import Steps
 from fastrag.plugins import PluginBase
-from fastrag.steps.step import RuntimeResources
+from fastrag.steps.resources import RuntimeResources
 
 
 class IRunner(PluginBase, ABC):
@@ -28,3 +37,14 @@ class IRunner(PluginBase, ABC):
         """
 
         raise NotImplementedError
+
+    def progress_bar(self) -> Progress:
+        return Progress(
+            TextColumn("[progress.percentage]{task.description} {task.percentage:>3.0f}%"),
+            BarColumn(),
+            MofNCompleteColumn(),
+            TextColumn("•"),
+            TimeElapsedColumn(),
+            TextColumn("•"),
+            TimeRemainingColumn(),
+        )

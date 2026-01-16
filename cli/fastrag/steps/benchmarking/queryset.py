@@ -114,7 +114,7 @@ class QuerySetBenchmarking(Task):
                 query=question.question,
                 query_embedding=query_embedding,
                 k=5,
-                collection_name=self.experiment.experiment_hash,
+                collection_name=self.experiment.hash,
             )
 
             context_parts = [
