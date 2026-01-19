@@ -1,5 +1,8 @@
+from __future__ import annotations
+
 from abc import ABC, abstractmethod
 from dataclasses import InitVar, dataclass, field
+from typing import TYPE_CHECKING
 
 from rich.progress import Progress
 
@@ -7,6 +10,9 @@ from fastrag.config.config import Resources
 from fastrag.helpers.experiments import Experiment
 from fastrag.plugins import PluginBase, inject
 from fastrag.steps.logs import Loggable
+
+if TYPE_CHECKING:
+    from fastrag.steps.step import Tasks
 
 
 @dataclass
@@ -28,6 +34,16 @@ class IStepCommon(PluginBase, ABC):
 
         Returns:
             int: number of tasks to perform
+        """
+
+        raise NotImplementedError
+
+    @abstractmethod
+    async def get_tasks(self) -> "Tasks":
+        """Generate a dict with the tasks to perform
+
+        Returns:
+            Tasks: dict with Task instance - Async generator of callbacks
         """
 
         raise NotImplementedError

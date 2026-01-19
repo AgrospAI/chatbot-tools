@@ -13,3 +13,6 @@ class BenchmarkingStep(IStep):
     async def get_tasks(self) -> Tasks:
         for task in self.tasks:
             yield (task, [task.run()])
+
+        score = sum(task.results for task in self.tasks) / len(self.tasks)
+        print("SCORE", score)

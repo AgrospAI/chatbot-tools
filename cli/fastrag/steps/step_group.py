@@ -60,6 +60,7 @@ class IMultiStep(IStepCommon, Experiment):
     def calculate_total(self) -> int:
         return sum(step.calculate_total() for step in self.steps.values())
 
+    @override
     def tasks(self, step: str) -> list[Task]:
         """Get the Task instance for the given step
 

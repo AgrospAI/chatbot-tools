@@ -71,7 +71,7 @@ class OpenAISimple(Task):
 
     @override
     def completed_callback(self) -> Event:
-        return Event(Event.Type.COMPLETED, "Completed SelfHostedEmbeddings")
+        return Event(Event.Type.COMPLETED, f"Completed {self.__class__.__name__}")
 
     async def embedding_logic(self, entry: CacheEntry) -> bytes:
         raw_json = entry.path.read_text(encoding="utf-8")

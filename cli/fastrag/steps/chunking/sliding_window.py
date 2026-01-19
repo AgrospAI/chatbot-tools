@@ -1,8 +1,8 @@
 import json
 import uuid
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from functools import partial
-from typing import AsyncGenerator, ClassVar, override
+from typing import ClassVar, override
 
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 

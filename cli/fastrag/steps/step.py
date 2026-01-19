@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from abc import ABC, abstractmethod
+from abc import ABC
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, AsyncGenerator, ClassVar, TypeAlias
+from typing import TYPE_CHECKING, AsyncGenerator, ClassVar, TypeAlias, override
 
 from fastrag.events import Event
 from fastrag.helpers.experiments import Experiment
@@ -22,15 +22,6 @@ class IStep(IStepCommon, ABC):
     tasks: list[Task]
     experiment: Experiment | None = field(init=False, repr=False)
 
+    @override
     def calculate_total(self) -> int:
         return len(self.tasks) if self.tasks else -1
-
-    @abstractmethod
-    async def get_tasks(self) -> Tasks:
-        """Generate a dict with the tasks to perform
-
-        Returns:
-            Tasks: dict with Task instance - Async generator of callbacks
-        """
-
-        raise NotImplementedError

@@ -18,5 +18,6 @@ class EmbeddingStep(IStep):
     async def get_tasks(self) -> Tasks:
         for task in self.tasks:
             entries = await self.resources.cache.get_entries(self.filter & task.filter)
+            print(entries)
 
             yield (task, [task.run(uri, entry) for uri, entry in entries])

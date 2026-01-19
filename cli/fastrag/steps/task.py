@@ -28,6 +28,9 @@ class Task(PluginBase, ABC):
     def set_experiment(self, experiment: Experiment):
         object.__setattr__(self, "experiment", experiment)
 
+    def set_results(self, value: Any) -> None:
+        object.__setattr__(self, "_results", value)
+
     @property
     def cache(self) -> ICache:
         return self.resources.cache
@@ -43,9 +46,6 @@ class Task(PluginBase, ABC):
     @property
     def results(self) -> Any:
         return getattr(self, "_results", None)
-
-    def set_results(self, value: Any) -> None:
-        object.__setattr__(self, "_results", value)
 
     @abstractmethod
     async def run(self, uri: str | None = None, entry: CacheEntry | None = None) -> Run:
