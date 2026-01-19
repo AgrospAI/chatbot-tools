@@ -1,4 +1,5 @@
 import threading
+import time
 from dataclasses import dataclass, field
 from typing import ClassVar, override
 
@@ -93,7 +94,6 @@ class OpenAIEmbeddings(Embeddings, PluginBase):
                     if attempt < self.max_attempts - 1:
                         wait_time = (attempt + 1) * 2
                         print(f"\tERROR in batch {i}, retrying in {wait_time}s... ({e})")
-                        import time
 
                         time.sleep(wait_time)
                     else:

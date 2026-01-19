@@ -35,7 +35,7 @@ class PathFetcher(Task):
             f"Copying local files ({humanize.naturalsize(self.path.stat().st_size)})",
         )
 
-        self._set_results([])
+        self.set_results([])
         try:
             for p in list_paths(self.path):
                 existed, entry = await self.cache.get_or_create(

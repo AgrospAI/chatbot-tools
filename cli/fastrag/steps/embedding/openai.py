@@ -61,7 +61,7 @@ class OpenAISimple(Task):
                 f"Re-uploaded embeddings to {self.experiment.hash}",
             )
 
-        self._set_results(data)
+        self.set_results(data)
 
         status = "Cached" if existed else "Generated"
         yield Event(

@@ -39,7 +39,7 @@ class SlidingWindowChunker(Task):
         data = json.loads(entries.content)
 
         if not self.results:
-            self._set_results([])
+            self.set_results([])
 
         self._results.extend(data)
 

@@ -23,7 +23,7 @@ class IStep(IStepCommon, ABC):
     experiment: Experiment | None = field(init=False, repr=False)
 
     def calculate_total(self) -> int:
-        return len(self.tasks) if self.tasks else 0
+        return len(self.tasks) if self.tasks else -1
 
     @abstractmethod
     async def get_tasks(self) -> Tasks:

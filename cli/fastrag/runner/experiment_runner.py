@@ -117,11 +117,11 @@ class ExperimentsRunner(IRunner):
 
                     async def consume(gen):
                         async for event in gen:
-                            experiment.log(event)
+                            experiment.logger.log(event)
                         progress.advance(step_task_id)
 
                     await asyncio.gather(*(consume(gen) for gen in generators))
-                    experiment.log(task.completed_callback())
+                    experiment.logger.log(task.completed_callback())
 
                 progress.advance(experiments_task_id)
 

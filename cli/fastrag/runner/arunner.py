@@ -28,6 +28,7 @@ class Runner(IRunner):
                     inject(Task, t.strategy, resources=resources, **t.params or {})
                     for t in tasks
                 ]
+
                 instances.append(
                     inject(
                         IStep,
@@ -53,10 +54,10 @@ class Runner(IRunner):
 
                         async def consume(gen):
                             async for event in gen:
-                                step.log(event)
+                                step.logger.log(event)
 
                         await asyncio.gather(*(consume(gen) for gen in generators))
-                        step.log(task.completed_callback())
+                        step.logger.log(task.completed_callback())
 
                         progress.advance(step_task_id)
 

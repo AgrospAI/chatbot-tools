@@ -25,7 +25,7 @@ class MilvusVectorStore(IVectorStore):
     dimension: int = 768
 
     # Internal state
-    _client: any = field(default=None, repr=False, init=False)
+    _client: AsyncMilvusClient = field(default=None, repr=False, init=False)
 
     async def _get_client(self, collection_name: str | None = None) -> AsyncMilvusClient:
         """Initialize the true Async Milvus Client"""
