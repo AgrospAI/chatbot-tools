@@ -1,17 +1,18 @@
 from typing import Optional
 
+from langchain_core.embeddings import Embeddings
+
 from fastrag import ILLM, Config
-from fastrag.embeddings import IEmbeddings
 from fastrag.stores.store import IVectorStore
 
 # These will be set at app startup
 vector_store: Optional[IVectorStore] = None
 llm: Optional[ILLM] = None
 config: Optional[Config] = None
-embedding_model: Optional[IEmbeddings] = None
+embedding_model: Optional[Embeddings] = None
 
 
-def set_dependencies(cfg: Config, vs: IVectorStore, llm_model: ILLM, emb: IEmbeddings):
+def set_dependencies(cfg: Config, vs: IVectorStore, llm_model: ILLM, emb: Embeddings):
     global config, vector_store, llm, embedding_model
     config = cfg
     vector_store = vs

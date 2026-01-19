@@ -11,6 +11,7 @@ from fastrag.steps.impl import (
     FetchingStep,
     ParsingStep,
 )
+from fastrag.steps.logs import Loggable, Logger
 from fastrag.steps.parsing import FileParser, HtmlParser
 from fastrag.steps.step import IStep
 from fastrag.steps.task import Task
@@ -34,4 +35,6 @@ __all__ = [
     OpenAISimple,
     QuerySetBenchmarking,
     ChunkQualityBenchmarking,
+    Logger,
+    Loggable,
 ]

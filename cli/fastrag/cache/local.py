@@ -93,6 +93,14 @@ class LocalCache(ICache):
     ) -> tuple[bool, CacheEntry]:
         entry = await self.get(uri)
         if entry:
+            # If metadata.experiment is present, update it !
+            experiment = metadata.get("experiment", None)
+            if experiment and experiment is not entry.metadata["experiment"]:
+                cached = self.metadata[uri]
+                cached.metadata["experiment"] = experiment
+                self.metadata[uri] = cached
+                self._save_metadata()
+
             return True, entry
 
         result = contents()

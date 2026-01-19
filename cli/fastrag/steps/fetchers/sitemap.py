@@ -48,7 +48,7 @@ class SitemapXMLFetcher(Task):
             tasks = [self.fetch_async(client, url) for url in urls]
             results = await asyncio.gather(*tasks)
 
-        self._set_results([])
+        self.set_results([])
         for entry, event in results:
             self.results.append(entry)
             yield event

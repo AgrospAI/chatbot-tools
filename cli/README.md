@@ -352,7 +352,7 @@ existed, entries = await self.cache.get_or_create(
     metadata={
         "step": "chunking",
         "strategy": ParentChildChunker.supported,
-        "experiment": self.experiment.experiment_hash, # THIS 
+        "experiment": self.experiment.hash, # THIS 
     },
 )
 ```
@@ -363,7 +363,7 @@ Which will be used in the following `EmbeddingStep` task definition as:
 ```python
 @override
 async def get_tasks(self) -> Tasks:
-    for task in self._tasks:
+    for task in self.tasks:
         # `self.filter` is the current experiment filter
         entries = await self.cache.get_entries(self.filter & task.filter)
         yield (task, [task.run(uri, entry) for uri, entry in entries])

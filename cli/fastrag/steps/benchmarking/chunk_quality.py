@@ -41,7 +41,6 @@ def calculate_corpus_quality(docs: List[Document]) -> Dict:
         "median_quality": float(round(np.median(scores), 2)),
         "min_quality": min(scores),
         "max_quality": max(scores),
-        "low_quality_count": sum(1 for s in scores if s < 0.5),
     }
 
     return overall_report
@@ -143,6 +142,8 @@ def evaluate_document_quality(doc: Document) -> float:
 class ChunkQualityBenchmarking(Task):
     supported: ClassVar[str] = "ChunkQuality"
 
+    _overall: dict[str, float] | None = None
+
     @override
     async def run(self) -> Run:
         chunking_tasks = self.experiment.tasks("chunking")
@@ -151,22 +152,13 @@ class ChunkQualityBenchmarking(Task):
         total = 0
 
         for task in chunking_tasks:
-            for documents in task.results:
-                docs = []
+            documents = [Document(**doc) for doc in task.results]
+            total += 1
 
-                if not documents:
-                    continue
+            quality = calculate_corpus_quality(documents)
+            qualities.append(quality)
 
-                for doc in documents:
-                    docs.append(Document(**doc))
-                total += 1
-
-                quality = calculate_corpus_quality(docs)
-                qualities.append(quality)
-
-                yield Event(
-                    Event.Type.PROGRESS, f"Calculated quality of {len(documents)} chunks"
-                )
+            yield Event(Event.Type.PROGRESS, f"Calculated quality of {len(documents)} chunks")
 
         overall = defaultdict(float)
         for quality in qualities:
@@ -176,10 +168,14 @@ class ChunkQualityBenchmarking(Task):
         for k, v in overall.items():
             overall[k] = round(v / total, 3)
 
+        result = sum(overall.values()) / len(overall.values())
+        self.set_results(result)
+
+        object.__setattr__(self, "_overall", overall)
         self.experiment.save_results(
             f"\nChunkQualityBenchmarking ({total} docs): {json.dumps(overall, indent=4)}"
         )
 
     @override
     def completed_callback(self) -> Event:
-        return Event(Event.Type.COMPLETED, "Finished ChunkQualityBenchmarking")
+        return Event(Event.Type.COMPLETED, f"ChunkQualityBenchmarking results: {self._overall}")

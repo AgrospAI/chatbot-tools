@@ -96,8 +96,6 @@ class QuerySetBenchmarking(Task):
 
     _questions: list[Question] = field(init=False, repr=False, default_factory=list)
 
-    _score: float = field(default=0.0, repr=False)
-
     def __post_init__(self, questions: list[list[str]]) -> None:
         for question in questions:
             question = map(_normalize, question)
@@ -114,7 +112,7 @@ class QuerySetBenchmarking(Task):
                 query=question.question,
                 query_embedding=query_embedding,
                 k=5,
-                collection_name=self.experiment.experiment_hash,
+                collection_name=self.experiment.hash,
             )
 
             context_parts = [
@@ -170,8 +168,8 @@ class QuerySetBenchmarking(Task):
         )
 
         if self._questions:
-            object.__setattr__(self, "_score", overall_score)
+            self.set_results(overall_score)
 
     @override
     def completed_callback(self) -> Event:
-        return Event(Event.Type.COMPLETED, f"Mean QuerySet response score {self._score}")
+        return Event(Event.Type.COMPLETED, f"Mean QuerySet response score {self._results}")

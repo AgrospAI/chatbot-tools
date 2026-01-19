@@ -1,8 +1,9 @@
 import json
 import uuid
-from dataclasses import dataclass, field
+from dataclasses import InitVar, dataclass, field
 from typing import AsyncGenerator, ClassVar, override
 
+from langchain_core.embeddings import Embeddings
 from langchain_experimental.text_splitter import SemanticChunker
 from langchain_text_splitters import MarkdownHeaderTextSplitter
 
@@ -10,8 +11,8 @@ from fastrag.cache.entry import CacheEntry
 from fastrag.cache.filters import MetadataFilter
 from fastrag.events import Event
 from fastrag.helpers.filters import Filter
-from fastrag.helpers.markdown_utils import clean_markdown, normalize_metadata
-from fastrag.steps.chunking.ollama_adapter import OpenWebUIEmbeddings
+from fastrag.plugins import inject
+from fastrag.steps.chunking.markdown_utils import clean_markdown, normalize_metadata
 from fastrag.steps.task import Task
 
 
@@ -20,23 +21,15 @@ class ParentChildChunker(Task):
     supported: ClassVar[str] = "ParentChild"
     filter: ClassVar[Filter] = MetadataFilter(step="parsing")
 
-    # embedding_model: InitVar[str] = "all-MiniLM-L6-v2"
-    # _embedding_model: HuggingFaceEmbeddings = field(init=False, repr=False, hash=False)
-    _embedding_model: OpenWebUIEmbeddings = field(init=False, repr=False, hash=False)
+    url: InitVar[str]
+    model_name: InitVar[str]
+    api_key: InitVar[str]
 
-    embedding_api_url: str = "https://chat.agrospai.udl.cat/ollama/api/embed"
-    embedding_api_key: str = ""
-    embedding_model: str = "paraphrase-multilingual:latest"
+    _model: Embeddings = field(init=False, repr=False, hash=False)
 
-    def __post_init__(self) -> None:
-        # model = HuggingFaceEmbeddings(model_name=embedding_model)
-        embed_model = OpenWebUIEmbeddings(
-            base_url=self.embedding_api_url,
-            api_key=self.embedding_api_key,
-            model=self.embedding_model,
-        )
-
-        object.__setattr__(self, "_embedding_model", embed_model)
+    def __post_init__(self, url: str, model_name: str, api_key: str) -> None:
+        model = inject(Embeddings, "openai-simple", url=url, model=model_name, api_key=api_key)
+        object.__setattr__(self, "_model", model)
 
     @override
     async def run(
@@ -45,24 +38,27 @@ class ParentChildChunker(Task):
         entry: CacheEntry,
     ) -> AsyncGenerator[Event, None]:
         existed, entries = await self.cache.get_or_create(
-            uri=f"{entry.path.resolve().as_uri()}.{self.__class__.__name__}.{self.embedding_model}.chunk.json",
+            uri=f"{entry.path.resolve().as_uri()}.{self.__class__.__name__}.{self._model.__class__.__name__}.chunk.json",
             contents=lambda: self.chunker_logic(uri, entry),
             metadata={
                 "step": "chunking",
                 "strategy": ParentChildChunker.supported,
-                "experiment": self.experiment.experiment_hash,
+                "experiment": self.experiment.hash,
             },
         )
 
         entries = json.loads(entries.content)
 
         if not self.results:
-            self._set_results([])
+            self.set_results([])
 
-        self._results.append(entries)
+        self._results.extend(entries)
 
         status = "Cached" if existed else "Generated"
-        yield Event(Event.Type.PROGRESS, f"{status} {len(entries)} chunks for {entry.path}")
+        yield Event(
+            Event.Type.PROGRESS,
+            f"{self.__class__.__name__} {status} {len(entries)} chunks for {entry.path}",
+        )
 
     @override
     def completed_callback(self) -> Event:
@@ -75,9 +71,6 @@ class ParentChildChunker(Task):
 
         parent_splitter = MarkdownHeaderTextSplitter(
             headers_to_split_on=[("#", "header_1"), ("##", "header_2")]
-        )
-        child_splitter = SemanticChunker(
-            embeddings=self._embedding_model, breakpoint_threshold_type="percentile"
         )
 
         all_chunks = []
@@ -127,6 +120,10 @@ class ParentChildChunker(Task):
                 continue
 
             try:
+                child_splitter = SemanticChunker(
+                    embeddings=self._model,
+                    breakpoint_threshold_type="percentile",
+                )
                 child_docs = child_splitter.create_documents([p_doc.page_content])
             except Exception:
                 child_docs = [p_doc]
@@ -150,5 +147,4 @@ class ParentChildChunker(Task):
                     }
                 )
 
-        object.__setattr__(self, "_chunked", len(all_chunks))
         return json.dumps(all_chunks).encode("utf-8")

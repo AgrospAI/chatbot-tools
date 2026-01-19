@@ -2,20 +2,12 @@ import asyncio
 from dataclasses import dataclass
 from typing import ClassVar, override
 
-from rich.panel import Panel
-from rich.progress import (
-    BarColumn,
-    MofNCompleteColumn,
-    Progress,
-    TextColumn,
-    TimeElapsedColumn,
-    TimeRemainingColumn,
-)
-
 from fastrag.config.config import Steps
 from fastrag.plugins import inject
 from fastrag.runner.runner import IRunner
-from fastrag.steps.step import IStep, RuntimeResources
+from fastrag.steps.resources import RuntimeResources
+from fastrag.steps.step import IStep
+from fastrag.steps.task import Task
 
 
 @dataclass(frozen=True)
@@ -27,32 +19,29 @@ class Runner(IRunner):
         self,
         steps: Steps,
         resources: RuntimeResources,
-        run_steps: int = -1,
         starting_step_number: int = 0,
     ) -> int:
-        with Progress(
-            TextColumn("[progress.percentage]{task.description} {task.percentage:>3.0f}%"),
-            BarColumn(),
-            MofNCompleteColumn(),
-            TextColumn("•"),
-            TimeElapsedColumn(),
-            TextColumn("•"),
-            TimeRemainingColumn(),
-        ) as progress:
-            steps = [
-                inject(
-                    IStep,
-                    step,
-                    task_id=idx,
-                    progress=progress,
-                    step=steps[step],
-                    resources=resources,
+        with self.progress_bar() as progress:
+            instances: list[IStep] = []
+            for idx, (step, tasks) in enumerate(steps.items()):
+                tasks = [
+                    inject(Task, t.strategy, resources=resources, **t.params or {})
+                    for t in tasks
+                ]
+
+                instances.append(
+                    inject(
+                        IStep,
+                        step,
+                        tasks=tasks,
+                        task_id=idx,
+                        progress=progress,
+                        resources=resources,
+                    )
                 )
-                for idx, step in enumerate(steps)
-            ]
 
             async def run_all():
-                for step in steps:
+                for step in instances:
                     step_number = step.task_id + starting_step_number + 1
 
                     # Step-level progress bar
@@ -65,24 +54,12 @@ class Runner(IRunner):
 
                         async def consume(gen):
                             async for event in gen:
-                                step.log(event)
+                                step.logger.log(event)
 
                         await asyncio.gather(*(consume(gen) for gen in generators))
-                        step.log(task.completed_callback())
+                        step.logger.log(task.completed_callback())
 
                         progress.advance(step_task_id)
 
-                    # Manual stop support
-                    if run_steps == step.task_id + 1:
-                        progress.print(
-                            Panel.fit(
-                                f"Stopping execution after step "
-                                f"[bold yellow]{step.description}[/bold yellow]",
-                                border_style="red",
-                            ),
-                            justify="center",
-                        )
-                        return
-
             asyncio.run(run_all())
-            return len(steps)
+            return len(instances)

@@ -2,18 +2,17 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Any, AsyncGenerator, TypeAlias
+from typing import Any, AsyncGenerator, ClassVar, TypeAlias
 
 from fastrag.cache.cache import ICache
 from fastrag.cache.entry import CacheEntry
 from fastrag.events import Event
+from fastrag.helpers.experiments import Experiment
+from fastrag.helpers.filters import Filter
 from fastrag.llms.llm import ILLM
 from fastrag.plugins import PluginBase
-from fastrag.steps.step import RuntimeResources
+from fastrag.steps.resources import RuntimeResources
 from fastrag.stores.store import IVectorStore
-
-if TYPE_CHECKING:
-    from fastrag.helpers.experiments import Experiment
 
 Run: TypeAlias = AsyncGenerator[Event, None]
 
@@ -21,8 +20,16 @@ Run: TypeAlias = AsyncGenerator[Event, None]
 @dataclass(frozen=True)
 class Task(PluginBase, ABC):
     _results: Any = field(init=False, repr=False, compare=False, hash=False)
-    experiment: Experiment = field(compare=False, hash=False, repr=False)
     resources: RuntimeResources = field(compare=False, hash=False, repr=False)
+    experiment: Experiment | None = field(init=False, compare=False, hash=False, repr=False)
+
+    filter: ClassVar[Filter | None] = None
+
+    def set_experiment(self, experiment: Experiment):
+        object.__setattr__(self, "experiment", experiment)
+
+    def set_results(self, value: Any) -> None:
+        object.__setattr__(self, "_results", value)
 
     @property
     def cache(self) -> ICache:
@@ -39,9 +46,6 @@ class Task(PluginBase, ABC):
     @property
     def results(self) -> Any:
         return getattr(self, "_results", None)
-
-    def _set_results(self, value: Any) -> None:
-        object.__setattr__(self, "_results", value)
 
     @abstractmethod
     async def run(self, uri: str | None = None, entry: CacheEntry | None = None) -> Run:
