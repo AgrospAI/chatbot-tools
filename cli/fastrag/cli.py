@@ -5,7 +5,6 @@ from rich.panel import Panel
 from rich.pretty import Pretty
 
 from fastrag import (
-    DEFAULT_CONFIG,
     PluginRegistry,
     import_plugins,
 )
@@ -13,6 +12,7 @@ from fastrag.commands.clean import app as clean_app
 from fastrag.commands.run import app as run_app
 from fastrag.commands.serve import app as serve_app
 from fastrag.config.config import get_config, get_resources
+from fastrag.config.settings import DEFAULT_CONFIG
 from fastrag.console import console
 from fastrag.context import AppContext
 
@@ -53,28 +53,26 @@ def main(
     if plugins_path is not None:
         import_plugins(plugins_path)
 
-        console.print(
-            Panel(
-                Pretty(PluginRegistry.representation()),
-                title="[bold]Plugin Registry[/bold]",
-                border_style="green",
+        if verbose:
+            console.print(
+                Panel(
+                    Pretty(PluginRegistry.representation()),
+                    title="[bold]Plugin Registry[/bold]",
+                    border_style="green",
+                )
             )
-        )
 
     config = get_config(config_path)
 
-    console.print(
-        Panel(
-            Pretty(config),
-            title="[bold]Loaded Configuration[/bold]",
-            subtitle=(
-                ":scroll: Using [bold magenta]DEFAULT[/bold magenta] config path"
-                if config == DEFAULT_CONFIG
-                else f":scroll: [bold yellow]Loaded from[/bold yellow] {config_path!r}"
-            ),
-            border_style="yellow",
+    if verbose:
+        console.print(
+            Panel(
+                Pretty(config),
+                title="[bold]Loaded Configuration[/bold]",
+                subtitle=(f":scroll: [bold yellow]Loaded from[/bold yellow] {config_path!r}"),
+                border_style="yellow",
+            )
         )
-    )
 
     resources = get_resources(config)
 
