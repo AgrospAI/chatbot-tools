@@ -7,16 +7,15 @@ from typing import ClassVar, override
 import httpx
 
 from fastrag.events import Event
-from fastrag.helpers import URLField
-from fastrag.steps.task import Run, Task
+from fastrag.tasks.base import Run, Task
 
 
-@dataclass(frozen=True)
+@dataclass
 class SitemapXMLFetcher(Task):
     supported: ClassVar[str] = "SitemapXML"
 
     regex: list[str] | None = field(compare=False, hash=False)
-    url: URLField = URLField()
+    url: str
 
     @override
     async def run(self) -> Run:
@@ -48,7 +47,7 @@ class SitemapXMLFetcher(Task):
             tasks = [self.fetch_async(client, url) for url in urls]
             results = await asyncio.gather(*tasks)
 
-        self.set_results([])
+        self.results = []
         for entry, event in results:
             self.results.append(entry)
             yield event

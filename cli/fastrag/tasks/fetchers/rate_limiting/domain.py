@@ -4,7 +4,7 @@ from dataclasses import dataclass, field
 from typing import ClassVar
 from urllib.parse import urlparse
 
-from fastrag.steps.fetchers.rate_limiting.rate_limiter import IRateLimiter
+from fastrag.tasks.fetchers.rate_limiting.rate_limiter import IRateLimiter
 
 
 @dataclass(frozen=True)

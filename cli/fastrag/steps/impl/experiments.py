@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from typing import ClassVar, override
 
+from fastrag.steps.base import Tasks
 from fastrag.steps.step_group import IMultiStep
 
 
@@ -10,7 +11,7 @@ class ExperimentsStep(IMultiStep):
     description: ClassVar[str] = "EXPERIMENTS"
 
     @override
-    async def get_tasks(self):
+    async def get_tasks(self) -> Tasks:
         for step in self.steps.values():
             async for task, generators in step.get_tasks():
                 yield task, generators

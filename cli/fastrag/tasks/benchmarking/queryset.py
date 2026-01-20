@@ -5,7 +5,7 @@ from difflib import SequenceMatcher
 from typing import ClassVar, override
 
 from fastrag.events import Event
-from fastrag.steps.task import Run, Task
+from fastrag.tasks.base import Run, Task
 
 
 @dataclass
@@ -89,10 +89,10 @@ def build_prompt(context: str, question: str) -> str:
     """.strip()
 
 
-@dataclass(frozen=True)
+@dataclass
 class QuerySetBenchmarking(Task):
     supported: ClassVar[str] = "QuerySet"
-    questions: InitVar[list[list[str]]] = field(repr=False)
+    questions: InitVar[list[list[str]]] = []
 
     _questions: list[Question] = field(init=False, repr=False, default_factory=list)
 
@@ -168,8 +168,8 @@ class QuerySetBenchmarking(Task):
         )
 
         if self._questions:
-            self.set_results(overall_score)
+            self.results = overall_score
 
     @override
     def completed_callback(self) -> Event:
-        return Event(Event.Type.COMPLETED, f"Mean QuerySet response score {self._results}")
+        return Event(Event.Type.COMPLETED, f"Mean QuerySet response score {self.results}")

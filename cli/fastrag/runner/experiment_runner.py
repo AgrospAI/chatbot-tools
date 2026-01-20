@@ -5,12 +5,12 @@ from typing import ClassVar, override
 
 from fastrag.config.config import Steps
 from fastrag.helpers.experiments import Experiment
+from fastrag.helpers.resources import RuntimeResources
 from fastrag.plugins import inject
 from fastrag.runner.runner import IRunner
-from fastrag.steps.resources import RuntimeResources
 from fastrag.steps.step import IStep
 from fastrag.steps.step_group import IMultiStep
-from fastrag.steps.task import Task
+from fastrag.tasks.base import Task
 
 
 @dataclass(frozen=True)

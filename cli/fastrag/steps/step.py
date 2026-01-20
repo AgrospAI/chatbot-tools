@@ -2,25 +2,29 @@ from __future__ import annotations
 
 from abc import ABC
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, AsyncGenerator, ClassVar, TypeAlias, override
+from typing import ClassVar, override
 
-from fastrag.events import Event
 from fastrag.helpers.experiments import Experiment
 from fastrag.steps.base import IStepCommon
-
-if TYPE_CHECKING:
-    from fastrag.steps.task import Task
-
-
-Tasks: TypeAlias = AsyncGenerator[tuple["Task", list[AsyncGenerator[Event, None]]], None]
+from fastrag.tasks.base import ITask
 
 
 @dataclass
 class IStep(IStepCommon, ABC):
     description: ClassVar[str] = "UNKNOWN STEP"
 
-    tasks: list[Task]
-    experiment: Experiment | None = field(init=False, repr=False)
+    _experiment: Experiment | None = field(init=False, repr=False)
+    tasks: list[ITask]
+
+    @property
+    def experiment(self) -> Experiment | None:
+        return self._experiment
+
+    @experiment.setter
+    def experiment(self, value: Experiment) -> None:
+        self._experiment = value
+        for task in self.tasks:
+            task.experiment = value
 
     @override
     def calculate_total(self) -> int:

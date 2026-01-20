@@ -21,9 +21,9 @@ from fastrag import (
     version,
 )
 from fastrag.cache.cache import ICache
+from fastrag.helpers.resources import RuntimeResources
 from fastrag.llms.llm import ILLM
 from fastrag.steps.logs import Loggable
-from fastrag.steps.resources import RuntimeResources
 from fastrag.stores.store import IVectorStore
 
 app = typer.Typer(help="FastRAG CLI", add_completion=False)

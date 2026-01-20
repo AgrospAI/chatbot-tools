@@ -1,7 +1,8 @@
 from dataclasses import dataclass
 from typing import ClassVar, override
 
-from fastrag.steps.step import IStep, Tasks
+from fastrag.steps.base import Tasks
+from fastrag.steps.step import IStep
 
 
 @dataclass

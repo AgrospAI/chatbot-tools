@@ -5,10 +5,9 @@ from pathlib import Path
 from typing import AsyncGenerator, ClassVar, override
 
 from fastrag.cache.entry import CacheEntry
-from fastrag.cache.filters import StepFilter
+from fastrag.cache.filters import Filter, StepFilter
 from fastrag.events import Event
-from fastrag.helpers.filters import Filter
-from fastrag.steps.task import Task
+from fastrag.tasks.base import Task
 
 
 def chunk_md(path: Path, chunk_size: int) -> list[str]:
@@ -31,7 +30,7 @@ def chunk_md(path: Path, chunk_size: int) -> list[str]:
     return json.dumps({"chunks": chunks}).encode("utf-8")
 
 
-@dataclass(frozen=True)
+@dataclass
 class RecursiveChunker(Task):
     supported: ClassVar[str] = "RecursiveChunker"
     filter: ClassVar[Filter] = StepFilter("parsing")

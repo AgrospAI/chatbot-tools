@@ -4,21 +4,20 @@ from typing import ClassVar, override
 from httpx import AsyncClient
 
 from fastrag.events import Event
-from fastrag.helpers import URLField
-from fastrag.steps.task import Run, Task
+from fastrag.tasks.base import Run, Task
 
 
-@dataclass(frozen=True)
+@dataclass
 class HttpFetcher(Task):
     supported: ClassVar[str] = "URL"
 
-    url: URLField = URLField()
-    _cached: bool = field(init=False, default=False, hash=False, compare=False)
+    url: str
+    cached: bool = field(init=False, default=False, hash=False, compare=False)
 
     @override
     async def run(self) -> Run:
         if self.cache.is_present(self.url):
-            object.__setattr__(self, "_cached", True)
+            self.cached = True
             return
 
         try:
@@ -44,5 +43,5 @@ class HttpFetcher(Task):
     def completed_callback(self) -> Event:
         return Event(
             Event.Type.COMPLETED,
-            f"{'Cached' if self._cached else 'Fetched'} {self.url}",
+            f"{'Cached' if self.cached else 'Fetched'} {self.url}",
         )

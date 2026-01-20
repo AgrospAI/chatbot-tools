@@ -1,22 +1,21 @@
 import json
 import uuid
 from dataclasses import InitVar, dataclass, field
-from typing import AsyncGenerator, ClassVar, override
+from typing import ClassVar, override
 
 from langchain_core.embeddings import Embeddings
 from langchain_experimental.text_splitter import SemanticChunker
 from langchain_text_splitters import MarkdownHeaderTextSplitter
 
 from fastrag.cache.entry import CacheEntry
-from fastrag.cache.filters import MetadataFilter
+from fastrag.cache.filters import Filter, MetadataFilter
 from fastrag.events import Event
-from fastrag.helpers.filters import Filter
 from fastrag.plugins import inject
-from fastrag.steps.chunking.markdown_utils import clean_markdown, normalize_metadata
-from fastrag.steps.task import Task
+from fastrag.tasks.base import Run, Task
+from fastrag.tasks.chunking.markdown_utils import clean_markdown, normalize_metadata
 
 
-@dataclass(frozen=True)
+@dataclass
 class ParentChildChunker(Task):
     supported: ClassVar[str] = "ParentChild"
     filter: ClassVar[Filter] = MetadataFilter(step="parsing")
@@ -25,20 +24,21 @@ class ParentChildChunker(Task):
     model_name: InitVar[str]
     api_key: InitVar[str]
 
-    _model: Embeddings = field(init=False, repr=False, hash=False)
+    model: Embeddings = field(init=False, repr=False, hash=False)
 
     def __post_init__(self, url: str, model_name: str, api_key: str) -> None:
-        model = inject(Embeddings, "openai-simple", url=url, model=model_name, api_key=api_key)
-        object.__setattr__(self, "_model", model)
+        self.model = inject(
+            Embeddings,
+            "openai-simple",
+            url=url,
+            model=model_name,
+            api_key=api_key,
+        )
 
     @override
-    async def run(
-        self,
-        uri: str,
-        entry: CacheEntry,
-    ) -> AsyncGenerator[Event, None]:
+    async def run(self, uri: str, entry: CacheEntry) -> Run:
         existed, entries = await self.cache.get_or_create(
-            uri=f"{entry.path.resolve().as_uri()}.{self.__class__.__name__}.{self._model.__class__.__name__}.chunk.json",
+            uri=f"{entry.path.resolve().as_uri()}.{self.__class__.__name__}.{self.model.__class__.__name__}.chunk.json",
             contents=lambda: self.chunker_logic(uri, entry),
             metadata={
                 "step": "chunking",
@@ -49,10 +49,10 @@ class ParentChildChunker(Task):
 
         entries = json.loads(entries.content)
 
-        if not self.results:
-            self.set_results([])
+        if getattr(self, "results", None) is None:
+            self.results = []
 
-        self._results.extend(entries)
+        self.results.extend(entries)
 
         status = "Cached" if existed else "Generated"
         yield Event(
@@ -121,7 +121,7 @@ class ParentChildChunker(Task):
 
             try:
                 child_splitter = SemanticChunker(
-                    embeddings=self._model,
+                    embeddings=self.model,
                     breakpoint_threshold_type="percentile",
                 )
                 child_docs = child_splitter.create_documents([p_doc.page_content])
