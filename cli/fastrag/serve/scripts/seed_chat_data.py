@@ -1,11 +1,11 @@
 import random
 
 from faker import Faker
+from fastrag.serve.db import get_db
+from fastrag.serve.db.models.ChatModel import Chat, ChatMessage
 from sqlalchemy.orm import Session
 
 from fastrag.config.settings import settings
-from fastrag.serve.db import get_db
-from fastrag.serve.db.models import Chat, ChatMessage
 
 fake = Faker()
 

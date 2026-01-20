@@ -1,201 +1,67 @@
-import os
 from pathlib import Path
-from typing import Annotated
 
-import humanize
 import typer
-from langchain_core.embeddings import Embeddings
-from rich.console import Console
 from rich.panel import Panel
 from rich.pretty import Pretty
 
 from fastrag import (
     DEFAULT_CONFIG,
-    Config,
-    IConfigLoader,
-    IRunner,
     PluginRegistry,
     import_plugins,
-    inject,
-    load_env_file,
-    version,
 )
-from fastrag.cache.cache import ICache
-from fastrag.helpers.resources import RuntimeResources
-from fastrag.llms.llm import ILLM
-from fastrag.steps.logs import Loggable
-from fastrag.stores.store import IVectorStore
+from fastrag.commands.clean import app as clean_app
+from fastrag.commands.run import app as run_app
+from fastrag.commands.serve import app as serve_app
+from fastrag.config.config import get_config, get_resources
+from fastrag.console import console
+from fastrag.context import AppContext
 
 app = typer.Typer(help="FastRAG CLI", add_completion=False)
-console = Console()
+
+app.add_typer(run_app)
+app.add_typer(serve_app)
+app.add_typer(clean_app)
 
 
-@app.command()
-def serve(
-    config: Annotated[
-        Path,
-        typer.Argument(help="Path to the config file."),
-    ] = DEFAULT_CONFIG,
-    plugins: Annotated[
-        Path | None,
-        typer.Option("--plugins", "-p", help="Path to the plugins directory."),
-    ] = None,
-    host: Annotated[
-        str,
-        typer.Option("--host", "-h", help="Host to bind the server to."),
-    ] = "0.0.0.0",
-    port: Annotated[
-        int,
-        typer.Option("--port", help="Port to bind the server to."),
-    ] = 8000,
-    reload: Annotated[
-        bool,
-        typer.Option("--reload", "-r", help="Enable auto-reload for development."),
-    ] = False,
-    verbose: Annotated[
-        bool,
-        typer.Option("--verbose", "-v", help="Verbose prints"),
-    ] = False,
+@app.callback()
+def main(
+    ctx: typer.Context,
+    config_path: Path = typer.Option(
+        DEFAULT_CONFIG,
+        "--config",
+        "-c",
+        help="Path to configuration file",
+        exists=True,
+        dir_okay=False,
+    ),
+    plugins_path: Path = typer.Option(
+        None,
+        "--plugins-path",
+        help="Path to plugins directory",
+        file_okay=False,
+    ),
+    verbose: bool = typer.Option(
+        False,
+        "--verbose",
+        "-v",
+        help="Enable verbose output",
+    ),
 ):
     """
-    Start the FastRAG API server for question answering.
+    Global options for all commands.
     """
-    console.print(
-        Panel.fit(
-            f"[bold cyan]fastrag serve[/bold cyan] [green]v{version('fastrag-cli')}[/green]",
-            border_style="cyan",
-        ),
-        justify="center",
-    )
+    if plugins_path is not None:
+        import_plugins(plugins_path)
 
-    console.quiet = not verbose
-    Loggable.is_verbose = verbose
+        console.print(
+            Panel(
+                Pretty(PluginRegistry.representation()),
+                title="[bold]Plugin Registry[/bold]",
+                border_style="green",
+            )
+        )
 
-    # Load plugins before config
-    load_plugins(plugins)
-
-    # Load configuration
-    cfg = load_config(config)
-
-    # Import and initialize serve module
-    from fastrag import init_serve, start_server
-
-    # Initialize the server with config
-    init_serve(cfg)
-
-    # Start the server
-    # Provide paths via env vars so reload subprocess can re-init correctly
-    os.environ["FASTRAG_CONFIG_PATH"] = str(config.resolve())
-    if plugins is not None:
-        os.environ["FASTRAG_PLUGINS_DIR"] = str(plugins.resolve())
-
-    start_server(host=host, port=port, reload=reload)
-
-
-@app.command()
-def clean(
-    sure: Annotated[
-        bool,
-        typer.Option(
-            "--yes",
-            "-y",
-            prompt="Are you sure you want to continue?",
-            confirmation_prompt=True,
-        ),
-    ] = False,
-    config: Annotated[
-        Path,
-        typer.Argument(help="Path to the config file."),
-    ] = DEFAULT_CONFIG,
-    plugins: Annotated[
-        Path | None,
-        typer.Option("--plugins", "-p", help="Path to the plugins directory."),
-    ] = None,
-):
-    """Clean the cache"""
-
-    if not sure:
-        raise typer.Abort()
-
-    console.quiet = True
-
-    # Load plugins before config
-    load_plugins(plugins)
-    config: Config = load_config(config)
-
-    cache = inject(
-        ICache, config.resources.cache.strategy, lifespan=config.resources.cache.lifespan
-    )
-    size = cache.clean()
-
-    console.quiet = False
-
-    console.print(f"[bold green] Deleted {humanize.naturalsize(size)}[/bold green]")
-
-
-@app.command()
-def run(
-    config: Annotated[
-        Path,
-        typer.Argument(help="Path to the config file."),
-    ] = DEFAULT_CONFIG,
-    plugins: Annotated[
-        Path | None,
-        typer.Option("--plugins", "-p", help="Path to the plugins directory."),
-    ] = None,
-    verbose: Annotated[
-        bool,
-        typer.Option("--verbose", "-v", help="Verbose prints"),
-    ] = False,
-):
-    """
-    Go through the process of generating a fastRAG.
-    """
-
-    console.print(
-        Panel.fit(
-            f"[bold cyan]fastrag[/bold cyan] [green]v{version('fastrag-cli')}[/green]",
-            border_style="cyan",
-        ),
-        justify="center",
-    )
-
-    console.quiet = not verbose
-    Loggable.is_verbose = verbose
-
-    # Load plugins before config
-    load_plugins(plugins)
-    config: Config = load_config(config)
-    resources = load_resources(config)
-
-    ran = inject(
-        IRunner,
-        config.resources.sources.strategy,
-        **config.resources.sources.params or {},
-    ).run(
-        config.resources.sources.steps,
-        resources,
-    )
-
-    ran = inject(
-        IRunner,
-        config.experiments.strategy,
-        **config.experiments.params or {},
-    ).run(
-        config.experiments.steps,
-        resources,
-        starting_step_number=ran,
-    )
-
-    console.print(f"[bold green]:heavy_check_mark: Completed {ran} experiments![/bold green]")
-
-
-def load_config(path: Path) -> Config:
-    # Load environment variables from .env file before loading config
-    load_env_file()
-
-    config = inject(IConfigLoader, path.suffix).load(path)
-    Config.instance = config
+    config = get_config(config_path)
 
     console.print(
         Panel(
@@ -204,46 +70,18 @@ def load_config(path: Path) -> Config:
             subtitle=(
                 ":scroll: Using [bold magenta]DEFAULT[/bold magenta] config path"
                 if config == DEFAULT_CONFIG
-                else f":scroll: [bold yellow]Loaded from[/bold yellow] {path!r}"
+                else f":scroll: [bold yellow]Loaded from[/bold yellow] {config_path!r}"
             ),
             border_style="yellow",
         )
     )
-    return config
 
+    resources = get_resources(config)
 
-def load_resources(config: Config) -> RuntimeResources:
-    embedding_config = config.experiments.steps["embedding"][0]
-    embedding_model = inject(Embeddings, embedding_config.strategy, **embedding_config.params)
-
-    return RuntimeResources(
-        cache=inject(
-            ICache,
-            config.resources.cache.strategy,
-            lifespan=config.resources.cache.lifespan,
-        ),
-        store=inject(
-            IVectorStore,
-            config.resources.store.strategy,
-            embedding_model=embedding_model,
-            **config.resources.store.params,
-        ),
-        llm=inject(
-            ILLM,
-            config.resources.llm.strategy,
-            **config.resources.llm.params,
-        ),
-    )
-
-
-def load_plugins(plugins: Path) -> None:
-    if plugins is not None:
-        import_plugins(plugins)
-
-    console.print(
-        Panel(
-            Pretty(PluginRegistry.representation()),
-            title="[bold]Plugin Registry[/bold]",
-            border_style="green",
-        )
+    ctx.obj = AppContext(
+        config=config,
+        config_path=config_path,
+        plugins_path=plugins_path,
+        verbose=verbose,
+        resources=resources,
     )

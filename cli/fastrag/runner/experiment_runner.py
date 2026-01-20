@@ -3,7 +3,7 @@ from dataclasses import InitVar, dataclass, field
 from itertools import product
 from typing import ClassVar, override
 
-from fastrag.config.config import Steps
+from fastrag.config.models import Steps
 from fastrag.helpers.experiments import Experiment
 from fastrag.helpers.resources import RuntimeResources
 from fastrag.plugins import inject

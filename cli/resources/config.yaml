@@ -69,10 +69,11 @@ experiments:
           questions:
             - [
                 "Who is the staff of the agrospai project?",
-                "Roberto Garcia Gonzalez"
+                "Roberto Garcia Gonzalez",
               ]
             - [
                 "What technologies does AgrospAI use to make payments",
-                "Smart Contracts", "Blockchain"
+                "Smart Contracts",
+                "Blockchain",
               ]
       - strategy: ChunkQuality

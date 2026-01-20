@@ -9,7 +9,7 @@ from rich.progress import (
     TimeRemainingColumn,
 )
 
-from fastrag.config.config import Steps
+from fastrag.config.models import Steps
 from fastrag.helpers.resources import RuntimeResources
 from fastrag.plugins import PluginBase
 
