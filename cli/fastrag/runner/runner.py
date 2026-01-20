@@ -10,8 +10,8 @@ from rich.progress import (
 )
 
 from fastrag.config.config import Steps
+from fastrag.helpers.resources import RuntimeResources
 from fastrag.plugins import PluginBase
-from fastrag.steps.resources import RuntimeResources
 
 
 class IRunner(PluginBase, ABC):

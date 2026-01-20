@@ -4,10 +4,9 @@ from pathlib import Path
 from typing import ClassVar, override
 
 from fastrag.cache.entry import CacheEntry
-from fastrag.cache.filters import MetadataFilter
+from fastrag.cache.filters import Filter, MetadataFilter
 from fastrag.events import Event
-from fastrag.helpers.filters import Filter
-from fastrag.steps.task import Run, Task
+from fastrag.tasks.base import Run, Task
 
 
 def to_markdown(fmt: str, path: Path) -> bytes:
@@ -24,14 +23,13 @@ def to_markdown(fmt: str, path: Path) -> bytes:
             raise TypeError(f"Unsupported file format type: {type(fmt)}")
 
 
-@dataclass(frozen=True)
+@dataclass
 class FileParser(Task):
     supported: ClassVar[str] = "FileParser"
     filter: ClassVar[Filter] = MetadataFilter(format="docx") | MetadataFilter(format="pdf")
 
     use: list[str] = field(default_factory=list, hash=False)
-
-    _parsed: int = field(default=0)
+    parsed: int = field(default=0, repr=False)
 
     @override
     async def run(self, uri: str, entry: CacheEntry) -> Run:
@@ -46,7 +44,9 @@ class FileParser(Task):
                 "step": "parsing",
             },
         )
-        object.__setattr__(self, "_parsed", self._parsed + 1)
+
+        self.parsed += 1
+
         yield Event(
             Event.Type.PROGRESS,
             ("Cached" if existed else "Parsing")
@@ -57,5 +57,5 @@ class FileParser(Task):
     def completed_callback(self) -> Event:
         return Event(
             Event.Type.COMPLETED,
-            f"Parsed {self._parsed} document(s) with FileParser",
+            f"Parsed {self.parsed} document(s) with FileParser",
         )

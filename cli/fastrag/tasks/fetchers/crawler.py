@@ -8,42 +8,37 @@ from bs4 import BeautifulSoup
 from httpx import AsyncClient
 
 from fastrag.events import Event
-from fastrag.helpers.url_field import URLField
 from fastrag.helpers.utils import normalize_url
 from fastrag.plugins import inject
-from fastrag.steps.fetchers.rate_limiting.rate_limiter import IRateLimiter
-from fastrag.steps.task import Run, Task
+from fastrag.tasks.base import Run, Task
+from fastrag.tasks.fetchers.rate_limiting.rate_limiter import IRateLimiter
 
 
 def is_same_domain(url_a: str, url_b: str) -> bool:
     return urlparse(url_a).netloc == urlparse(url_b).netloc
 
 
-@dataclass(frozen=True)
+@dataclass
 class CrawlerFetcher(Task):
     supported: ClassVar[str] = "Crawling"
-
-    url: URLField = URLField()
-    depth: int = field(default=5)
-    workers: int = field(default=5)
-    delay: InitVar[float] = field(default=0.1)
-
-    _visited: set[str] = field(init=False, compare=False, default_factory=set)
-    _cached: int = field(init=False, compare=False, default=0)
-    _rate_limiter: IRateLimiter | None = field(compare=False, default=None)
-
     UserAgent: ClassVar[str] = "CrawlerFetcher/1.0"
 
+    delay: InitVar[float] = field(default=0.1, kw_only=True)
+
+    url: str = ""
+    depth: int = 5
+    workers: int = 5
+
+    visited: set[str] = field(init=False, compare=False, default_factory=set, repr=False)
+    cached: int = field(default=0, init=False, compare=False, repr=False)
+    rate_limiter: IRateLimiter | None = field(compare=False, default=None, repr=False)
+
     def __post_init__(self, delay: float) -> None:
-        object.__setattr__(
-            self,
-            "_rate_limiter",
-            inject(IRateLimiter, "domain", delay=delay),
-        )
+        self.rate_limiter = inject(IRateLimiter, "domain", delay=delay)
 
     @override
     async def run(self) -> Run:
-        self._visited.clear()
+        self.visited.clear()
 
         queue: asyncio.Queue[tuple[str, int]] = asyncio.Queue()
         event_queue: asyncio.Queue[Event] = asyncio.Queue()
@@ -99,10 +94,10 @@ class CrawlerFetcher(Task):
                         return
 
                     try:  # Safety measure
-                        if depth > self.depth or url in self._visited:
+                        if depth > self.depth or url in self.visited:
                             continue
 
-                        self._visited.add(url)
+                        self.visited.add(url)
                         if not rp.can_fetch(CrawlerFetcher.UserAgent, url):
                             await event_queue.put(
                                 Event.Type.EXCEPTION,
@@ -111,7 +106,7 @@ class CrawlerFetcher(Task):
                             continue
 
                         if self.cache.is_present(url):
-                            object.__setattr__(self, "_cached", self._cached + 1)
+                            self.cached += 1
 
                             cached = await self.cache.get(url)
                             html = cached.content.decode()
@@ -130,7 +125,7 @@ class CrawlerFetcher(Task):
                                 )
                             )
 
-                            await self._rate_limiter.wait(url)
+                            await self.rate_limiter.wait(url)
                             res = await client.get(url)
                             res.raise_for_status()
 
@@ -184,7 +179,7 @@ class CrawlerFetcher(Task):
         return Event(
             Event.Type.COMPLETED,
             (
-                f"From {self.url}, crawled {len(self._visited)} sites "
-                f"({self._cached} cached) with CrawlerFetcher"
+                f"From {self.url}, crawled {len(self.visited)} sites "
+                f"({self.cached} cached) with CrawlerFetcher"
             ),
         )

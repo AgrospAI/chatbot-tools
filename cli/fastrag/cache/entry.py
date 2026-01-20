@@ -5,7 +5,7 @@ from functools import cached_property
 from pathlib import Path
 from urllib.parse import unquote, urlparse
 
-from fastrag.helpers.utils import PosixTimestamp, timestamp
+from fastrag.cache.utils import PosixTimestamp, timestamp
 
 
 @dataclass(frozen=True)

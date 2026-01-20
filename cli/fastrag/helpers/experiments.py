@@ -3,7 +3,7 @@ from dataclasses import field
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from fastrag.steps.task import Task
+    from fastrag.tasks.base import Task
 
 
 class Experiment(ABC):

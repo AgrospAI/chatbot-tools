@@ -1,43 +1,40 @@
 import json
-from dataclasses import InitVar, dataclass, field
+from dataclasses import InitVar, dataclass
 from typing import ClassVar, override
 
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 
 from fastrag.cache.entry import CacheEntry
-from fastrag.cache.filters import MetadataFilter
+from fastrag.cache.filters import Filter, MetadataFilter
 from fastrag.events import Event
-from fastrag.helpers.filters import Filter
 from fastrag.plugins import inject
-from fastrag.steps.task import Run, Task
+from fastrag.tasks.base import Run, Task
 
 
-def inject_embedder(*args, **kwargs) -> Embeddings:
-    return inject(Embeddings, "OpenAI-Simple", *args, **kwargs)
+def inject_embedder(**kwargs) -> Embeddings:
+    return inject(Embeddings, "OpenAI-Simple", **kwargs)
 
 
-@dataclass(frozen=True)
+@dataclass
 class OpenAISimple(Task):
     supported: ClassVar[list[str]] = ["OpenAI-Simple", "openai-simple"]
     filter: ClassVar[Filter] = MetadataFilter(step="chunking")
 
-    model: str
-    api_key: InitVar[str] = field(repr=False)
+    api_key: InitVar[str]
     url: InitVar[str]
     batch_size: InitVar[int] = 1
 
-    _embedder: Embeddings | None = None
+    model: str = ""
+    embedder: Embeddings | None = None
 
-    def __post_init__(self, api_key, url, batch_size):
-        embedder = inject_embedder(
+    def __post_init__(self, api_key: str, url: str, batch_size: int):
+        self.embedder = inject_embedder(
             model=self.model,
             api_key=api_key,
             url=url,
             batch_size=batch_size,
         )
-
-        object.__setattr__(self, "_embedder", embedder)
 
     @override
     async def run(self, uri: str, entry: CacheEntry) -> Run:
@@ -61,7 +58,7 @@ class OpenAISimple(Task):
                 f"Re-uploaded embeddings to {self.experiment.hash}",
             )
 
-        self.set_results(data)
+        self.results = data
 
         status = "Cached" if existed else "Generated"
         yield Event(
@@ -81,7 +78,7 @@ class OpenAISimple(Task):
             return json.dumps([]).encode("utf-8")
 
         documents = [Document(**chunk) for chunk in chunks]
-        total_vectors = await self._embedder.aembed_documents(documents)
+        total_vectors = await self.embedder.aembed_documents(documents)
 
         await self.upload_embeddings(documents, total_vectors)
 

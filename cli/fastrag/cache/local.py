@@ -1,4 +1,3 @@
-import asyncio
 import hashlib
 import inspect
 import json
@@ -9,8 +8,8 @@ from pathlib import Path
 from typing import ClassVar, Iterable, override
 
 from fastrag.cache.cache import CacheEntry, ContentsCallable, ICache
-from fastrag.helpers import PosixTimestamp, timestamp
-from fastrag.helpers.filters import Filter
+from fastrag.cache.filters import Filter
+from fastrag.cache.utils import PosixTimestamp, timestamp
 
 type Metadata = dict[str, CacheEntry]
 

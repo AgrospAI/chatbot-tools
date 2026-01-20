@@ -10,7 +10,7 @@ from typing import override
 from fastrag.helpers.experiments import Experiment
 from fastrag.steps.base import IStepCommon
 from fastrag.steps.step import IStep
-from fastrag.steps.task import Task
+from fastrag.tasks.base import Task
 
 ALPHA_UNDERSCORE = string.ascii_letters + "_"
 ALPHANUM_UNDERSCORE = string.ascii_letters + string.digits + "_"
@@ -46,7 +46,7 @@ class IMultiStep(IStepCommon, Experiment):
             step.experiment = self
 
             for task in step.tasks:
-                task.set_experiment(self)
+                task.experiment = self
 
         lines = []
         for step in self.steps.values():

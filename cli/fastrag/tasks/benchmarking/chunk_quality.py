@@ -8,7 +8,7 @@ import numpy as np
 from langchain_core.documents import Document
 
 from fastrag.events import Event
-from fastrag.steps.task import Run, Task
+from fastrag.tasks.base import Run, Task
 
 
 def calculate_corpus_quality(docs: List[Document]) -> Dict:
@@ -138,44 +138,43 @@ def evaluate_document_quality(doc: Document) -> float:
     return round(score, 2)
 
 
-@dataclass(frozen=True)
+@dataclass
 class ChunkQualityBenchmarking(Task):
     supported: ClassVar[str] = "ChunkQuality"
 
-    _overall: dict[str, float] | None = None
+    overall: dict[str, float] = field(
+        init=False, repr=False, default_factory=lambda: defaultdict(float)
+    )
 
     @override
     async def run(self) -> Run:
         chunking_tasks = self.experiment.tasks("chunking")
 
         qualities = []
-        total = 0
+        total = len(chunking_tasks)
 
         for task in chunking_tasks:
             documents = [Document(**doc) for doc in task.results]
-            total += 1
 
             quality = calculate_corpus_quality(documents)
             qualities.append(quality)
 
             yield Event(Event.Type.PROGRESS, f"Calculated quality of {len(documents)} chunks")
 
-        overall = defaultdict(float)
         for quality in qualities:
             for k, v in quality.items():
-                overall[f"{k}_mean"] += v
+                self.overall[f"{k}_mean"] += v
 
-        for k, v in overall.items():
-            overall[k] = round(v / total, 3)
+        for k, v in self.overall.items():
+            self.overall[k] = round(v / total, 3)
 
-        result = sum(overall.values()) / len(overall.values())
-        self.set_results(result)
+        result = sum(self.overall.values()) / len(self.overall.values())
+        self.results = result
 
-        object.__setattr__(self, "_overall", overall)
         self.experiment.save_results(
-            f"\nChunkQualityBenchmarking ({total} docs): {json.dumps(overall, indent=4)}"
+            f"\nChunkQualityBenchmarking ({total} docs): {json.dumps(self.overall, indent=4)}"
         )
 
     @override
     def completed_callback(self) -> Event:
-        return Event(Event.Type.COMPLETED, f"ChunkQualityBenchmarking results: {self._overall}")
+        return Event(Event.Type.COMPLETED, f"ChunkQualityBenchmarking results: {self.overall}")

@@ -18,20 +18,20 @@ resources:
   sources:
     steps:
       fetching:
-        # - strategy: Path
-        #   params:
-        #     path: ./resources/test/
+        - strategy: Path
+          params:
+            path: ./resources/test/
         # - strategy: SitemapXML
         #   params:
         #     url: https://agrospai.udl.cat/sitemap.xml
         #     regex:
         #       - https?://[^/]+/docs/
-        - strategy: Crawling
-          params:
-            url: https://agrospai.udl.cat
-            workers: 5
-            depth: 0
-            delay: 0
+      #   - strategy: Crawling
+      #     params:
+      #       url: https://agrospai.udl.cat
+      #       workers: 5
+      #       depth: 0
+      #       delay: 0
       parsing:
         - strategy: HtmlParser
           params:

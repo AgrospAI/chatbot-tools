@@ -2,7 +2,8 @@ from dataclasses import dataclass
 from typing import ClassVar, override
 
 from fastrag.cache.filters import MetadataFilter
-from fastrag.steps.step import IStep, Tasks
+from fastrag.steps.base import Tasks
+from fastrag.steps.step import IStep
 
 
 @dataclass
@@ -17,7 +18,5 @@ class EmbeddingStep(IStep):
     @override
     async def get_tasks(self) -> Tasks:
         for task in self.tasks:
-            entries = await self.resources.cache.get_entries(self.filter & task.filter)
-            print(entries)
-
+            entries = await self.cache.get_entries(self.filter & task.filter)
             yield (task, [task.run(uri, entry) for uri, entry in entries])

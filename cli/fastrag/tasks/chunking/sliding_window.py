@@ -7,14 +7,13 @@ from typing import ClassVar, override
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 from fastrag.cache.entry import CacheEntry
-from fastrag.cache.filters import MetadataFilter
+from fastrag.cache.filters import Filter, MetadataFilter
 from fastrag.events import Event
-from fastrag.helpers.filters import Filter
-from fastrag.steps.chunking.markdown_utils import clean_markdown, normalize_metadata
-from fastrag.steps.task import Run, Task
+from fastrag.tasks.base import Run, Task
+from fastrag.tasks.chunking.markdown_utils import clean_markdown, normalize_metadata
 
 
-@dataclass(frozen=True)
+@dataclass
 class SlidingWindowChunker(Task):
     supported: ClassVar[str] = "SlidingWindow"
     filter: ClassVar[Filter] = MetadataFilter(step="parsing")
@@ -38,10 +37,10 @@ class SlidingWindowChunker(Task):
 
         data = json.loads(entries.content)
 
-        if not self.results:
-            self.set_results([])
+        if getattr(self, "results", None) is None:
+            self.results = []
 
-        self._results.extend(data)
+        self.results.extend(data)
 
         status = "Cached" if existed else "Generated"
         yield Event(

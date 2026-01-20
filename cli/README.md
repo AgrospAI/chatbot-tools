@@ -100,7 +100,7 @@ The most generic components are Tasks, since they do from fetching from a URL, t
 class HttpFetcher(Task):
     supported: ClassVar[str] = "URL"
 
-    url: URLField = URLField()
+    url: str = field(default="")
     _cached: bool = field(init=False, default=False, hash=False, compare=False)
 
     @override

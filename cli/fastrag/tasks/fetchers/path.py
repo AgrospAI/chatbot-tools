@@ -1,12 +1,11 @@
-from dataclasses import dataclass
+from dataclasses import InitVar, dataclass, field
 from pathlib import Path
 from typing import ClassVar, override
 
 import humanize
 
 from fastrag.events import Event
-from fastrag.helpers import PathField
-from fastrag.steps.task import Run, Task
+from fastrag.tasks.base import Run, Task
 
 
 def get_uri(p: Path) -> str:
@@ -22,22 +21,28 @@ def list_paths(p: Path) -> list[Path]:
     raise FileNotFoundError(p)
 
 
-@dataclass(frozen=True)
+@dataclass
 class PathFetcher(Task):
     supported: ClassVar[str] = "Path"
 
-    path: PathField = PathField()
+    path: InitVar[str]
+
+    _path: Path = field(init=False)
+
+    def __post_init__(self, path: str) -> None:
+        self._path = Path(path)
+        assert self._path.exists()
 
     @override
     async def run(self) -> Run:
         yield Event(
             Event.Type.PROGRESS,
-            f"Copying local files ({humanize.naturalsize(self.path.stat().st_size)})",
+            f"Copying local files ({humanize.naturalsize(self._path.stat().st_size)})",
         )
 
-        self.set_results([])
+        self.results = []
         try:
-            for p in list_paths(self.path):
+            for p in list_paths(self._path):
                 existed, entry = await self.cache.get_or_create(
                     uri=p.resolve().as_uri(),
                     contents=p.read_bytes,

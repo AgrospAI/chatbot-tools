@@ -2,9 +2,10 @@ from dataclasses import dataclass
 from typing import ClassVar, override
 
 from fastrag.cache import CacheEntry, MetadataFilter
-from fastrag.helpers.filters import Filter, OrFilter
-from fastrag.steps.step import IStep, Tasks
-from fastrag.steps.task import Task
+from fastrag.cache.filters import Filter, OrFilter
+from fastrag.steps.base import Tasks
+from fastrag.steps.step import IStep
+from fastrag.tasks.base import Task
 
 
 @dataclass
@@ -16,7 +17,7 @@ class ParsingStep(IStep):
     async def get_tasks(self) -> Tasks:
         for idx, task in enumerate(self.tasks):
             extended_filter = self.get_extended_filter(idx, task)
-            entries = await self.resources.cache.get_entries(extended_filter)
+            entries = await self.cache.get_entries(extended_filter)
             yield (task, [task.run(uri, entry) for uri, entry in entries])
 
     def get_extended_filter(self, index: int, task: Task) -> Filter[CacheEntry]:
