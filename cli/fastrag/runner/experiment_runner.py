@@ -161,9 +161,7 @@ class ExperimentsRunner(IRunner):
             combined_text.append(header)
 
         console.print(
-            Align.center(
-                Panel(combined_text, title="Experiments Summary", expand=False)
-            )
+            Align.center(Panel(combined_text, title="Experiments Summary", expand=False))
         )
 
     def report_experiment(self, experiment: Experiment, index: int):
@@ -175,17 +173,13 @@ class ExperimentsRunner(IRunner):
 
         # --- Build the benchmarks table ---
         benchmarks = experiment.tasks("benchmarking")
-        table = Table(
-            title="Benchmark Scores", show_header=True, header_style="bold magenta"
-        )
+        table = Table(title="Benchmark Scores", show_header=True, header_style="bold magenta")
         table.add_column("Metric")
         table.add_column("Value", justify="right")
 
         if benchmarks:
             for bench in benchmarks:
-                table.add_row(
-                    bench.get_supported_name(), f"[green]{bench.results}[/green]"
-                )
+                table.add_row(bench.get_supported_name(), f"[green]{bench.results}[/green]")
         else:
             table.add_row("No benchmarks", "-")
 
