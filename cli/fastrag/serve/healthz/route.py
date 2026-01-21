@@ -1,8 +1,8 @@
 from fastapi import APIRouter, Response
 
-router = APIRouter()
+HealthRouter = APIRouter()
 
 
-@router.get("/healthz")
+@HealthRouter.get("/healthz")
 async def healthz() -> Response:
     return Response(content="ok", media_type="text/plain")

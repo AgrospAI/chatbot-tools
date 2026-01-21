@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from dataclasses import InitVar, dataclass, field
+from dataclasses import dataclass, field
 from typing import AsyncGenerator, ClassVar, TypeAlias
 
 from fastrag.cache.cache import ICache

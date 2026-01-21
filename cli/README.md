@@ -14,7 +14,6 @@ uv add fastrag-cli
 
 Generally to use the CLI you will need a configuration file. The default plugins provide a `yaml` configuration reader, but it can be of any format, as long as you provide an `IConfigLoader` that can handle it.
 
-
 To run your own configuration workflow `config.yaml` with verbosity.
 
 ```bash
@@ -51,7 +50,6 @@ typer ./fastrag/__main__.py utils docs > USAGE.md
 
 ![Workflow Diagram](resources/workflow.png "Workflow Diagram")
 
-
 ## Architecture
 
 The main benefit of using plugins is being able to expand the workflow execution capabilities, which requires to understand how it works, as of now, the core components forming FastRAG are:
@@ -83,7 +81,6 @@ The main benefit of using plugins is being able to expand the workflow execution
     - `Benchmarking`:
       - `ChunkQualityBenchmarking (supported=["ChunkQuality"])`
       - `QuerySetBenchmarking (supported=["QuerySet"])`
-    
 
 Providing a new implementation for any of these components is as easy as inheriting from them and executing _fastRAG_ with the plugin base dir as:
 
@@ -190,6 +187,7 @@ As of the `run` method, which is inherited from `Task`, it's the one supposed to
 async def run(self) -> Run:
     ...
 ```
+
 Although a `TypeAlias` is used, the `run` method is supposed to be of type `Run`, which is an `AsyncGenerator[Event, None]`, thus the method is expected to _yield_ events. These events are nothing but feedback to show in the terminal (behaviour defined in `IStep`). In this given example, we only show feedback upon failure.
 
 ```python
@@ -282,7 +280,6 @@ This `filter` uses a special subclass of `Filter`, the `MetadataFilter`, which o
 
 > **NOTE** that for every entry compliant with the given filter, with the default `Step` implementations, an `asyncio.Task` will be created and awaited for.
 
-
 ### Experiments
 
 #### Experiment definition
@@ -318,11 +315,12 @@ experiments:
           questions:
             - [
                 "Who is the staff of the agrospai project?",
-                "Roberto Garcia Gonzalez"
+                "Roberto Garcia Gonzalez",
               ]
             - [
                 "What technologies does AgrospAI use to make payments",
-                "Smart Contracts", "Blockchain"
+                "Smart Contracts",
+                "Blockchain",
               ]
       - strategy: ChunkQuality
 ```
@@ -342,7 +340,6 @@ Now that all the experiments have been defined, they will be executed concurrent
 
 To implement an experiment step such as `chunking` or `embedding`, it's the same as the previous shown `Task`, but having in mind to add a special key value pair in the cache entry metadata with the current experiment hash, so the next experiment step uses the correct entries (to not using chunks from other experiments).
 
-
 ```python
 # parent_child.py
 
@@ -352,13 +349,12 @@ existed, entries = await self.cache.get_or_create(
     metadata={
         "step": "chunking",
         "strategy": ParentChildChunker.supported,
-        "experiment": self.experiment.hash, # THIS 
+        "experiment": self.experiment.hash, # THIS
     },
 )
 ```
 
 Which will be used in the following `EmbeddingStep` task definition as:
-
 
 ```python
 @override
@@ -367,4 +363,12 @@ async def get_tasks(self) -> Tasks:
         # `self.filter` is the current experiment filter
         entries = await self.cache.get_entries(self.filter & task.filter)
         yield (task, [task.run(uri, entry) for uri, entry in entries])
+```
+
+### Development
+
+Fill the database
+
+```bash
+uv run fastrag/serve/scripts/seed_chat_data.py
 ```

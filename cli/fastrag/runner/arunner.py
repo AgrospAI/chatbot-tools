@@ -2,7 +2,7 @@ import asyncio
 from dataclasses import dataclass
 from typing import ClassVar, override
 
-from fastrag.config.config import Steps
+from fastrag.config.models import Steps
 from fastrag.helpers.resources import RuntimeResources
 from fastrag.plugins import inject
 from fastrag.runner.runner import IRunner
