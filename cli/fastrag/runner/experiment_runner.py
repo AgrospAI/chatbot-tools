@@ -3,6 +3,14 @@ from dataclasses import InitVar, dataclass, field
 from itertools import product
 from typing import ClassVar, override
 
+from rich.align import Align
+from rich.columns import Columns
+from rich.console import Console
+from rich.panel import Panel
+from rich.table import Table
+from rich.text import Text
+from rich.tree import Tree
+
 from fastrag.config.config import Steps
 from fastrag.helpers.experiments import Experiment
 from fastrag.helpers.resources import RuntimeResources
@@ -11,6 +19,8 @@ from fastrag.runner.runner import IRunner
 from fastrag.steps.step import IStep
 from fastrag.steps.step_group import IMultiStep
 from fastrag.tasks.base import Task
+
+console = Console()
 
 
 @dataclass(frozen=True)
@@ -26,7 +36,7 @@ class ExperimentsRunner(IRunner):
         object.__setattr__(self, "_semaphore", semaphore)
 
     @override
-    def run(
+    async def run(
         self,
         steps: Steps,
         resources: RuntimeResources,
@@ -125,17 +135,63 @@ class ExperimentsRunner(IRunner):
 
                 progress.advance(experiments_task_id)
 
-            async def run_all():
-                await asyncio.gather(
-                    *(
-                        run_single_experiment(idx, exp)
-                        for idx, exp in enumerate(experiments, start=1)
-                    )
+            await asyncio.gather(
+                *(
+                    run_single_experiment(idx, exp)
+                    for idx, exp in enumerate(experiments, start=1)
                 )
+            )
 
-            asyncio.run(run_all())
+        for idx, experiment in enumerate(experiments, start=1):
+            self.report_experiment(experiment, idx)
 
-            for experiment in experiments:
-                print(experiment.results)
+        self.report_summary(experiments)
 
-            return len(experiment_combinations)
+        return len(experiment_combinations)
+
+    def report_summary(self, experiments: list[Experiment]):
+        combined_text = Text()
+
+        for index, experiment in enumerate(experiments, start=1):
+            header = Text()
+            header.append(f"\nExperiment #{index} ", style="bold cyan")
+            header.append(f"{experiment.hash} ", style="dim")
+            header.append("Score ", style="bold")
+            header.append(f"{experiment.score}", style="bold green")
+            combined_text.append(header)
+
+        console.print(
+            Align.center(Panel(combined_text, title="Experiments Summary", expand=False))
+        )
+
+    def report_experiment(self, experiment: Experiment, index: int):
+        # --- Build the tree ---
+        tree = Tree("[bold]Pipeline[/bold]")
+        for key, step in experiment.steps.items():
+            s = tree.add(f"[bold]{key.capitalize()}[/bold]")
+            s.add(step.tasks[0].get_supported_name())
+
+        # --- Build the benchmarks table ---
+        benchmarks = experiment.tasks("benchmarking")
+        table = Table(title="Benchmark Scores", show_header=True, header_style="bold magenta")
+        table.add_column("Metric")
+        table.add_column("Value", justify="right")
+
+        if benchmarks:
+            for bench in benchmarks:
+                table.add_row(bench.get_supported_name(), f"[green]{bench.results}[/green]")
+        else:
+            table.add_row("No benchmarks", "-")
+
+        # --- Place tree and table side by side ---
+        columns = Columns([tree, table], align="left", expand=False, equal=False)
+
+        # --- Wrap everything in a full-width panel ---
+        panel = Panel(
+            columns,
+            title=f"Experiment #{index} {experiment.hash}",
+            expand=False,
+            border_style="cyan",
+        )
+
+        console.print(Align.center(panel))

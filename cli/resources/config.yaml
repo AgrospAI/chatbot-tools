@@ -18,34 +18,34 @@ resources:
   sources:
     steps:
       fetching:
-        - strategy: Path
-          params:
-            path: ./resources/test/
+        # - strategy: Path
+        #   params:
+        #     path: ./resources/test/
         # - strategy: SitemapXML
         #   params:
         #     url: https://agrospai.udl.cat/sitemap.xml
         #     regex:
         #       - https?://[^/]+/docs/
-      #   - strategy: Crawling
-      #     params:
-      #       url: https://agrospai.udl.cat
-      #       workers: 5
-      #       depth: 0
-      #       delay: 0
+        - strategy: Crawling
+          params:
+            url: https://agrospai.udl.cat
+            workers: 5
+            depth: 1
+            delay: 0
       parsing:
         - strategy: HtmlParser
           params:
             use:
               - SitemapXML
               - Crawling
-        - strategy: FileParser
-          params:
-            use:
-              - Path
+        # - strategy: FileParser
+        #   params:
+        #     use:
+        #       - Path
 experiments:
   strategy: async_experiments
   params:
-    max_concurrent: 3
+    max_concurrent: 5
   steps:
     chunking:
       - strategy: ParentChild
@@ -69,10 +69,11 @@ experiments:
           questions:
             - [
                 "Who is the staff of the agrospai project?",
-                "Roberto Garcia Gonzalez"
+                "Roberto Garcia Gonzalez",
               ]
             - [
                 "What technologies does AgrospAI use to make payments",
-                "Smart Contracts", "Blockchain"
+                "Smart Contracts",
+                "Blockchain",
               ]
       - strategy: ChunkQuality

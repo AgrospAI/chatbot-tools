@@ -22,7 +22,7 @@ dependencies = [
     "langchain-milvus>=0.3.3",
     "langchain-openai>=1.1.7",
     "langchain-text-splitters>=1.1.0",
-    "pymilvus[async]>=2.6.6",
+    "pymilvus>=2.6.6",
     "prometheus-client>=0.21.1",
     "prometheus-fastapi-instrumentator>=7.0.0",
     "psycopg2-binary>=2.9.11",
@@ -40,6 +40,8 @@ dependencies = [
     "uvicorn>=0.40.0",
     "slowapi>=0.1.9",
     "geoip2>=5.2.0",
+    "aiofiles>=25.1.0",
+    "orjson>=3.11.5",
 ]
 
 [project.scripts]

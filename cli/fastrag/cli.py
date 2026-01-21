@@ -1,3 +1,4 @@
+import asyncio
 import os
 from pathlib import Path
 from typing import Annotated
@@ -168,26 +169,32 @@ def run(
     config: Config = load_config(config)
     resources = load_resources(config)
 
-    ran = inject(
-        IRunner,
-        config.resources.sources.strategy,
-        **config.resources.sources.params or {},
-    ).run(
-        config.resources.sources.steps,
-        resources,
-    )
+    async def run():
+        async with resources.cache:
+            ran = await inject(
+                IRunner,
+                config.resources.sources.strategy,
+                **config.resources.sources.params or {},
+            ).run(
+                config.resources.sources.steps,
+                resources,
+            )
 
-    ran = inject(
-        IRunner,
-        config.experiments.strategy,
-        **config.experiments.params or {},
-    ).run(
-        config.experiments.steps,
-        resources,
-        starting_step_number=ran,
-    )
+            ran = await inject(
+                IRunner,
+                config.experiments.strategy,
+                **config.experiments.params or {},
+            ).run(
+                config.experiments.steps,
+                resources,
+                starting_step_number=ran,
+            )
 
-    console.print(f"[bold green]:heavy_check_mark: Completed {ran} experiments![/bold green]")
+            console.print(
+                f"[bold green]:heavy_check_mark: Completed {ran} experiments![/bold green]"
+            )
+
+    asyncio.run(run())
 
 
 def load_config(path: Path) -> Config:

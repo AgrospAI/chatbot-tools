@@ -18,7 +18,7 @@ class IRunner(PluginBase, ABC):
     """Base abstract class for running the configuration file"""
 
     @abstractmethod
-    def run(
+    async def run(
         self,
         steps: Steps,
         resources: RuntimeResources,

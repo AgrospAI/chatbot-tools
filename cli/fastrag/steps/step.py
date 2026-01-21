@@ -14,7 +14,7 @@ class IStep(IStepCommon, ABC):
     description: ClassVar[str] = "UNKNOWN STEP"
 
     _experiment: Experiment | None = field(init=False, repr=False)
-    tasks: list[ITask]
+    tasks: list[ITask] = field(repr=False)
 
     @property
     def experiment(self) -> Experiment | None:

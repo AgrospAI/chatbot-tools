@@ -109,7 +109,8 @@ class CrawlerFetcher(Task):
                             self.cached += 1
 
                             cached = await self.cache.get(url)
-                            html = cached.content.decode()
+                            cached = await cached.get_content()
+                            html = cached.decode()
 
                             await event_queue.put(
                                 Event(

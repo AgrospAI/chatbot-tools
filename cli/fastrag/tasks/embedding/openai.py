@@ -44,7 +44,7 @@ class OpenAISimple(Task):
             metadata={"step": "embedding", "experiment": self.experiment.hash},
         )
 
-        data = json.loads(cached.content)
+        data = json.loads(await cached.get_content())
         if existed and data:
             vectors = []
             documents = []

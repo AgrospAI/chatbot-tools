@@ -1,9 +1,10 @@
-import json
+import asyncio
 import uuid
 from dataclasses import dataclass
-from functools import partial
 from typing import ClassVar, override
 
+import aiofiles
+import orjson
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 from fastrag.cache.entry import CacheEntry
@@ -25,7 +26,7 @@ class SlidingWindowChunker(Task):
     async def run(self, uri: str, entry: CacheEntry) -> Run:
         existed, entries = await self.cache.get_or_create(
             uri=f"{entry.path.resolve().as_uri()}.{self.__class__.__name__}.chunk.json",
-            contents=partial(self.chunker_logic, uri, entry),
+            contents=lambda: self.chunker_logic(uri, entry),
             metadata={
                 "step": "chunking",
                 "strategy": "SlidingWindow",
@@ -35,7 +36,8 @@ class SlidingWindowChunker(Task):
             },
         )
 
-        data = json.loads(entries.content)
+        content = await entries.get_content()
+        data = orjson.loads(content)
 
         if getattr(self, "results", None) is None:
             self.results = []
@@ -52,8 +54,10 @@ class SlidingWindowChunker(Task):
     def completed_callback(self) -> Event:
         return Event(Event.Type.COMPLETED, "Finished SlidingWindow")
 
-    def chunker_logic(self, uri: str, entry: CacheEntry) -> bytes:
-        raw_text = entry.path.read_text(encoding="utf-8")
+    async def chunker_logic(self, uri: str, entry: CacheEntry) -> bytes:
+        async with aiofiles.open(entry.path, "r") as f:
+            raw_text = await f.read()
+
         text, raw_metadata = clean_markdown(raw_text)
         metadata = normalize_metadata(raw_metadata, uri)
 
@@ -64,6 +68,10 @@ class SlidingWindowChunker(Task):
         )
 
         docs = splitter.create_documents([text])
+
+        loop = asyncio.get_running_loop()
+        docs = await loop.run_in_executor(None, splitter.create_documents, [text])
+
         all_chunks = []
 
         for i, doc in enumerate(docs):
@@ -82,4 +90,4 @@ class SlidingWindowChunker(Task):
                 }
             )
 
-        return json.dumps(all_chunks).encode("utf-8")
+        return orjson.dumps(all_chunks)
