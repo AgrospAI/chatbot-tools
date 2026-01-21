@@ -1,5 +1,3 @@
-import asyncio
-import os
 from pathlib import Path
 
 import typer
@@ -55,53 +53,6 @@ def main(
     if plugins_path is not None:
         import_plugins(plugins_path)
 
-    console.print(
-        Panel.fit(
-            f"[bold cyan]fastrag[/bold cyan] [green]v{version('fastrag-cli')}[/green]",
-            border_style="cyan",
-        ),
-        justify="center",
-    )
-
-    console.quiet = not verbose
-    Loggable.is_verbose = verbose
-
-    # Load plugins before config
-    load_plugins(plugins)
-    config: Config = load_config(config)
-    resources = load_resources(config)
-
-    async def run():
-        async with resources.cache:
-            ran = await inject(
-                IRunner,
-                config.resources.sources.strategy,
-                **config.resources.sources.params or {},
-            ).run(
-                config.resources.sources.steps,
-                resources,
-            )
-
-            ran = await inject(
-                IRunner,
-                config.experiments.strategy,
-                **config.experiments.params or {},
-            ).run(
-                config.experiments.steps,
-                resources,
-                starting_step_number=ran,
-            )
-
-            console.print(
-                f"[bold green]:heavy_check_mark: Completed {ran} experiments![/bold green]"
-            )
-
-    asyncio.run(run())
-
-
-def load_config(path: Path) -> Config:
-    # Load environment variables from .env file before loading config
-    load_env_file()
         console.print(
             Panel(
                 Pretty(PluginRegistry.representation()),

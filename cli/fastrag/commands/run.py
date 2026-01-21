@@ -18,11 +18,19 @@ app = typer.Typer()
 @app.command()
 def run(
     ctx: typer.Context,
+    verbose: bool = typer.Option(
+        False,
+        "--verbose",
+        "-v",
+        help="Enable verbose output",
+    ),
 ):
     """
     Go through the process of generating a fastRAG.
     """
+
     ctx: AppContext = ctx.obj
+    ctx.verbose = verbose
 
     console.print(
         Panel.fit(
