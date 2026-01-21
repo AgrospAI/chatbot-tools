@@ -22,8 +22,8 @@ def is_outdated(time: PosixTimestamp, lifespan: int) -> bool:
 
 @dataclass(frozen=True)
 class Paths:
-    metadata: Path = field(init=False)
-    data: Path = field(init=False)
+    metadata: Path = field(init=False, repr=False)
+    data: Path = field(init=False, repr=False)
 
     base: InitVar[Path]
 
@@ -43,7 +43,7 @@ class LocalCache(ICache):
     supported: ClassVar[str] = "local"
 
     _dirty: bool = field(init=False, default=False, repr=False)
-    _paths: Paths = field(init=False)
+    _paths: Paths = field(init=False, repr=False)
     _lock: asyncio.Lock = field(init=False, repr=False, default_factory=asyncio.Lock)
     metadata: Metadata = field(init=False, repr=False, default_factory=lambda: dict)
 

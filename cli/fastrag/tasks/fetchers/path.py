@@ -27,7 +27,7 @@ class PathFetcher(Task):
 
     path: InitVar[str]
 
-    _path: Path = field(init=False)
+    _path: Path = field(init=False, repr=False)
 
     def __post_init__(self, path: str) -> None:
         self._path = Path(path)

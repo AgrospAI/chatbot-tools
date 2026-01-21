@@ -9,7 +9,6 @@ from typing import override
 
 from fastrag.helpers.experiments import Experiment
 from fastrag.steps.base import IStepCommon
-from fastrag.steps.step import IStep
 from fastrag.tasks.base import Task
 
 ALPHA_UNDERSCORE = string.ascii_letters + "_"
@@ -21,7 +20,7 @@ def generate_alphanum_id(experiment: IMultiStep, length: int = 22) -> str:
     if experiment is not None:
         # Serialize and to bytes the experiment steps as seed
 
-        rng = random.Random(repr(experiment).encode("utf-8"))
+        rng = random.Random("".join([repr(step.tasks) for step in experiment.steps.values()]))
         return rng.choice(ALPHA_UNDERSCORE) + "".join(
             rng.choice(ALPHANUM_UNDERSCORE) for _ in range(length)
         )
