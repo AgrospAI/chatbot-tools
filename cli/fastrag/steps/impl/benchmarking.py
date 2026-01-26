@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from typing import ClassVar, override
 
+from fastrag.events import Event
 from fastrag.steps.base import Tasks
 from fastrag.steps.step import IStep
 
@@ -15,5 +16,8 @@ class BenchmarkingStep(IStep):
         for task in self.tasks:
             yield (task, [task.run()])
 
-        score = sum(task.results for task in self.tasks) / len(self.tasks)
-        print("SCORE", score)
+        score = round(sum(task.results for task in self.tasks) / len(self.tasks), 3)
+        self.experiment.score = score
+        self.logger.log(
+            Event(Event.Type.COMPLETED, f"Experiment {self.experiment.hash} score: {score}")
+        )

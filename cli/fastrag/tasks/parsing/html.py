@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import ClassVar, override
 from urllib.parse import urljoin
 
+import aiofiles
 from bs4 import BeautifulSoup
 from html_to_markdown import convert_to_markdown
 
@@ -13,8 +14,10 @@ from fastrag.events import Event
 from fastrag.tasks.base import Run, Task
 
 
-def parse_to_md(path: Path, base_url: str) -> bytes:
-    html = path.read_text()
+async def parse_to_md(path: Path, base_url: str) -> bytes:
+    async with aiofiles.open(path, "r") as f:
+        html = await f.read()
+
     soup = BeautifulSoup(html, "html.parser")
 
     for tag in soup.find_all(["a", "img"]):
@@ -38,7 +41,7 @@ class HtmlParser(Task):
     async def run(self, uri: str, entry: CacheEntry) -> Run:
         existed, _ = await self.cache.get_or_create(
             uri=entry.path.resolve().as_uri(),
-            contents=partial(parse_to_md, entry.path, uri),
+            contents=lambda: parse_to_md(entry.path, uri),
             metadata={
                 "source": uri,
                 "strategy": HtmlParser.supported,

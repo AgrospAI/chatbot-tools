@@ -9,7 +9,6 @@ from typing import override
 
 from fastrag.helpers.experiments import Experiment
 from fastrag.steps.base import IStepCommon
-from fastrag.steps.step import IStep
 from fastrag.tasks.base import Task
 
 ALPHA_UNDERSCORE = string.ascii_letters + "_"
@@ -21,7 +20,7 @@ def generate_alphanum_id(experiment: IMultiStep, length: int = 22) -> str:
     if experiment is not None:
         # Serialize and to bytes the experiment steps as seed
 
-        rng = random.Random(repr(experiment).encode("utf-8"))
+        rng = random.Random("".join([repr(step.tasks) for step in experiment.steps.values()]))
         return rng.choice(ALPHA_UNDERSCORE) + "".join(
             rng.choice(ALPHANUM_UNDERSCORE) for _ in range(length)
         )
@@ -34,9 +33,6 @@ def generate_alphanum_id(experiment: IMultiStep, length: int = 22) -> str:
 
 @dataclass
 class IMultiStep(IStepCommon, Experiment):
-    steps: dict[str, IStep]
-    results: str = ""
-
     def __post_init__(self, *args, **kwargs) -> None:
         super().__post_init__(*args, **kwargs)
 
@@ -54,7 +50,15 @@ class IMultiStep(IStepCommon, Experiment):
             lines.append(f"\t{step_name}:")
             lines.append(f"\t└─ {step.tasks}")
 
-        self.results = f"Experiment #{self.task_id + 1} | {self.hash} :\n{'\n'.join(lines)}"
+        self._results = (
+            f"Experiment  #{self.task_id + 1} | {self.hash}"
+            + " | {score}:\n"
+            + f"{'\n'.join(lines)}"
+        )
+
+    @property
+    def results(self) -> str:
+        return self._results.replace("{score}", str(self.score))
 
     @override
     def calculate_total(self) -> int:
@@ -62,15 +66,6 @@ class IMultiStep(IStepCommon, Experiment):
 
     @override
     def tasks(self, step: str) -> list[Task]:
-        """Get the Task instance for the given step
-
-        Args:
-            step (str): step to look for
-
-        Returns:
-            list[Task]: list of Tasks of the given step
-        """
-
         tasks = []
         for s in self.steps.values():
             if step in s.supported:
@@ -78,5 +73,6 @@ class IMultiStep(IStepCommon, Experiment):
 
         return tasks
 
+    @override
     def save_results(self, results: str) -> None:
-        self.results += results
+        self._results += results

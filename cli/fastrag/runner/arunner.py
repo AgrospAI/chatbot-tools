@@ -15,7 +15,7 @@ class Runner(IRunner):
     supported: ClassVar[str] = "async"
 
     @override
-    def run(
+    async def run(
         self,
         steps: Steps,
         resources: RuntimeResources,
@@ -40,26 +40,24 @@ class Runner(IRunner):
                     )
                 )
 
-            async def run_all():
-                for step in instances:
-                    step_number = step.task_id + starting_step_number + 1
+            for step in instances:
+                step_number = step.task_id + starting_step_number + 1
 
-                    # Step-level progress bar
-                    step_task_id = progress.add_task(
-                        f"{step_number}. {step.description}",
-                        total=step.calculate_total(),
-                    )
+                # Step-level progress bar
+                step_task_id = progress.add_task(
+                    f"{step_number}. {step.description}",
+                    total=step.calculate_total(),
+                )
 
-                    async for task, generators in step.get_tasks():
+                async for task, generators in step.get_tasks():
 
-                        async def consume(gen):
-                            async for event in gen:
-                                step.logger.log(event)
+                    async def consume(gen):
+                        async for event in gen:
+                            step.logger.log(event)
 
-                        await asyncio.gather(*(consume(gen) for gen in generators))
-                        step.logger.log(task.completed_callback())
+                    await asyncio.gather(*(consume(gen) for gen in generators))
+                    step.logger.log(task.completed_callback())
 
-                        progress.advance(step_task_id)
+                    progress.advance(step_task_id)
 
-            asyncio.run(run_all())
             return len(instances)

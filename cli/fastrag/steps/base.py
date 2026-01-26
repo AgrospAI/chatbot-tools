@@ -22,7 +22,7 @@ Tasks: TypeAlias = AsyncGenerator[tuple[ITask, list[AsyncGenerator[Event, None]]
 class IStepCommon(PluginBase, ABC):
     progress: InitVar[Progress]
 
-    task_id: int
+    task_id: int = field(repr=False)
     resources: RuntimeResources = field(repr=False)
     logger: Loggable = field(init=False, repr=False)
 

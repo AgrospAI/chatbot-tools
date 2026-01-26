@@ -162,10 +162,8 @@ class QuerySetBenchmarking(Task):
         for a in answers:
             yield Event(Event.Type.PROGRESS, f"\n{a}")
 
-        overall_score = sum(a.score for a in answers) / len(answers)
-        self.experiment.save_results(
-            f"\nQuerySetBenchmarking overall score: {round(overall_score, 3)}"
-        )
+        overall_score = round(sum(a.score for a in answers) / len(answers), 3)
+        self.experiment.save_results(f"\nQuerySetBenchmarking overall score: {overall_score}")
 
         if self._questions:
             self.results = overall_score

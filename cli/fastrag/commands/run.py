@@ -1,3 +1,5 @@
+import asyncio
+
 import typer
 from rich.panel import Panel
 
@@ -16,11 +18,19 @@ app = typer.Typer()
 @app.command()
 def run(
     ctx: typer.Context,
+    verbose: bool = typer.Option(
+        False,
+        "--verbose",
+        "-v",
+        help="Enable verbose output",
+    ),
 ):
     """
     Go through the process of generating a fastRAG.
     """
+
     ctx: AppContext = ctx.obj
+    ctx.verbose = verbose
 
     console.print(
         Panel.fit(
@@ -36,23 +46,29 @@ def run(
     config = ctx.config
     resources = ctx.resources
 
-    ran = inject(
-        IRunner,
-        config.resources.sources.strategy,
-        **config.resources.sources.params or {},
-    ).run(
-        config.resources.sources.steps,
-        resources,
-    )
+    async def run():
+        async with resources.cache:
+            ran = await inject(
+                IRunner,
+                config.resources.sources.strategy,
+                **config.resources.sources.params or {},
+            ).run(
+                config.resources.sources.steps,
+                resources,
+            )
 
-    ran = inject(
-        IRunner,
-        config.experiments.strategy,
-        **config.experiments.params or {},
-    ).run(
-        config.experiments.steps,
-        resources,
-        starting_step_number=ran,
-    )
+            ran = await inject(
+                IRunner,
+                config.experiments.strategy,
+                **config.experiments.params or {},
+            ).run(
+                config.experiments.steps,
+                resources,
+                starting_step_number=ran,
+            )
 
-    console.print(f"[bold green]:heavy_check_mark: Completed {ran} experiments![/bold green]")
+            console.print(
+                f"[bold green]:heavy_check_mark: Completed {ran} experiments![/bold green]"
+            )
+
+    asyncio.run(run())

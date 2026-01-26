@@ -1,8 +1,10 @@
-import json
+import asyncio
 import uuid
 from dataclasses import InitVar, dataclass, field
 from typing import ClassVar, override
 
+import aiofiles
+import orjson
 from langchain_core.embeddings import Embeddings
 from langchain_experimental.text_splitter import SemanticChunker
 from langchain_text_splitters import MarkdownHeaderTextSplitter
@@ -23,10 +25,12 @@ class ParentChildChunker(Task):
     url: InitVar[str]
     model_name: InitVar[str]
     api_key: InitVar[str]
+    max_concurrent: InitVar[int] = 5
 
     model: Embeddings = field(init=False, repr=False, hash=False)
+    _semaphore: asyncio.Semaphore = field(init=False, repr=False, hash=False)
 
-    def __post_init__(self, url: str, model_name: str, api_key: str) -> None:
+    def __post_init__(self, url: str, model_name: str, api_key: str, max_concurrent: int):
         self.model = inject(
             Embeddings,
             "openai-simple",
@@ -34,11 +38,12 @@ class ParentChildChunker(Task):
             model=model_name,
             api_key=api_key,
         )
+        self._semaphore = asyncio.Semaphore(max_concurrent)
 
     @override
     async def run(self, uri: str, entry: CacheEntry) -> Run:
         existed, entries = await self.cache.get_or_create(
-            uri=f"{entry.path.resolve().as_uri()}.{self.__class__.__name__}.{self.model.__class__.__name__}.chunk.json",
+            uri=f"{entry.path.resolve().as_uri()}.{self.__class__.__name__}.{self.model.__class__.__name__}.chunk.jsonl",
             contents=lambda: self.chunker_logic(uri, entry),
             metadata={
                 "step": "chunking",
@@ -47,17 +52,18 @@ class ParentChildChunker(Task):
             },
         )
 
-        entries = json.loads(entries.content)
+        entries_bytes = await entries.get_content()
+        entries_list = orjson.loads(entries_bytes) if entries_bytes else []
 
         if getattr(self, "results", None) is None:
             self.results = []
 
-        self.results.extend(entries)
+        self.results.extend(entries_list)
 
         status = "Cached" if existed else "Generated"
         yield Event(
             Event.Type.PROGRESS,
-            f"{self.__class__.__name__} {status} {len(entries)} chunks for {entry.path}",
+            f"{self.__class__.__name__} {status} {len(entries_list)} chunks for {entry.path}",
         )
 
     @override
@@ -65,7 +71,9 @@ class ParentChildChunker(Task):
         return Event(Event.Type.COMPLETED, "Finished ParentChildChunking")
 
     async def chunker_logic(self, uri: str, entry: CacheEntry) -> bytes:
-        raw_text = entry.path.read_text(encoding="utf-8")
+        async with aiofiles.open(entry.path) as f:
+            raw_text = await f.read()
+
         text, raw_metadata = clean_markdown(raw_text)
         metadata = normalize_metadata(raw_metadata, uri)
 
@@ -124,7 +132,15 @@ class ParentChildChunker(Task):
                     embeddings=self.model,
                     breakpoint_threshold_type="percentile",
                 )
-                child_docs = child_splitter.create_documents([p_doc.page_content])
+
+                async with self._semaphore:
+                    loop = asyncio.get_running_loop()
+                    child_docs = await loop.run_in_executor(
+                        None,
+                        child_splitter.create_documents,
+                        [p_doc.page_content],
+                    )
+
             except Exception:
                 child_docs = [p_doc]
 
@@ -147,4 +163,4 @@ class ParentChildChunker(Task):
                     }
                 )
 
-        return json.dumps(all_chunks).encode("utf-8")
+        return orjson.dumps(all_chunks)
