@@ -1,7 +1,8 @@
 from dataclasses import dataclass
 from typing import ClassVar, override
 
-from fastrag.steps.step import IStep, Tasks
+from fastrag.steps.base import Tasks
+from fastrag.steps.step import IStep
 
 
 @dataclass
@@ -11,6 +12,6 @@ class ChunkingStep(IStep):
 
     @override
     async def get_tasks(self) -> Tasks:
-        for task in self._tasks:
+        for task in self.tasks:
             entries = await self.cache.get_entries(task.filter)
             yield (task, [task.run(uri, entry) for uri, entry in entries])

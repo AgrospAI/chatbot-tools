@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from pathlib import Path
 
-from fastrag.config.config import Config
+from fastrag.config.models import Config
 from fastrag.plugins import PluginBase
 
 

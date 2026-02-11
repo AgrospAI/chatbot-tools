@@ -30,7 +30,7 @@ resources:
           params:
             url: https://agrospai.udl.cat
             workers: 5
-            depth: 0
+            depth: 1
             delay: 0
       parsing:
         - strategy: HtmlParser
@@ -38,21 +38,21 @@ resources:
             use:
               - SitemapXML
               - Crawling
-        - strategy: FileParser
-          params:
-            use:
-              - Path
+        # - strategy: FileParser
+        #   params:
+        #     use:
+        #       - Path
 experiments:
   strategy: async_experiments
   params:
-    max_concurrent: 3
+    max_concurrent: 5
   steps:
     chunking:
       - strategy: ParentChild
         params:
-          embedding_model: "paraphrase-multilingual:latest"
-          embedding_api_url: "https://chat.agrospai.udl.cat/ollama/api/embed"
-          embedding_api_key: ${CHAT_API_KEY}
+          model_name: paraphrase-multilingual:latest
+          url: https://chat.agrospai.udl.cat/ollama/api/embed
+          api_key: ${CHAT_API_KEY}
       - strategy: SlidingWindow
         params:
           chunk_size: 1200
@@ -69,10 +69,11 @@ experiments:
           questions:
             - [
                 "Who is the staff of the agrospai project?",
-                "Roberto Garcia Gonzalez"
+                "Roberto Garcia Gonzalez",
               ]
             - [
                 "What technologies does AgrospAI use to make payments",
-                "Smart Contracts", "Blockchain"
+                "Smart Contracts",
+                "Blockchain",
               ]
       - strategy: ChunkQuality

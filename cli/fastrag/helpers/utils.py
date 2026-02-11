@@ -1,10 +1,6 @@
 import re
-import string
-from datetime import datetime
 from importlib.metadata import PackageNotFoundError
 from importlib.metadata import version as v
-from random import Random
-from typing import TypeAlias
 from urllib.parse import urlparse, urlunparse
 
 
@@ -42,13 +38,6 @@ def parse_to_seconds(time: str) -> int:
         raise ValueError("Unsupported time unit") from e
 
     return total_seconds
-
-
-PosixTimestamp: TypeAlias = float
-
-
-def timestamp() -> PosixTimestamp:
-    return datetime.now().timestamp()
 
 
 def normalize_url(url: str) -> str:

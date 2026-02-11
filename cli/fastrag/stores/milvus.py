@@ -4,9 +4,9 @@ from typing import ClassVar, List, override
 
 os.environ["GRPC_VERBOSITY"] = "ERROR"
 os.environ["GRPC_DNS_RESOLVER"] = "native"
+from langchain_core.embeddings import Embeddings
 from pymilvus import AsyncMilvusClient, DataType
 
-from fastrag.embeddings import IEmbeddings
 from fastrag.stores.store import Document, IVectorStore
 
 
@@ -21,11 +21,11 @@ class MilvusVectorStore(IVectorStore):
     collection_name: str
     user: str | None = None
     password: str | None = None
-    embedding_model: IEmbeddings | None = None
+    embedding_model: Embeddings | None = None
     dimension: int = 768
 
     # Internal state
-    _client: any = field(default=None, repr=False, init=False)
+    _client: AsyncMilvusClient = field(default=None, repr=False, init=False)
 
     async def _get_client(self, collection_name: str | None = None) -> AsyncMilvusClient:
         """Initialize the true Async Milvus Client"""
@@ -157,7 +157,7 @@ class MilvusVectorStore(IVectorStore):
     @override
     async def embed_query(self, text: str) -> List[float]:
         """Required implementation: Delegates to the assigned embedding model"""
-        return await self.embedding_model.embed_query(text)
+        return await self.embedding_model.aembed_query(text)
 
     def _get_collection(self, collection_name: str | None) -> str:
         return collection_name if collection_name else self.collection_name

@@ -1,7 +1,8 @@
 from dataclasses import dataclass
 from typing import ClassVar, override
 
-from fastrag.steps.step import IStep, Tasks
+from fastrag.steps.base import Tasks
+from fastrag.steps.step import IStep
 
 
 @dataclass
@@ -11,5 +12,5 @@ class FetchingStep(IStep):
 
     @override
     async def get_tasks(self) -> Tasks:
-        for task in self._tasks:
+        for task in self.tasks:
             yield (task, [task.run()])

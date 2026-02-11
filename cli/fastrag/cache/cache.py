@@ -9,7 +9,7 @@ from fastrag.plugins import PluginBase
 ContentsCallable = Callable[[], bytes | Awaitable[bytes]]
 
 
-@dataclass(frozen=True)
+@dataclass
 class ICache(PluginBase, ABC):
     lifespan: int
 
@@ -102,5 +102,11 @@ class ICache(PluginBase, ABC):
         Returns:
             int: cleaned size
         """
+
+        raise NotImplementedError
+
+    @abstractmethod
+    async def flush(self) -> None:
+        """Flushes the cache state into memory"""
 
         raise NotImplementedError

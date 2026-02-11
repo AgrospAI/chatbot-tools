@@ -2,20 +2,12 @@ import asyncio
 from dataclasses import dataclass
 from typing import ClassVar, override
 
-from rich.panel import Panel
-from rich.progress import (
-    BarColumn,
-    MofNCompleteColumn,
-    Progress,
-    TextColumn,
-    TimeElapsedColumn,
-    TimeRemainingColumn,
-)
-
-from fastrag.config.config import Steps
+from fastrag.config.models import Steps
+from fastrag.helpers.resources import RuntimeResources
 from fastrag.plugins import inject
 from fastrag.runner.runner import IRunner
-from fastrag.steps.step import IStep, RuntimeResources
+from fastrag.steps.step import IStep
+from fastrag.tasks.base import Task
 
 
 @dataclass(frozen=True)
@@ -23,66 +15,49 @@ class Runner(IRunner):
     supported: ClassVar[str] = "async"
 
     @override
-    def run(
+    async def run(
         self,
         steps: Steps,
         resources: RuntimeResources,
-        run_steps: int = -1,
         starting_step_number: int = 0,
     ) -> int:
-        with Progress(
-            TextColumn("[progress.percentage]{task.description} {task.percentage:>3.0f}%"),
-            BarColumn(),
-            MofNCompleteColumn(),
-            TextColumn("•"),
-            TimeElapsedColumn(),
-            TextColumn("•"),
-            TimeRemainingColumn(),
-        ) as progress:
-            steps = [
-                inject(
-                    IStep,
-                    step,
-                    task_id=idx,
-                    progress=progress,
-                    step=steps[step],
-                    resources=resources,
-                )
-                for idx, step in enumerate(steps)
-            ]
+        with self.progress_bar() as progress:
+            instances: list[IStep] = []
+            for idx, (step, tasks) in enumerate(steps.items()):
+                tasks = [
+                    inject(Task, t.strategy, resources=resources, **t.params or {})
+                    for t in tasks
+                ]
 
-            async def run_all():
-                for step in steps:
-                    step_number = step.task_id + starting_step_number + 1
-
-                    # Step-level progress bar
-                    step_task_id = progress.add_task(
-                        f"{step_number}. {step.description}",
-                        total=step.calculate_total(),
+                instances.append(
+                    inject(
+                        IStep,
+                        step,
+                        tasks=tasks,
+                        task_id=idx,
+                        progress=progress,
+                        resources=resources,
                     )
+                )
 
-                    async for task, generators in step.get_tasks():
+            for step in instances:
+                step_number = step.task_id + starting_step_number + 1
 
-                        async def consume(gen):
-                            async for event in gen:
-                                step.log(event)
+                # Step-level progress bar
+                step_task_id = progress.add_task(
+                    f"{step_number}. {step.description}",
+                    total=step.calculate_total(),
+                )
 
-                        await asyncio.gather(*(consume(gen) for gen in generators))
-                        step.log(task.completed_callback())
+                async for task, generators in step.get_tasks():
 
-                        progress.advance(step_task_id)
+                    async def consume(gen):
+                        async for event in gen:
+                            step.logger.log(event)
 
-                    # Manual stop support
-                    if run_steps == step.task_id + 1:
-                        progress.print(
-                            Panel.fit(
-                                f"Stopping execution after step "
-                                f"[bold yellow]{step.description}[/bold yellow]",
-                                border_style="red",
-                            ),
-                            justify="center",
-                        )
-                        return
+                    await asyncio.gather(*(consume(gen) for gen in generators))
+                    step.logger.log(task.completed_callback())
 
-            asyncio.run(run_all())
-            return len(steps)
+                    progress.advance(step_task_id)
+
+            return len(instances)

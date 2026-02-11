@@ -1,15 +1,24 @@
 from abc import ABC, abstractmethod
 
-from fastrag.config.config import Steps
+from rich.progress import (
+    BarColumn,
+    MofNCompleteColumn,
+    Progress,
+    TextColumn,
+    TimeElapsedColumn,
+    TimeRemainingColumn,
+)
+
+from fastrag.config.models import Steps
+from fastrag.helpers.resources import RuntimeResources
 from fastrag.plugins import PluginBase
-from fastrag.steps.step import RuntimeResources
 
 
 class IRunner(PluginBase, ABC):
     """Base abstract class for running the configuration file"""
 
     @abstractmethod
-    def run(
+    async def run(
         self,
         steps: Steps,
         resources: RuntimeResources,
@@ -28,3 +37,14 @@ class IRunner(PluginBase, ABC):
         """
 
         raise NotImplementedError
+
+    def progress_bar(self) -> Progress:
+        return Progress(
+            TextColumn("[progress.percentage]{task.description} {task.percentage:>3.0f}%"),
+            BarColumn(),
+            MofNCompleteColumn(),
+            TextColumn("•"),
+            TimeElapsedColumn(),
+            TextColumn("•"),
+            TimeRemainingColumn(),
+        )

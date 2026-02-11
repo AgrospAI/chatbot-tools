@@ -3,14 +3,15 @@ import hashlib
 import inspect
 import json
 import shutil
-from asyncio import Lock
 from dataclasses import InitVar, dataclass, field
 from pathlib import Path
 from typing import ClassVar, Iterable, override
 
+import aiofiles
+
 from fastrag.cache.cache import CacheEntry, ContentsCallable, ICache
-from fastrag.helpers import PosixTimestamp, timestamp
-from fastrag.helpers.filters import Filter
+from fastrag.cache.filters import Filter
+from fastrag.cache.utils import PosixTimestamp, timestamp
 
 type Metadata = dict[str, CacheEntry]
 
@@ -21,8 +22,8 @@ def is_outdated(time: PosixTimestamp, lifespan: int) -> bool:
 
 @dataclass(frozen=True)
 class Paths:
-    metadata: Path = field(init=False)
-    data: Path = field(init=False)
+    metadata: Path = field(init=False, repr=False)
+    data: Path = field(init=False, repr=False)
 
     base: InitVar[Path]
 
@@ -36,13 +37,14 @@ class Paths:
         self.metadata.touch(mode=0o770, exist_ok=True)
 
 
-@dataclass(frozen=True)
+@dataclass
 class LocalCache(ICache):
     base: ClassVar[Path] = Path(".fastrag")
     supported: ClassVar[str] = "local"
 
-    _paths: Paths = field(init=False)
-    _lock: Lock = field(init=False, repr=False, default_factory=Lock)
+    _dirty: bool = field(init=False, default=False, repr=False)
+    _paths: Paths = field(init=False, repr=False)
+    _lock: asyncio.Lock = field(init=False, repr=False, default_factory=asyncio.Lock)
     metadata: Metadata = field(init=False, repr=False, default_factory=lambda: dict)
 
     def __post_init__(self) -> None:
@@ -56,8 +58,8 @@ class LocalCache(ICache):
             raw = json.loads(raw)
             metadata = {k: CacheEntry.from_dict(v) for k, v in raw.items()}
 
-        object.__setattr__(self, "_paths", paths)
-        object.__setattr__(self, "metadata", metadata)
+        self._paths = paths
+        self.metadata = metadata
 
         self._delete_invalid()
 
@@ -78,10 +80,12 @@ class LocalCache(ICache):
             path=self._paths.data / digest,
             metadata=metadata,
         )
+
         async with self._lock:
             self.metadata[uri] = entry
-            self._save(entry.path, contents)
-            self._save_metadata()
+            await self._save(entry.path, contents)
+            self._dirty = True
+
         return entry
 
     @override
@@ -93,6 +97,14 @@ class LocalCache(ICache):
     ) -> tuple[bool, CacheEntry]:
         entry = await self.get(uri)
         if entry:
+            # If metadata.experiment is present, update it !
+            experiment = metadata.get("experiment", None)
+            if experiment and experiment is not entry.metadata["experiment"]:
+                cached = self.metadata[uri]
+                cached.metadata["experiment"] = experiment
+                self.metadata[uri] = cached
+                self._dirty = True
+
             return True, entry
 
         result = contents()
@@ -122,6 +134,27 @@ class LocalCache(ICache):
         shutil.rmtree(self.base)
         return size
 
+    @override
+    async def flush(self) -> None:
+        async with self._lock:
+            if not self._dirty:
+                return
+            raw = {k: v.to_dict() for k, v in self.metadata.items()}
+            with open(self._paths.metadata, "w") as f:
+                json.dump(raw, f, indent=2)
+            self._dirty = False
+
+    async def __aenter__(self):
+        return self
+
+    async def __aexit__(self, exc_type, exc, tb):
+        await self.flush()
+
+    async def autosave(self, interval: int = 5):
+        while True:
+            await asyncio.sleep(interval)
+            await self.flush()
+
     def _delete_invalid(self) -> None:
         outdated = [
             (h, v.path)
@@ -134,13 +167,9 @@ class LocalCache(ICache):
         for h, item in outdated:
             item.unlink(missing_ok=True)
             self.metadata.pop(h)
-        self._save_metadata()
 
-    def _save_metadata(self) -> None:
-        raw = {k: v.to_dict() for k, v in self.metadata.items()}
-        with open(self._paths.metadata, "w") as f:
-            json.dump(raw, f, indent=2)
+        self._dirty = True
 
-    def _save(self, path: Path, contents: bytes) -> None:
-        with open(path, "wb") as f:
-            f.write(contents)
+    async def _save(self, path: Path, content: bytes) -> None:
+        async with aiofiles.open(path, "wb+") as f:
+            await f.write(content)

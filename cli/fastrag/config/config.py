@@ -1,57 +1,45 @@
 from __future__ import annotations
 
-from dataclasses import InitVar, dataclass, field
-from typing import ClassVar, TypeAlias
+from pathlib import Path
 
-from fastrag.helpers.utils import parse_to_seconds
+from langchain_core.embeddings import Embeddings
 
-
-@dataclass(frozen=True)
-class Strategy:
-    strategy: str
-    params: dict | None
-
-
-Step: TypeAlias = list[Strategy]
-Steps: TypeAlias = dict[str, Step]
+from fastrag.cache.cache import ICache
+from fastrag.config.loaders.loader import IConfigLoader
+from fastrag.config.models import Config
+from fastrag.config.settings import settings
+from fastrag.helpers.resources import RuntimeResources
+from fastrag.llms.llm import ILLM
+from fastrag.plugins import inject
+from fastrag.stores.store import IVectorStore
 
 
-@dataclass(frozen=True)
-class MultiStrategy:
-    steps: Steps
-    params: dict | None = None
-    strategy: str = "async"
+def get_config(path: Path = settings.fastrag_config_path) -> Config:
+    config = inject(IConfigLoader, path.suffix).load(path)
+    Config.instance = config
+
+    return config
 
 
-@dataclass(frozen=True)
-class Cache:
-    lifespan_str: InitVar[str] = "1d"
-    strategy: str = field(default="local")
-    _lifespan: int = field(init=False)
+def get_resources(config: Config) -> RuntimeResources:
+    embedding_config = config.experiments.steps["embedding"][0]
+    embedding_model = inject(Embeddings, embedding_config.strategy, **embedding_config.params)
 
-    @property
-    def lifespan(self) -> int:
-        return self._lifespan
-
-    def __post_init__(self, lifespan_str: str) -> None:
-        object.__setattr__(
-            self,
-            "_lifespan",
-            parse_to_seconds(lifespan_str),
-        )
-
-
-@dataclass(frozen=True)
-class Resources:
-    sources: MultiStrategy
-    cache: Cache = field(default_factory=Cache)
-    store: Strategy | None = field(default=None)
-    llm: Strategy | None = field(default=None)
-
-
-@dataclass(frozen=True)
-class Config:
-    resources: Resources
-    experiments: MultiStrategy
-
-    instance: ClassVar[Config | None] = None
+    return RuntimeResources(
+        cache=inject(
+            ICache,
+            config.resources.cache.strategy,
+            lifespan=config.resources.cache.lifespan,
+        ),
+        store=inject(
+            IVectorStore,
+            config.resources.store.strategy,
+            embedding_model=embedding_model,
+            **config.resources.store.params,
+        ),
+        llm=inject(
+            ILLM,
+            config.resources.llm.strategy,
+            **config.resources.llm.params,
+        ),
+    )

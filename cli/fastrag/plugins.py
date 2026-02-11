@@ -72,8 +72,13 @@ class PluginBase(ABC):
         for base in cls.__mro__:
             if base is PluginBase:
                 continue
-            if issubclass(base, PluginBase):
-                PluginRegistry.register(cls, base, cls.supported)
+            PluginRegistry.register(cls, base, cls.supported)
+
+    def get_supported_name(self) -> str:
+        supported = self.supported
+        if isinstance(supported, list):
+            supported = supported[0]
+        return str(supported)
 
 
 def inject(interface: T, supported: list[str] | str, *args, **kwargs) -> T:

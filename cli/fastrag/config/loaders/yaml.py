@@ -6,8 +6,8 @@ import yaml
 from dacite import Config as Conf
 from dacite import from_dict
 
-from fastrag.config.config import Config
 from fastrag.config.loaders.loader import IConfigLoader
+from fastrag.config.models import Config
 
 
 def expand_env_vars(obj):
