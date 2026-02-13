@@ -1,7 +1,5 @@
 import re
 
-import frontmatter
-
 
 def clean_markdown(content: str) -> tuple[str, dict]:
     """
@@ -10,10 +8,9 @@ def clean_markdown(content: str) -> tuple[str, dict]:
     """
     # Use frontmatter library to parse YAML frontmatter
     try:
-        post = frontmatter.loads(content)
-        metadata = post.metadata
-        cleaned_content = post.content
-    except Exception:
+        metadata, cleaned_content = extract_metadata_content(content)
+    except Exception as e:
+        print(f"Frontmatter parsing failed: {e}")
         return content, {}
 
     # Matches "# Title" or "Title \n ===="
@@ -82,3 +79,17 @@ def normalize_metadata(raw_meta: dict, uri: str) -> dict:
         "keywords": raw_meta.get("meta-keywords", ""),
         "description": raw_meta.get("meta-description", ""),
     }
+
+
+def extract_metadata_content(text: str):
+    metadata = {}
+    parts = re.split(r"^---$", text, maxsplit=2, flags=re.MULTILINE)
+
+    if len(parts) >= 3:
+        metadata_str = parts[1]
+        content = parts[2]
+        for line in metadata_str.strip().split("\n"):
+            if ":" in line:
+                key, value = line.split(":", 1)
+                metadata[key.strip()] = value.strip()
+    return metadata, content.strip()
