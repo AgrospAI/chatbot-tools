@@ -1,3 +1,5 @@
+# type: ignore
+
 import asyncio
 import uuid
 from dataclasses import InitVar, dataclass, field
@@ -108,7 +110,6 @@ class ParentChildChunker(Task):
             final_metadata = {
                 **metadata,
                 **p_doc.metadata,
-                "chunk_type": "parent",
                 "title_path": title_path,
             }
 
@@ -117,7 +118,6 @@ class ParentChildChunker(Task):
                     "chunk_id": parent_id,
                     "page_content": parent_content,
                     "metadata": final_metadata,
-                    "level": "parent",
                 }
             )
 
@@ -128,10 +128,8 @@ class ParentChildChunker(Task):
                         "page_content": parent_content,
                         "metadata": {
                             **final_metadata,
-                            "chunk_type": "child",
+                            "parent_id": parent_id,
                         },
-                        "level": "child",
-                        "parent_id": parent_id,
                     }
                 )
 
@@ -140,7 +138,8 @@ class ParentChildChunker(Task):
             try:
                 child_splitter = SemanticChunker(
                     embeddings=self.model,
-                    breakpoint_threshold_type="percentile",
+                    breakpoint_threshold_type="standard_deviation",
+                    breakpoint_threshold_amount=1.2,
                 )
 
                 async with self._semaphore:
@@ -165,11 +164,9 @@ class ParentChildChunker(Task):
                         "page_content": child_content,
                         "metadata": {
                             **final_metadata,
-                            "chunk_type": "child",
                             "child_index": i,
+                            "parent_id": parent_id,
                         },
-                        "level": "child",
-                        "parent_id": parent_id,
                     }
                 )
 
