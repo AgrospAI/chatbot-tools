@@ -1,9 +1,8 @@
 from pathlib import Path
 
+from fastrag.settings import DEFAULT_CONFIG
 from pydantic import Field
 from pydantic_settings import BaseSettings
-
-from fastrag.settings import DEFAULT_CONFIG
 
 
 class Settings(BaseSettings):
@@ -18,4 +17,4 @@ class Settings(BaseSettings):
         env_file = ".env"
 
 
-settings = Settings()
+settings = Settings()  #  type: ignore[call-args]

@@ -1,10 +1,10 @@
 import asyncio
-import uuid
 from dataclasses import dataclass
 from typing import ClassVar, override
 
 import aiofiles
 import orjson
+import uuid6
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 from fastrag.cache.entry import CacheEntry
@@ -82,7 +82,7 @@ class SlidingWindowChunker(Task):
 
             all_chunks.append(
                 {
-                    "chunk_id": str(uuid.uuid4()),
+                    "chunk_id": str(uuid6.uuid6()),
                     "page_content": chunk_content,
                     "metadata": {**metadata, "chunk_index": i, "total_chunks": len(docs)},
                     "level": "child",
