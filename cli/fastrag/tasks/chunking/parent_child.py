@@ -1,21 +1,22 @@
 # type: ignore
 
 import asyncio
-import uuid
 from dataclasses import InitVar, dataclass, field
 from typing import ClassVar, override
 
 import aiofiles
 import orjson
+import uuid6
 from langchain_core.embeddings import Embeddings
 from langchain_experimental.text_splitter import SemanticChunker
 from langchain_text_splitters import MarkdownHeaderTextSplitter
-from sqlalchemy import create_engine, text
 
 from fastrag.cache.entry import CacheEntry
 from fastrag.cache.filters import Filter, MetadataFilter
 from fastrag.events import Event
 from fastrag.plugins import inject
+from fastrag.serve.database import SessionLocal, initialize_database
+from fastrag.stores.parent_chunk_db import ParentStore
 from fastrag.tasks.base import Run, Task
 from fastrag.tasks.chunking.markdown_utils import clean_markdown, normalize_metadata
 
@@ -33,9 +34,8 @@ class ParentChildChunker(Task):
     model: Embeddings = field(init=False, repr=False, hash=False)
     _semaphore: asyncio.Semaphore = field(init=False, repr=False, hash=False)
 
-    db_connection_str: str = "postgresql://postgres:postgres@localhost:5432/chatbot"
-
     def __post_init__(self, url: str, model_name: str, api_key: str, max_concurrent: int):
+        initialize_database()
         self.model = inject(
             Embeddings,
             "openai-simple",
@@ -79,12 +79,6 @@ class ParentChildChunker(Task):
         async with aiofiles.open(entry.path) as f:
             raw_text = await f.read()
 
-        try:
-            engine = create_engine(self.db_connection_str)
-            self._check_parent_table_exists(engine)
-        except Exception as e:
-            print(f"Database connection failed: {e}")
-
         text, raw_metadata = clean_markdown(raw_text)
         metadata = normalize_metadata(raw_metadata, uri)
 
@@ -105,7 +99,7 @@ class ParentChildChunker(Task):
                 context_header += f"\nSummary: {metadata['description']}"
 
             parent_content = f"{context_header}\n\n{p_doc.page_content}"
-            parent_id = str(uuid.uuid4())
+            parent_id = str(uuid6.uuid6())
 
             final_metadata = {
                 **metadata,
@@ -124,7 +118,7 @@ class ParentChildChunker(Task):
             if "| ---" in p_doc.page_content or "```" in p_doc.page_content:
                 child_chunks.append(
                     {
-                        "chunk_id": str(uuid.uuid4()),
+                        "chunk_id": str(uuid6.uuid6()),
                         "page_content": parent_content,
                         "metadata": {
                             **final_metadata,
@@ -160,7 +154,7 @@ class ParentChildChunker(Task):
 
                 child_chunks.append(
                     {
-                        "chunk_id": str(uuid.uuid4()),
+                        "chunk_id": str(uuid6.uuid6()),
                         "page_content": child_content,
                         "metadata": {
                             **final_metadata,
@@ -170,42 +164,18 @@ class ParentChildChunker(Task):
                     }
                 )
 
-        self._save_parents_to_db(engine, parent_chunks)
+        self._save_parents_to_db(parent_chunks)
         return orjson.dumps(child_chunks)
 
-    def _check_parent_table_exists(self, engine):
-        with engine.begin() as conn:
-            conn.execute(
-                text("""
-                CREATE TABLE IF NOT EXISTS parent_documents (
-                    id UUID PRIMARY KEY,
-                    content TEXT NOT NULL,
-                    doc_metadata JSONB,
-                    created_at TIMESTAMP DEFAULT NOW()
-                    );
-            """)
-            )
-
-    def _save_parents_to_db(self, engine, parents: list[dict]):
+    def _save_parents_to_db(self, parents: list[dict]):
         if not parents:
             return
 
-        query = text("""
-            INSERT INTO parent_documents (id, content, doc_metadata)
-            VALUES (:id, :content, :doc_metadata)
-            ON CONFLICT (id) DO UPDATE SET
-                content = EXCLUDED.content,
-                doc_metadata = EXCLUDED.doc_metadata,
-                created_at = NOW()
-        """)
-
-        with engine.begin() as conn:
+        with SessionLocal() as session:
+            parent_store = ParentStore(session)
             for parent in parents:
-                conn.execute(
-                    query,
-                    {
-                        "id": parent["chunk_id"],
-                        "content": parent["page_content"],
-                        "doc_metadata": orjson.dumps(parent["metadata"]).decode("utf-8"),
-                    },
+                parent_store.save_parents(
+                    parent_id=uuid6.UUID(parent["chunk_id"]),
+                    content=parent["page_content"],
+                    doc_metadata=parent["metadata"],
                 )
