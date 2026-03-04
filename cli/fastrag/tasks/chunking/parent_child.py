@@ -94,7 +94,7 @@ class ParentChildChunker(Task):
             headers = [p_doc.metadata.get(k, "") for k in ["header_1", "header_2"]]
             title_path = " > ".join(filter(None, headers))
 
-            context_header = f"Context: {title_path}"
+            context_header = title_path
             if metadata["description"]:
                 context_header += f"\nSummary: {metadata['description']}"
 
@@ -149,8 +149,8 @@ class ParentChildChunker(Task):
 
             for i, c_doc in enumerate(child_docs):
                 child_content = c_doc.page_content
-                if title_path and not child_content.startswith("Context:"):
-                    child_content = f"Context: {title_path}\n{child_content}"
+                if title_path:
+                    child_content = f"{title_path}\n{child_content}"
 
                 child_chunks.append(
                     {

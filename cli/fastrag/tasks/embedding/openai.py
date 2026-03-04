@@ -77,7 +77,10 @@ class OpenAISimple(Task):
         if not chunks:
             return json.dumps([]).encode("utf-8")
 
-        documents = [Document(**chunk) for chunk in chunks]
+        documents = [
+            Document(**{**chunk, "page_content": f"search_document: {chunk['page_content']}"})
+            for chunk in chunks
+        ]
         total_vectors = await self.embedder.aembed_documents(documents)
 
         await self.upload_embeddings(documents, total_vectors)

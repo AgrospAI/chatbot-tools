@@ -23,7 +23,7 @@ class ParentDocuments(Base):
 
 @dataclass
 class ParentVectorStore(MilvusVectorStore):
-    supported: ClassVar[str] = "parent-chunk-db"
+    supported: ClassVar[str] = "milvus"
 
     db: Session | None = field(default=None, repr=False)
 
@@ -42,8 +42,11 @@ class ParentVectorStore(MilvusVectorStore):
             collection_name=collection_name,
         )
 
-        if self.db is not None:
-            return self._resolve_parent_documents(child_docs, ParentStore(self.db))
+        # Check if any child doc has a parent_id reference
+        has_parent_refs = any(doc.metadata.get("parent_id") for doc in child_docs)
+
+        if not has_parent_refs:
+            return child_docs
 
         with SessionLocal() as session:
             return self._resolve_parent_documents(child_docs, ParentStore(session))

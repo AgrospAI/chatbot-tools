@@ -77,11 +77,12 @@ async def ask_question(
         chat_id=chat_id, content=req.question, role="user", ip=client_ip, country=country
     )
 
-    query_embedding = await embedding_model.aembed_query(req.question)
+    query_embedding = await embedding_model.aembed_query("search_query: " + req.question)
 
     results = await vector_store.similarity_search(
         query=req.question, query_embedding=query_embedding, k=5
     )
+
     context_parts = [f"Document[{i}]: {doc.page_content}" for i, doc in enumerate(results)]
     context = "\n\n".join(context_parts)
     sources_metadata = [doc.metadata.get("source") for doc in results]
