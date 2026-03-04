@@ -22,7 +22,7 @@ class MilvusVectorStore(IVectorStore):
     user: str | None = None
     password: str | None = None
     embedding_model: Embeddings | None = None
-    dimension: int = 768
+    dimension: int = 4096
 
     # Internal state
     _client: AsyncMilvusClient = field(default=None, repr=False, init=False)
@@ -47,6 +47,7 @@ class MilvusVectorStore(IVectorStore):
     ):
         """Creates collection matching the docs_chatbot schema exactly."""
         collection_name = self._get_collection(collection_name)
+        print("!!" + collection_name)
 
         exists = await client.has_collection(collection_name)
         if not exists:
@@ -115,6 +116,7 @@ class MilvusVectorStore(IVectorStore):
         collection_name: str | None = None,
     ) -> List[Document]:
         collection_name = self._get_collection(collection_name)
+        print("¿¿¿" + str(collection_name))
 
         client = await self._get_client(collection_name)
 

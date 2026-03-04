@@ -4,10 +4,12 @@ resources:
     params:
       host: milvus.agrospai.udl.cat
       port: 19530
-      collection_name: testing
+      collection_name: TW9d9O3pDqgh4qLBs0iEAud
+      # vs4GRJPi4VeWa7cDRzb2Rm4
+      # kU3ujmaApEduQc_P4xcOrxL
       user: ${MILVUS_USER}
       password: ${MILVUS_PASSWORD}
-      dimension: 768
+      dimension: 4096
   llm:
     strategy: openai
     params:
@@ -30,7 +32,7 @@ resources:
           params:
             url: https://agrospai.udl.cat
             workers: 5
-            depth: 1
+            depth: 2
             delay: 0
       parsing:
         - strategy: HtmlParser
@@ -50,17 +52,17 @@ experiments:
     chunking:
       - strategy: ParentChild
         params:
-          model_name: paraphrase-multilingual:latest
+          model_name: qwen3-embedding:8b
           url: https://chat.agrospai.udl.cat/ollama/api/embed
           api_key: ${CHAT_API_KEY}
-      - strategy: SlidingWindow
-        params:
-          chunk_size: 1200
-          chunk_overlap: 200
+      # - strategy: SlidingWindow
+      #   params:
+      #     chunk_size: 1200
+      #     chunk_overlap: 200
     embedding:
       - strategy: OpenAI-Simple
         params:
-          model: nomic-embed-text-v2-moe:latest
+          model: qwen3-embedding:8b
           api_key: ${CHAT_API_KEY}
           url: https://chat.agrospai.udl.cat/ollama/api/embed
     benchmarking:
@@ -76,4 +78,24 @@ experiments:
                 "Smart Contracts",
                 "Blockchain",
               ]
+            - [
+                "What credentials should we prepared for the incorporation in agrospai?",
+                "Credentials",
+            ]
+            - [
+                "How can we automatize the signature?",
+                "Wallet",
+            ]
+            - [
+                "Whats Kit espacios de datos?",
+            ]
+            - [
+                "How to publish an asset in agrospai?",
+            ]    
+            - [
+                "Who is the head investigator from agrospai?",
+            ]
+            - [
+                "Whats the use case Validation of computer vision models applied to crops?",
+            ]
       - strategy: ChunkQuality
