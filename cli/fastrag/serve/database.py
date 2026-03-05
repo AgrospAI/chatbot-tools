@@ -1,41 +1,55 @@
-import time
+import asyncio
+import logging
+from typing import Annotated, AsyncIterator
 
-import psycopg2
-from psycopg2 import OperationalError
-from sqlalchemy import create_engine
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import scoped_session, sessionmaker
+from fastapi import Depends
+from sqlalchemy.ext.asyncio import (
+    AsyncSession,
+    async_sessionmaker,
+    create_async_engine,
+)
+from sqlalchemy.orm import DeclarativeBase
 
 from fastrag.config.settings import settings
 
-sqlalchemy_url = settings.database_url.replace("postgresql://", "postgresql+psycopg2://", 1)
-engine = create_engine(sqlalchemy_url, echo=False, future=True)
+logger = logging.getLogger(__name__)
 
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+sqlalchemy_url = settings.database_url.replace("postgresql://", "postgresql+asyncpg://", 1)
 
-
-def get_db():
-    db = scoped_session(SessionLocal)
-    try:
-        yield db
-    finally:
-        db.close()
+engine = create_async_engine(sqlalchemy_url, echo=False)
+session_factory = async_sessionmaker(bind=engine, expire_on_commit=False, class_=AsyncSession)
 
 
-Base = declarative_base()
+async def get_session(
+    session_factory: Annotated[async_sessionmaker[AsyncSession], Depends(session_factory)],
+) -> AsyncIterator[AsyncSession]:
+    async with session_factory() as session:
+        try:
+            yield session
+        except Exception:
+            await session.rollback()
+            raise
 
 
-def initialize_database():
-    Base.metadata.create_all(bind=engine)
+class Base(DeclarativeBase): ...
 
 
-def wait_database():
+async def initialize_database():
+    async with engine.begin() as connection:
+        await connection.run_sync(Base.metadata.create_all)
+
+
+async def wait_database(
+    timeout: int = 5,
+):
     while True:
         try:
-            conn = psycopg2.connect(settings.database_url)
-            print("Successfully connected to the database.")
-            conn.close()
+            async with engine.connect():
+                logger.info("Successfully connected to the database.")
+                break
+        except KeyboardInterrupt:
             break
-        except OperationalError:
-            print("Database not reachable, waiting 5 seconds...")
-            time.sleep(5)
+        except Exception as e:
+            logger.exception(e)
+            logger.info("Database not reachable, waiting %d seconds...", timeout)
+            await asyncio.sleep(timeout)

@@ -1,5 +1,6 @@
 import uvicorn
 from fastapi import FastAPI
+from fastapi.concurrency import asynccontextmanager
 from fastapi.middleware.cors import CORSMiddleware
 from langchain_core.embeddings import Embeddings
 from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
@@ -15,11 +16,16 @@ from fastrag.serve.rate_limiting import custom_rate_limit_handler, limiter
 from fastrag.stores.store import IVectorStore
 
 
-def create_app(embedding_model: Embeddings, vector_store: IVectorStore, llm: ILLM) -> FastAPI:
-    wait_database()
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    await wait_database()
     initialize_database()
 
-    app = FastAPI()
+    yield
+
+
+def create_app(embedding_model: Embeddings, vector_store: IVectorStore, llm: ILLM) -> FastAPI:
+    app = FastAPI(lifespan=lifespan)
 
     app.state.limiter = limiter
     app.state.embedding_model = embedding_model
