@@ -2,15 +2,14 @@ import { env } from "@/env"
 import { buildMockDashboardMetrics } from "@/lib/metrics/mock"
 import {
   DashboardMetrics,
-  LatencyMetrics,
   MetricState,
   ModelUsageMetrics,
   RateLimitingMetrics,
+  RejectedRequestsMetrics,
   ServiceHealthMetrics,
-  TrafficMetrics,
   TimeToTokenMetrics,
   TokenLengthMetrics,
-  RejectedRequestsMetrics,
+  TrafficMetrics,
 } from "@/lib/metrics/types"
 
 type QueryRangeResponse = {
@@ -39,26 +38,17 @@ type QueryInstantResponse = {
 
 type GetDashboardMetricsOptions = {
   useMock?: boolean
-  rangeHours?: number
-  stepSeconds?: number
+  fromDate?: Date
+  toDate?: Date
+  refresh?: number
 }
-
-const DEFAULT_RANGE_HOURS = 24
-const DEFAULT_STEP_SECONDS = 4 * 60 * 60
 
 const PROM_QUERIES = {
   requestsPerSecond: "sum(rate(http_requests_total[5m]))",
   concurrentRequests: "sum(http_requests_in_flight)",
+  pendingRequests: "sum(http_requests_in_flight)",
   rejectedRequests: "sum(rate(rejected_requests_total[5m]))",
-  requestsPerIp: "sum(rate(requests_per_ip_total[5m]))",
-  latencyP50:
-    "histogram_quantile(0.5, sum(rate(http_request_duration_seconds_bucket[5m])) by (le))",
-  latencyP90:
-    "histogram_quantile(0.9, sum(rate(http_request_duration_seconds_bucket[5m])) by (le))",
-  latencyP99:
-    "histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket[5m])) by (le))",
-  tokensIn: "sum(rate(model_tokens_in_total[5m]))",
-  tokensOut: "sum(rate(model_tokens_out_total[5m]))",
+  requestsPerIp: "avg(rate(requests_per_ip_total[5m]))",
   timeToFirstTokenP50:
     "histogram_quantile(0.5, sum(rate(llm_time_to_first_token_seconds_bucket[5m])) by (le))",
   timeToFirstTokenP90:
@@ -79,6 +69,7 @@ const PROM_QUERIES = {
   errorRate:
     "sum(rate(http_request_errors_total[5m])) / sum(rate(http_requests_total[5m]))",
   liveness: "up",
+  totalRequests: "sum(http_requests_total)",
 }
 
 async function queryRange(
@@ -165,48 +156,9 @@ async function fetchTrafficMetrics(
   end: Date,
   stepSeconds: number,
 ): Promise<TrafficMetrics> {
-  const series = await queryRange(
-    PROM_QUERIES.requestsPerSecond,
-    baseUrl,
-    token,
-    start,
-    end,
-    stepSeconds,
-  )
-
-  const concurrent = await queryInstant(
-    PROM_QUERIES.concurrentRequests,
-    baseUrl,
-    token,
-  )
-
-  return {
-    summary: {
-      requestsPerSec: Number(
-        average(series.map(point => point.value)).toFixed(0),
-      ),
-      concurrent,
-      pending: 0,
-    },
-    series: series.map(point => ({
-      time: formatTimestampToHour(point.timestamp),
-      requests: point.value,
-      concurrent,
-      pending: 0,
-    })),
-  }
-}
-
-async function fetchLatencyMetrics(
-  baseUrl: string,
-  token: string | undefined,
-  start: Date,
-  end: Date,
-  stepSeconds: number,
-): Promise<LatencyMetrics> {
-  const [p50Series, p90Series, p99Series] = await Promise.all([
+  const [requestsSeries, concurrentSeries] = await Promise.all([
     queryRange(
-      PROM_QUERIES.latencyP50,
+      PROM_QUERIES.requestsPerSecond,
       baseUrl,
       token,
       start,
@@ -214,15 +166,7 @@ async function fetchLatencyMetrics(
       stepSeconds,
     ),
     queryRange(
-      PROM_QUERIES.latencyP90,
-      baseUrl,
-      token,
-      start,
-      end,
-      stepSeconds,
-    ),
-    queryRange(
-      PROM_QUERIES.latencyP99,
+      PROM_QUERIES.concurrentRequests,
       baseUrl,
       token,
       start,
@@ -231,20 +175,32 @@ async function fetchLatencyMetrics(
     ),
   ])
 
-  const series = p50Series.map((p50Point, index) => ({
-    time: formatTimestampToHour(p50Point.timestamp),
-    p50: p50Point.value,
-    p90: p90Series[index]?.value ?? p50Point.value,
-    p99: p99Series[index]?.value ?? p50Point.value,
-  }))
+  const concurrent = await queryInstant(
+    PROM_QUERIES.concurrentRequests,
+    baseUrl,
+    token,
+  )
+
+  const pending = await queryInstant(
+    PROM_QUERIES.pendingRequests,
+    baseUrl,
+    token,
+  )
 
   return {
     summary: {
-      p50: Number((p50Series.at(-1)?.value ?? 0).toFixed(0)),
-      p90: Number((p90Series.at(-1)?.value ?? 0).toFixed(0)),
-      p99: Number((p99Series.at(-1)?.value ?? 0).toFixed(0)),
+      requestsPerSec: Number(
+        average(requestsSeries.map(point => point.value)).toFixed(0),
+      ),
+      concurrent,
+      pending,
     },
-    series,
+    series: requestsSeries.map((point, index) => ({
+      time: formatTimestampToHour(point.timestamp),
+      requests: Math.round(point.value),
+      concurrent: Math.round(concurrentSeries[index]?.value ?? concurrent),
+      pending: Math.round(pending),
+    })),
   }
 }
 
@@ -255,21 +211,35 @@ async function fetchModelUsageMetrics(
   end: Date,
   stepSeconds: number,
 ): Promise<ModelUsageMetrics> {
-  const [inputSeries, outputSeries] = await Promise.all([
-    queryRange(PROM_QUERIES.tokensIn, baseUrl, token, start, end, stepSeconds),
-    queryRange(PROM_QUERIES.tokensOut, baseUrl, token, start, end, stepSeconds),
+  const [questionSeries, answerSeries] = await Promise.all([
+    queryRange(
+      PROM_QUERIES.questionLengthAvg,
+      baseUrl,
+      token,
+      start,
+      end,
+      stepSeconds,
+    ),
+    queryRange(
+      PROM_QUERIES.answerLengthAvg,
+      baseUrl,
+      token,
+      start,
+      end,
+      stepSeconds,
+    ),
   ])
 
-  const series = inputSeries.map((point, index) => ({
+  const series = questionSeries.map((point, index) => ({
     time: formatTimestampToHour(point.timestamp),
-    input: point.value,
-    output: outputSeries[index]?.value ?? 0,
+    input: Math.round(point.value),
+    output: Math.round(answerSeries[index]?.value ?? 0),
   }))
 
   return {
     summary: {
-      inputTokens: Number((inputSeries.at(-1)?.value ?? 0).toFixed(0)),
-      outputTokens: Number((outputSeries.at(-1)?.value ?? 0).toFixed(0)),
+      inputTokens: Math.round(questionSeries.at(-1)?.value ?? 0),
+      outputTokens: Math.round(answerSeries.at(-1)?.value ?? 0),
     },
     series,
   }
@@ -282,19 +252,35 @@ async function fetchRateLimitingMetrics(
   end: Date,
   stepSeconds: number,
 ): Promise<RateLimitingMetrics> {
-  const requestsPerIpSeries = await queryRange(
-    PROM_QUERIES.requestsPerIp,
+  const [requestsPerIpSeries, rejectedSeries] = await Promise.all([
+    queryRange(
+      PROM_QUERIES.requestsPerIp,
+      baseUrl,
+      token,
+      start,
+      end,
+      stepSeconds,
+    ),
+    queryRange(
+      PROM_QUERIES.rejectedRequests,
+      baseUrl,
+      token,
+      start,
+      end,
+      stepSeconds,
+    ),
+  ])
+
+  const rejectedCount = await queryInstant(
+    PROM_QUERIES.rejectedRequests,
     baseUrl,
     token,
-    start,
-    end,
-    stepSeconds,
   )
 
-  const series = requestsPerIpSeries.map(point => ({
+  const series = requestsPerIpSeries.map((point, index) => ({
     time: formatTimestampToHour(point.timestamp),
-    allowed: point.value,
-    rejected: 0,
+    allowed: Math.round(point.value),
+    rejected: Math.round(rejectedSeries[index]?.value ?? 0),
   }))
 
   return {
@@ -302,7 +288,7 @@ async function fetchRateLimitingMetrics(
       requestsPerIpAvg: Number(
         average(requestsPerIpSeries.map(p => p.value)).toFixed(0),
       ),
-      rejected: 0,
+      rejected: Math.round(rejectedCount),
     },
     series,
   }
@@ -548,8 +534,9 @@ export async function getDashboardMetrics(
 ): Promise<DashboardMetrics> {
   const {
     useMock = env.METRICS_USE_MOCK,
-    rangeHours = DEFAULT_RANGE_HOURS,
-    stepSeconds = DEFAULT_STEP_SECONDS,
+    fromDate = new Date(Date.now() - 24 * 60 * 60 * 1000),
+    toDate = new Date(),
+    refresh = 0,
   } = options
   const mock = buildMockDashboardMetrics()
 
@@ -558,51 +545,50 @@ export async function getDashboardMetrics(
 
   console.log("Use mock metrics:", useMock)
 
-  if (!useMock && !baseUrl) {
-    const missingConfigError = !baseUrl
-      ? "Prometheus URL not configured. Serving mock data."
-      : undefined
+  if (useMock) {
+    return mock
+  }
+
+  if (!baseUrl) {
+    const missingConfigError =
+      "Prometheus URL not configured. Serving mock data."
 
     return {
       traffic: {
         ...mock.traffic,
-        error: missingConfigError ?? mock.traffic.error,
-      },
-      latency: {
-        ...mock.latency,
-        error: missingConfigError ?? mock.latency.error,
+        error: missingConfigError,
       },
       modelUsage: {
         ...mock.modelUsage,
-        error: missingConfigError ?? mock.modelUsage.error,
+        error: missingConfigError,
       },
       rateLimiting: {
         ...mock.rateLimiting,
-        error: missingConfigError ?? mock.rateLimiting.error,
+        error: missingConfigError,
       },
       serviceHealth: {
         ...mock.serviceHealth,
-        error: missingConfigError ?? mock.serviceHealth.error,
+        error: missingConfigError,
       },
       timeToFirstToken: {
         ...mock.timeToFirstToken,
-        error: missingConfigError ?? mock.timeToFirstToken.error,
+        error: missingConfigError,
       },
       timeToLastToken: {
         ...mock.timeToLastToken,
-        error: missingConfigError ?? mock.timeToLastToken.error,
+        error: missingConfigError,
       },
       questionLength: {
         ...mock.questionLength,
-        error: missingConfigError ?? mock.questionLength.error,
+        error: missingConfigError,
       },
       answerLength: {
         ...mock.answerLength,
-        error: missingConfigError ?? mock.answerLength.error,
+        error: missingConfigError,
       },
       rejectedRequests: {
         ...mock.rejectedRequests,
-        error: missingConfigError ?? mock.rejectedRequests.error,
+        error: missingConfigError,
       },
     }
   }
@@ -611,12 +597,8 @@ export async function getDashboardMetrics(
     return mock
   }
 
-  const end = new Date()
-  const start = new Date(end.getTime() - rangeHours * 60 * 60 * 1000)
-
   const [
     trafficResult,
-    latencyResult,
     modelUsageResult,
     rateLimitingResult,
     serviceHealthResult,
@@ -626,21 +608,19 @@ export async function getDashboardMetrics(
     answerLengthResult,
     rejectedRequestsResult,
   ] = await Promise.allSettled([
-    fetchTrafficMetrics(baseUrl, token, start, end, stepSeconds),
-    fetchLatencyMetrics(baseUrl, token, start, end, stepSeconds),
-    fetchModelUsageMetrics(baseUrl, token, start, end, stepSeconds),
-    fetchRateLimitingMetrics(baseUrl, token, start, end, stepSeconds),
+    fetchTrafficMetrics(baseUrl, token, fromDate, toDate, refresh),
+    fetchModelUsageMetrics(baseUrl, token, fromDate, toDate, refresh),
+    fetchRateLimitingMetrics(baseUrl, token, fromDate, toDate, refresh),
     fetchServiceHealthMetrics(baseUrl, token),
-    fetchTimeToFirstTokenMetrics(baseUrl, token, start, end, stepSeconds),
-    fetchTimeToLastTokenMetrics(baseUrl, token, start, end, stepSeconds),
-    fetchQuestionLengthMetrics(baseUrl, token, start, end, stepSeconds),
-    fetchAnswerLengthMetrics(baseUrl, token, start, end, stepSeconds),
-    fetchRejectedRequestsMetrics(baseUrl, token, start, end, stepSeconds),
+    fetchTimeToFirstTokenMetrics(baseUrl, token, fromDate, toDate, refresh),
+    fetchTimeToLastTokenMetrics(baseUrl, token, fromDate, toDate, refresh),
+    fetchQuestionLengthMetrics(baseUrl, token, fromDate, toDate, refresh),
+    fetchAnswerLengthMetrics(baseUrl, token, fromDate, toDate, refresh),
+    fetchRejectedRequestsMetrics(baseUrl, token, fromDate, toDate, refresh),
   ])
 
   return {
     traffic: fromSettled(trafficResult, mock.traffic),
-    latency: fromSettled(latencyResult, mock.latency),
     modelUsage: fromSettled(modelUsageResult, mock.modelUsage),
     rateLimiting: fromSettled(rateLimitingResult, mock.rateLimiting),
     serviceHealth: fromSettled(serviceHealthResult, mock.serviceHealth),

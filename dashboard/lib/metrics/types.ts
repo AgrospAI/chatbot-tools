@@ -19,22 +19,6 @@ export type TrafficMetrics = {
   series: TrafficPoint[]
 }
 
-export type LatencyPoint = {
-  time: string
-  p50: number
-  p90: number
-  p99: number
-}
-
-export type LatencyMetrics = {
-  summary: {
-    p50: number
-    p90: number
-    p99: number
-  }
-  series: LatencyPoint[]
-}
-
 export type ModelUsagePoint = {
   time: string
   input: number
@@ -113,7 +97,6 @@ export type RejectedRequestsMetrics = {
 
 export type DashboardMetrics = {
   traffic: MetricState<TrafficMetrics>
-  latency: MetricState<LatencyMetrics>
   modelUsage: MetricState<ModelUsageMetrics>
   rateLimiting: MetricState<RateLimitingMetrics>
   serviceHealth: MetricState<ServiceHealthMetrics>

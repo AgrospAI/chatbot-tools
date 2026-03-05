@@ -1,12 +1,13 @@
 import { AppSidebar } from "@/components/app-sidebar"
-import { ThemeProvider } from "@/providers/theme-provider"
-import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
 import ThemeCookieSetter from "@/components/theme-cookie-setter"
+import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
+import { ThemeProvider } from "@/providers/theme-provider"
 import "@/styles/globals.css"
 import type { Metadata } from "next"
 import { NextIntlClientProvider } from "next-intl"
 import { cookies } from "next/dist/server/request/cookies"
 import { Geist, Geist_Mono, Inter } from "next/font/google"
+import { NuqsAdapter } from "nuqs/adapters/next/app"
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" })
 
@@ -38,23 +39,25 @@ export default async function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <NextIntlClientProvider>
-          <SidebarProvider defaultOpen={defaultOpen}>
-            <AppSidebar />
-            <ThemeProvider
-              attribute="class"
-              defaultTheme="system"
-              enableSystem
-              disableTransitionOnChange
-            >
-              <main>
-                <ThemeCookieSetter />
-                <SidebarTrigger />
-                {children}
-              </main>
-            </ThemeProvider>
-          </SidebarProvider>
-        </NextIntlClientProvider>
+        <NuqsAdapter>
+          <NextIntlClientProvider>
+            <SidebarProvider defaultOpen={defaultOpen}>
+              <AppSidebar />
+              <ThemeProvider
+                attribute="class"
+                defaultTheme="system"
+                enableSystem
+                disableTransitionOnChange
+              >
+                <main>
+                  <ThemeCookieSetter />
+                  <SidebarTrigger />
+                  {children}
+                </main>
+              </ThemeProvider>
+            </SidebarProvider>
+          </NextIntlClientProvider>
+        </NuqsAdapter>
       </body>
     </html>
   )
