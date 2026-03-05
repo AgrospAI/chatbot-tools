@@ -1,7 +1,7 @@
-import json
 from dataclasses import InitVar, dataclass
 from typing import ClassVar, override
 
+import orjson
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 
@@ -44,7 +44,7 @@ class OpenAISimple(Task):
             metadata={"step": "embedding", "experiment": self.experiment.hash},
         )
 
-        data = json.loads(await cached.get_content())
+        data = orjson.loads(await cached.get_content())
         if existed and data:
             vectors = []
             documents = []
@@ -72,15 +72,12 @@ class OpenAISimple(Task):
 
     async def embedding_logic(self, entry: CacheEntry) -> bytes:
         raw_json = entry.path.read_text(encoding="utf-8")
-        chunks = json.loads(raw_json)
+        chunks = orjson.loads(raw_json)
 
         if not chunks:
-            return json.dumps([]).encode("utf-8")
+            return orjson.dumps([])
 
-        documents = [
-            Document(**{**chunk, "page_content": f"search_document: {chunk['page_content']}"})
-            for chunk in chunks
-        ]
+        documents = [Document(**chunk) for chunk in chunks]
         total_vectors = await self.embedder.aembed_documents(documents)
 
         await self.upload_embeddings(documents, total_vectors)
@@ -88,7 +85,7 @@ class OpenAISimple(Task):
         for i, chunk in enumerate(chunks):
             chunk["vector"] = total_vectors[i]
 
-        return json.dumps(chunks).encode("utf-8")
+        return orjson.dumps(chunks)
 
     async def upload_embeddings(
         self,
