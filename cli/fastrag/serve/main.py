@@ -9,13 +9,14 @@ from slowapi.errors import RateLimitExceeded
 from fastrag import ILLM
 from fastrag.serve.ask.route import AskRouter
 from fastrag.serve.chats.route import ChatRouter
-from fastrag.serve.database import initialize_database
+from fastrag.serve.database import initialize_database, wait_database
 from fastrag.serve.healthz.route import HealthRouter
 from fastrag.serve.rate_limiting import custom_rate_limit_handler, limiter
 from fastrag.stores.store import IVectorStore
 
 
 def create_app(embedding_model: Embeddings, vector_store: IVectorStore, llm: ILLM) -> FastAPI:
+    wait_database()
     initialize_database()
 
     app = FastAPI()
