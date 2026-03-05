@@ -1,21 +1,28 @@
 resources:
   store:
-    strategy: milvus
+    strategy: parent-child-milvus
     params:
       host: milvus.agrospai.udl.cat
       port: 19530
       collection_name: TW9d9O3pDqgh4qLBs0iEAud
-      # vs4GRJPi4VeWa7cDRzb2Rm4
-      # kU3ujmaApEduQc_P4xcOrxL
       user: ${MILVUS_USER}
       password: ${MILVUS_PASSWORD}
       dimension: 4096
+
+    # strategy: sliding-window-milvus
+    # params:
+    #   host: milvus.agrospai.udl.cat
+    #   port: 19530
+    #   collection_name: MsbvtveMU1dlK5fldrttmdi
+    #   user: ${MILVUS_USER}
+    #   password: ${MILVUS_PASSWORD}
+    #   dimension: 4096
   llm:
     strategy: openai
     params:
       api_key: ${CHAT_API_KEY}
       base_url: https://chat.agrospai.udl.cat/api
-      model_name: gpt-oss:latest
+      model_name: vllm.Qwen/Qwen3-VL-32B-Instruct
       temperature: 0.0
   sources:
     steps:
@@ -32,7 +39,7 @@ resources:
           params:
             url: https://agrospai.udl.cat
             workers: 5
-            depth: 2
+            depth: 5
             delay: 0
       parsing:
         - strategy: HtmlParser
@@ -85,17 +92,5 @@ experiments:
             - [
                 "How can we automatize the signature?",
                 "Wallet",
-            ]
-            - [
-                "Whats Kit espacios de datos?",
-            ]
-            - [
-                "How to publish an asset in agrospai?",
-            ]    
-            - [
-                "Who is the head investigator from agrospai?",
-            ]
-            - [
-                "Whats the use case Validation of computer vision models applied to crops?",
             ]
       - strategy: ChunkQuality

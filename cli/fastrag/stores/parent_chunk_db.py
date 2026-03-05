@@ -23,7 +23,7 @@ class ParentDocuments(Base):
 
 @dataclass
 class ParentVectorStore(MilvusVectorStore):
-    supported: ClassVar[str] = "milvus"
+    supported: ClassVar[str] = "parent-child-milvus"
 
     db: Session | None = field(default=None, repr=False)
 
@@ -41,12 +41,6 @@ class ParentVectorStore(MilvusVectorStore):
             k=k,
             collection_name=collection_name,
         )
-
-        # Check if any child doc has a parent_id reference
-        has_parent_refs = any(doc.metadata.get("parent_id") for doc in child_docs)
-
-        if not has_parent_refs:
-            return child_docs
 
         with SessionLocal() as session:
             return self._resolve_parent_documents(child_docs, ParentStore(session))
@@ -71,21 +65,19 @@ class ParentVectorStore(MilvusVectorStore):
 
             seen_parent_ids.add(parent_id_str)
 
-            try:
-                parent_id = uuid6.UUID(parent_id_str)
-                parent_data = parent_store.get_parents(parent_id)
+            parent_id = uuid6.UUID(parent_id_str)
+            parent_data = parent_store.get_parents(parent_id)
 
-                if parent_data:
-                    result_docs.append(
-                        Document(
-                            page_content=parent_data["content"],
-                            metadata=parent_data["doc_metadata"] or {},
-                        )
+            if parent_data:
+                result_docs.append(
+                    Document(
+                        page_content=parent_data["content"],
+                        metadata=parent_data["doc_metadata"] or {},
                     )
-                else:
-                    result_docs.append(child_doc)
-            except ValueError:
+                )
+            else:
                 result_docs.append(child_doc)
+            result_docs.append(child_doc)
 
         return result_docs
 

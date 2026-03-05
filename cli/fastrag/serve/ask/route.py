@@ -77,7 +77,10 @@ async def ask_question(
         chat_id=chat_id, content=req.question, role="user", ip=client_ip, country=country
     )
 
-    query_embedding = await embedding_model.aembed_query("search_query: " + req.question)
+    query_embedding = await embedding_model.aembed_query(
+        "Instruct: Given a related data space chatbot query, retrieve relevant information that answer the query\nQuery: "
+        + req.question
+    )
 
     results = await vector_store.similarity_search(
         query=req.question, query_embedding=query_embedding, k=5

@@ -14,7 +14,7 @@ from fastrag.stores.store import Document, IVectorStore
 class MilvusVectorStore(IVectorStore):
     """Milvus vector store implementation using Async Milvus Client"""
 
-    supported: ClassVar[str] = "milvus"
+    supported: ClassVar[list[str]] = ["parent-child-milvus", "sliding-window-milvus"]
 
     host: str
     port: int
@@ -47,7 +47,6 @@ class MilvusVectorStore(IVectorStore):
     ):
         """Creates collection matching the docs_chatbot schema exactly."""
         collection_name = self._get_collection(collection_name)
-        print("!!" + collection_name)
 
         exists = await client.has_collection(collection_name)
         if not exists:
@@ -116,8 +115,6 @@ class MilvusVectorStore(IVectorStore):
         collection_name: str | None = None,
     ) -> List[Document]:
         collection_name = self._get_collection(collection_name)
-        print("¿¿¿" + str(collection_name))
-
         client = await self._get_client(collection_name)
 
         res = await client.search(
