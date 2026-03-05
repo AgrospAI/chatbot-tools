@@ -39,7 +39,7 @@ export default function ChatsPage({ params }: { params: { locale: string } }) {
           sort_by: sortBy,
           sort_order: sortOrder,
         })
-        const res = await fetch(`http://localhost:8000/chats?${params}`, {
+        const res = await fetch(`http://localhost:8000/chats/?${params}`, {
           cache: "no-store",
         })
         if (!res.ok) throw new Error("Failed to fetch chats")

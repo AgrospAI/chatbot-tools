@@ -1,11 +1,10 @@
-import logging
 from pathlib import Path
 from typing import Optional
 
 import geoip2.database
 from geoip2.errors import AddressNotFoundError
 
-logger = logging.getLogger(__name__)
+from fastrag.logging import logger
 
 # Path to GeoLite2-Country database file
 # You can download it from https://dev.maxmind.com/geoip/geolite2-free-geolocation-data

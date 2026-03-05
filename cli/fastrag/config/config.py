@@ -14,7 +14,7 @@ from fastrag.plugins import inject
 from fastrag.stores.store import IVectorStore
 
 
-def get_config(path: Path = settings.fastrag_config_path) -> Config:
+def get_config(path: Path = settings.config_path) -> Config:
     config = inject(IConfigLoader, path.suffix).load(path)
     Config.instance = config
 

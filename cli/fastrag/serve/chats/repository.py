@@ -11,7 +11,7 @@ from fastrag.serve.database import get_db
 class ChatRepository:
     db: Session
 
-    def __init__(self, db: Session = Depends(get_db)) -> None:
+    def __init__(self, db: Session) -> None:
         self.db = db
 
     def get_chat_by_id(self, chat_id: UUID) -> Optional[Dict[str, Any]]:

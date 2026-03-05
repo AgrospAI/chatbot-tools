@@ -32,7 +32,7 @@ export function TimeToFirstTokenSection({
 }: TimeToFirstTokenSectionProps) {
   const t = useExtracted()
   const summary = metrics.data?.summary
-  const series = metrics.data?.series ?? []
+  const series = metrics.data?.series || []
   const errorMessage = metrics.error
   return (
     <Card className="border-border">

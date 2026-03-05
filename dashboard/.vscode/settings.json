@@ -4,5 +4,6 @@
   "prettier.configPath": "./prettier.config.js",
   "editor.codeActionsOnSave": {
     "source.organizeImports": "explicit"
-  }
+  },
+  "js/ts.preferences.importModuleSpecifier": "non-relative"
 }

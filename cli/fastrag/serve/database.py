@@ -1,3 +1,7 @@
+import time
+
+import psycopg2
+from psycopg2 import OperationalError
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import scoped_session, sessionmaker
@@ -23,3 +27,15 @@ Base = declarative_base()
 
 def initialize_database():
     Base.metadata.create_all(bind=engine)
+
+
+def wait_database():
+    while True:
+        try:
+            conn = psycopg2.connect(settings.database_url)
+            print("Successfully connected to the database.")
+            conn.close()
+            break
+        except OperationalError:
+            print("Database not reachable, waiting 5 seconds...")
+            time.sleep(5)
