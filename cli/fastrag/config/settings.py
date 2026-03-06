@@ -12,10 +12,10 @@ DEFAULT_CONFIG = resources_dir / "config.yaml"
 
 
 class Settings(BaseSettings):
-    database_url: Optional[str] = Field(None, env="DATABASE_URL")
-    milvus_user: Optional[str] = Field(None, env="MILVUS_USER")
-    milvus_password: Optional[str] = Field(None, env="MILVUS_PASSWORD")
-    chat_api_key: Optional[str] = Field(None, env="CHAT_API_KEY")
+    database_url: str = Field(..., env="DATABASE_URL")
+    milvus_user: str = Field(..., env="MILVUS_USER")
+    milvus_password: str = Field(..., env="MILVUS_PASSWORD")
+    chat_api_key: str = Field(..., env="CHAT_API_KEY")
     plugins_dir: Optional[Path] = Field(None, env="PLUGINS_DIR")
     config_path: Path = Field(DEFAULT_CONFIG, env="CONFIG_PATH")
 
@@ -40,6 +40,7 @@ class Settings(BaseSettings):
 
     model_config = SettingsConfigDict(
         env_file=".env",
+        extra="ignore",
     )
 
 

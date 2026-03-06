@@ -18,12 +18,12 @@ services:
     ports:
       - "8000:8000"
     environment:
-      - FASTRAG_CONFIG_PATH=/app/resources/config.yaml
-      - METRICS_BEARER_TOKEN=${METRICS_BEARER_TOKEN}
-      - MILVUS_USER=${MILVUS_USER}
-      - MILVUS_PASSWORD=${MILVUS_PASSWORD}
-      - CHAT_API_KEY=${CHAT_API_KEY}
-      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/chatbot
+      FASTRAG_CONFIG_PATH: /app/resources/config.yaml
+      METRICS_BEARER_TOKEN: ${METRICS_BEARER_TOKEN}
+      MILVUS_USER: ${MILVUS_USER}
+      MILVUS_PASSWORD: ${MILVUS_PASSWORD}
+      CHAT_API_KEY: ${CHAT_API_KEY}
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/chatbot
     volumes:
       - ./cli/resources:/app/resources
       - ./cli/fastrag:/app/fastrag
@@ -36,6 +36,8 @@ services:
       timeout: 10s
       retries: 3
       start_period: 40s
+    profiles:
+      - api
 
   prometheus:
     image: prom/prometheus:latest
@@ -46,16 +48,16 @@ services:
       - ./prometheus.yml:/etc/prometheus/prometheus.yml
       - prometheus-data:/prometheus
     command:
-      - '--config.file=/etc/prometheus/prometheus.yml'
-      - '--storage.tsdb.path=/prometheus'
-      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
-      - '--web.console.templates=/usr/share/prometheus/consoles'
-      - '--web.enable-lifecycle'
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--web.console.libraries=/usr/share/prometheus/console_libraries"
+      - "--web.console.templates=/usr/share/prometheus/consoles"
+      - "--web.enable-lifecycle"
     networks:
       - monitoring
     restart: unless-stopped
     # depends_on:
-      # - fastrag-api
+    # - fastrag-api
     entrypoint:
       - /bin/sh
       - -c
@@ -81,7 +83,6 @@ services:
     restart: unless-stopped
     depends_on:
       - prometheus
-      # - fastrag-api
 
   postgres:
     image: postgres:16-alpine

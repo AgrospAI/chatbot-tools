@@ -1,3 +1,5 @@
+import asyncio
+
 import uvicorn
 from fastapi import FastAPI
 from fastapi.concurrency import asynccontextmanager
@@ -8,23 +10,44 @@ from prometheus_client import make_asgi_app
 from slowapi.errors import RateLimitExceeded
 
 from fastrag import ILLM
-from fastrag.serve.ask.route import AskRouter
-from fastrag.serve.chats.route import ChatRouter
-from fastrag.serve.database import initialize_database, wait_database
-from fastrag.serve.healthz.route import HealthRouter
+from fastrag.logging import logger
+from fastrag.serve.ask.route import router as ask_router
+from fastrag.serve.chats.route import router as chat_router
+from fastrag.serve.database import Base, engine
+from fastrag.serve.geolocalization.middleware import GeoIPMiddleware
+from fastrag.serve.healthz.route import router as health_router
 from fastrag.serve.rate_limiting import custom_rate_limit_handler, limiter
+from fastrag.serve.telemetry.middleware import MetricsMiddleware
 from fastrag.stores.store import IVectorStore
 
 
 @asynccontextmanager
-async def lifespan(app: FastAPI):
-    await wait_database()
-    initialize_database()
+async def lifespan(_: FastAPI):
+    # Wait database
+    while True:
+        try:
+            async with engine.connect():
+                logger.info("Successfully connected to the database.")
+                break
+        except KeyboardInterrupt:
+            exit(-1)
+        except Exception as e:
+            logger.exception(e)
+            logger.info("Database not reachable, waiting %d seconds...", 5)
+            await asyncio.sleep(5)
+
+    # Initialize the database
+    async with engine.begin() as connection:
+        await connection.run_sync(Base.metadata.create_all)
 
     yield
 
 
-def create_app(embedding_model: Embeddings, vector_store: IVectorStore, llm: ILLM) -> FastAPI:
+def create_app(
+    embedding_model: Embeddings,
+    vector_store: IVectorStore,
+    llm: ILLM,
+) -> FastAPI:
     app = FastAPI(lifespan=lifespan)
 
     app.state.limiter = limiter
@@ -34,6 +57,8 @@ def create_app(embedding_model: Embeddings, vector_store: IVectorStore, llm: ILL
 
     app.add_exception_handler(RateLimitExceeded, custom_rate_limit_handler)
 
+    app.add_middleware(MetricsMiddleware)
+    app.add_middleware(GeoIPMiddleware)
     app.add_middleware(
         CORSMiddleware,
         allow_origins=["*"],
@@ -42,9 +67,9 @@ def create_app(embedding_model: Embeddings, vector_store: IVectorStore, llm: ILL
         allow_headers=["*"],
     )
 
-    app.include_router(HealthRouter)
-    app.include_router(AskRouter)
-    app.include_router(ChatRouter)
+    app.include_router(health_router)
+    app.include_router(ask_router)
+    app.include_router(chat_router)
 
     FastAPIInstrumentor.instrument_app(app)
 

@@ -1,5 +1,4 @@
 from pathlib import Path
-from typing import Optional
 
 import geoip2.database
 from geoip2.errors import AddressNotFoundError
@@ -11,7 +10,7 @@ from fastrag.logging import logger
 GEOIP_DB_PATH = Path(__file__).parent / "GeoLite2-Country.mmdb"
 
 
-def get_country_from_ip(ip_address: str) -> Optional[str]:
+def get_country_from_ip(ip_address: str) -> str | None:
     """
     Get the country code from an IP address using GeoIP2.
 

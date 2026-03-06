@@ -1,52 +1,45 @@
-from typing import List
+from typing import override
 from uuid import UUID
 
-from fastapi import Depends
+from fastrag.serve.chats.interfaces import IChatRepository, IChatService
+from fastrag.serve.chats.model import Chat, ChatMessage
+from fastrag.serve.chats.schemas import ChatMessageCreate
+from fastrag.serve.paging import Page, PageParameters
 
-from fastrag.serve.chats.model import Chat
-from fastrag.serve.chats.repository import ChatRepository, get_chat_repository
 
+class ChatService(IChatService):
+    def __init__(self, repository: IChatRepository) -> None:
+        self.repository = repository
 
-class ChatService:
-    chatRepository: ChatRepository
-
-    def __init__(self, chatRepository: ChatRepository = Depends()):
-        self.chatRepository = chatRepository
-
-    def list(
+    @override
+    async def get_page(
         self,
-        page: int,
-        page_size: int,
-        sort_by: str,
-        sort_order: str,
-    ) -> List[Chat]:
-        return self.chatRepository.get_chats(
-            page=page, page_size=page_size, sort_by=sort_by, sort_order=sort_order
+        page_parameters: PageParameters,
+    ) -> Page[Chat]:
+        return await self.repository.get_chats(
+            page_parameters,
         )
 
-    def get(self, chat_id: UUID) -> Chat | None:
-        return self.chatRepository.get_chat_by_id(chat_id)
-
-    def save_message(
+    @override
+    async def get_chat(
         self,
-        chat_id: str,
-        content: str,
-        role: str,
+        id: UUID,
+        include_messages: bool = False,
+    ) -> Chat | None:
+        return await self.repository.get_chat(
+            id=id,
+            include_messages=include_messages,
+        )
+
+    @override
+    async def save_message(
+        self,
+        data: ChatMessageCreate,
         ip: str | None = None,
         country: str | None = None,
-        sources: List[str] | None = None,
-    ) -> None:
-        self.chatRepository.save_message(
-            chat_id=chat_id,
-            content=content,
-            role=role,
+    ) -> ChatMessage:
+        return await self.repository.save_message(
+            message=data,
             ip=ip,
             country=country,
-            sources=sources,
         )
-
-
-def get_chat_service(
-    chatRepository: ChatRepository = Depends(get_chat_repository),
-) -> ChatService:
-    return ChatService(chatRepository)
