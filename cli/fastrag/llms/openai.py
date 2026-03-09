@@ -1,5 +1,7 @@
-from dataclasses import dataclass, field
+from dataclasses import InitVar, dataclass, field
 from typing import AsyncGenerator, ClassVar, override
+
+from langchain_openai import ChatOpenAI
 
 from fastrag.llms.llm import ILLM
 
@@ -10,49 +12,35 @@ class OpenAILLM(ILLM):
 
     supported: ClassVar[str] = "openai"
 
-    api_key: str = field(repr=False)
-    base_url: str
-    model_name: str
-    temperature: float = 0.0
+    api_key: InitVar[str] = field(repr=False)
+    base_url: InitVar[str]
+    model_name: InitVar[str]
+    temperature: InitVar[float] = 0.0
 
-    def __post_init__(self):
-        """Initialize OpenAI client lazily"""
-        self._llm = None
+    llm: ChatOpenAI = field(init=False)
 
-    def _get_llm(self):
-        """Lazy initialization of OpenAI client"""
-        if self._llm is None:
-            try:
-                from langchain_openai import ChatOpenAI
-            except ImportError:
-                raise ImportError(
-                    "langchain-openai is required for OpenAI support. "
-                    "Install it with: pip install langchain-openai"
-                )
-
-            self._llm = ChatOpenAI(
-                api_key=self.api_key,
-                base_url=self.base_url,
-                model_name=self.model_name,
-                temperature=self.temperature,
-                streaming=True,
-            )
-
-        return self._llm
+    def __post_init__(
+        self,
+        api_key: str,
+        base_url: str,
+        model_name: str,
+        temperature: float,
+    ) -> None:
+        self.llm = ChatOpenAI(
+            openai_api_key=lambda: api_key,
+            openai_api_base=base_url,
+            model_name=model_name,
+            temperature=temperature,
+            streaming=True,
+        )
 
     @override
     async def stream(self, prompt: str) -> AsyncGenerator[str, None]:
-        """Stream responses from OpenAI"""
-        llm = self._get_llm()
-
-        async for chunk in llm.astream(prompt):
+        async for chunk in self.llm.astream(prompt):
             if chunk.content:
                 yield chunk.content
 
     @override
-    async def generate(self, prompt: str) -> str:
-        """Generate a complete response from OpenAI"""
-        llm = self._get_llm()
-
-        response = await llm.ainvoke(prompt)
+    async def generate(self, prompt: str) -> str | list[str | dict]:
+        response = await self.llm.ainvoke(prompt)
         return response.content

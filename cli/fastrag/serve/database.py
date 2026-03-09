@@ -1,7 +1,5 @@
-from typing import Annotated, AsyncIterator
+from typing import AsyncIterator
 
-from fastapi import Depends
-from langchain_community.vectorstores.pgembedding import BaseModel
 from sqlalchemy.ext.asyncio import (
     AsyncSession,
     async_sessionmaker,
@@ -9,7 +7,9 @@ from sqlalchemy.ext.asyncio import (
 )
 from sqlalchemy.orm import DeclarativeBase
 
-from fastrag.config.settings import settings
+from fastrag.config.settings import get_settings
+
+settings = get_settings()
 
 sqlalchemy_url = settings.database_url.replace(
     "postgresql://",

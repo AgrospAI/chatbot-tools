@@ -44,9 +44,9 @@ async def lifespan(_: FastAPI):
 
 
 def create_app(
-    embedding_model: Embeddings,
-    vector_store: IVectorStore,
-    llm: ILLM,
+    embedding_model: Embeddings | None,
+    vector_store: IVectorStore | None,
+    llm: ILLM | None,
 ) -> FastAPI:
     app = FastAPI(lifespan=lifespan)
 
@@ -57,10 +57,14 @@ def create_app(
 
     app.add_exception_handler(RateLimitExceeded, custom_rate_limit_handler)
 
-    app.add_middleware(MetricsMiddleware)
-    app.add_middleware(GeoIPMiddleware)
     app.add_middleware(
-        CORSMiddleware,
+        MetricsMiddleware,  # type: ignore
+    )
+    app.add_middleware(
+        GeoIPMiddleware,  # type: ignore
+    )
+    app.add_middleware(
+        CORSMiddleware,  # type: ignore
         allow_origins=["*"],
         allow_credentials=True,
         allow_methods=["*"],
@@ -83,21 +87,17 @@ def start_server(
     host: str = "0.0.0.0",
     port: int = 8000,
     reload: bool = False,
-    embedding_model: Embeddings = None,
-    vector_store: IVectorStore = None,
-    llm: ILLM = None,
+    embedding_model: Embeddings | None = None,
+    vector_store: IVectorStore | None = None,
+    llm: ILLM | None = None,
 ):
-    if reload:
-        uvicorn.run(
-            "fastrag.serve.main:create_app", host=host, port=port, reload=True, factory=True
-        )
-    else:
-        app = create_app(
-            embedding_model=embedding_model,
-            vector_store=vector_store,
-            llm=llm,
-        )
-        uvicorn.run(app, host=host, port=port)
+    app = create_app(
+        embedding_model=embedding_model,
+        vector_store=vector_store,
+        llm=llm,
+    )
+
+    uvicorn.run(app, host=host, port=port, reload=reload)
 
 
 if __name__ == "__main__":

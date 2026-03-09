@@ -1,3 +1,4 @@
+from functools import cache
 from pathlib import Path
 from typing import Optional
 
@@ -44,4 +45,6 @@ class Settings(BaseSettings):
     )
 
 
-settings = Settings()
+@cache
+def get_settings() -> Settings:
+    return Settings()
