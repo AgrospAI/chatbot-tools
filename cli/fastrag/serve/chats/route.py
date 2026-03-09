@@ -1,28 +1,37 @@
+from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException
 
-from fastrag.serve.chats.service import ChatService, get_chat_service
+from fastrag.serve.chats.deps import get_chat_service
+from fastrag.serve.chats.interfaces import IChatService
+from fastrag.serve.chats.service import ChatService
+from fastrag.serve.paging import PageParameters
 
-ChatRouter = APIRouter(prefix="/chats", tags=["chat"])
+router = APIRouter(prefix="/chats", tags=["chat"])
 
 
-@ChatRouter.get("/")
-def list(
-    page: int = Query(1, ge=1, description="Page number (1-indexed)"),
-    page_size: int = Query(10, ge=1, le=100, description="Number of items per page"),
-    sort_by: str = Query("created_at", description="Field to sort by"),
-    sort_order: str = Query("desc", description="Sort order: 'asc' or 'desc'"),
-    chatService: ChatService = Depends(get_chat_service),
+@router.get("/")
+async def get_chats(
+    chat_service: Annotated[IChatService, Depends(get_chat_service)],
+    pagination: Annotated[PageParameters, Depends()],
 ):
     """Get all chats (no messages) with pagination and sorting."""
-    return chatService.list(page, page_size, sort_by, sort_order)
+
+    return await chat_service.get_page(pagination)
 
 
-@ChatRouter.get("/{chat_id}")
-def get(chat_id: UUID, chatService: ChatService = Depends(get_chat_service)):
-    """Get a specific chat and all its messages."""
-    chat = chatService.get(chat_id)
+@router.get("/{chat_id}")
+async def get(
+    chat_service: Annotated[ChatService, Depends(get_chat_service)],
+    chat_id: UUID,
+    include_messages: bool = True,
+):
+    """Get a specific chat"""
+    chat = await chat_service.get_chat(
+        id=chat_id,
+        include_messages=include_messages,
+    )
 
     if chat is None:
         raise HTTPException(status_code=404, detail="Chat not found")

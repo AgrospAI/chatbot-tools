@@ -1,41 +1,41 @@
-import time
+from typing import Annotated, AsyncIterator
 
-import psycopg2
-from psycopg2 import OperationalError
-from sqlalchemy import create_engine
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import scoped_session, sessionmaker
+from fastapi import Depends
+from langchain_community.vectorstores.pgembedding import BaseModel
+from sqlalchemy.ext.asyncio import (
+    AsyncSession,
+    async_sessionmaker,
+    create_async_engine,
+)
+from sqlalchemy.orm import DeclarativeBase
 
 from fastrag.config.settings import settings
 
-sqlalchemy_url = settings.database_url.replace("postgresql://", "postgresql+psycopg2://", 1)
-engine = create_engine(sqlalchemy_url, echo=False, future=True)
+sqlalchemy_url = settings.database_url.replace(
+    "postgresql://",
+    "postgresql+asyncpg://",
+    1,
+)
 
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+engine = create_async_engine(
+    sqlalchemy_url,
+    echo=False,
+)
 
-
-def get_db():
-    db = scoped_session(SessionLocal)
-    try:
-        yield db
-    finally:
-        db.close()
-
-
-Base = declarative_base()
-
-
-def initialize_database():
-    Base.metadata.create_all(bind=engine)
+session_factory = async_sessionmaker(
+    bind=engine,
+    expire_on_commit=False,
+    class_=AsyncSession,
+)
 
 
-def wait_database():
-    while True:
+async def get_session() -> AsyncIterator[AsyncSession]:
+    async with session_factory() as session:
         try:
-            conn = psycopg2.connect(settings.database_url)
-            print("Successfully connected to the database.")
-            conn.close()
-            break
-        except OperationalError:
-            print("Database not reachable, waiting 5 seconds...")
-            time.sleep(5)
+            yield session
+        except Exception:
+            await session.rollback()
+            raise
+
+
+class Base(DeclarativeBase): ...

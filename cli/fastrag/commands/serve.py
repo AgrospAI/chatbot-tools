@@ -11,6 +11,7 @@ from fastrag.console import console
 from fastrag.context import AppContext
 from fastrag.llms.llm import ILLM
 from fastrag.plugins import inject
+from fastrag.serve.main import start_server
 from fastrag.steps.logs import Loggable
 from fastrag.stores.store import IVectorStore
 
@@ -67,8 +68,6 @@ def serve(
         **config.resources.store.params,
     )
     llm = inject(ILLM, config.resources.llm.strategy, **config.resources.llm.params)
-
-    from fastrag.serve.main import start_server
 
     start_server(
         host=host,

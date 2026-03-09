@@ -1,113 +1,89 @@
-from typing import Any, Dict, List, Optional
+from typing import override
 from uuid import UUID
 
-from fastapi import Depends
-from sqlalchemy.orm import Session
+from sqlalchemy import func, select
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
+from fastrag.serve.chats.interfaces import IChatRepository
 from fastrag.serve.chats.model import Chat, ChatMessage
-from fastrag.serve.database import get_db
+from fastrag.serve.chats.schemas import ChatMessageCreate
+from fastrag.serve.paging import Page, PageParameters
 
 
-class ChatRepository:
-    db: Session
-
-    def __init__(self, db: Session) -> None:
+class ChatRepository(IChatRepository):
+    def __init__(self, db: AsyncSession) -> None:
         self.db = db
 
-    def get_chat_by_id(self, chat_id: UUID) -> Optional[Dict[str, Any]]:
-        chat = self.db.query(Chat).filter(getattr(Chat, "chat_id", None) == chat_id).first()
-        if not chat:
-            return None
+    @override
+    async def get_chat(
+        self,
+        id: UUID,
+        include_messages: bool = True,
+    ) -> Chat | None:
+        query = select(Chat).filter(Chat.chat_id == id)
 
-        messages = (
-            self.db.query(ChatMessage)
-            .filter(getattr(ChatMessage, "chat_id", None) == chat_id)
-            .order_by(getattr(ChatMessage, "created_at", None))
-            .all()
+        if include_messages:
+            query = query.options(selectinload(Chat.messages))
+
+        result = await self.db.execute(query)
+        return result.scalars().first()
+
+    @override
+    async def save_message(
+        self,
+        message: ChatMessageCreate,
+        ip: str | None = None,
+        country: str | None = None,
+    ) -> ChatMessage:
+        result = await self.db.execute(
+            select(Chat).filter(Chat.chat_id == message.chat_id).limit(1)
         )
 
-        return {
-            "chat_id": str(getattr(chat, "chat_id", chat_id)),
-            "created_at": getattr(chat, "created_at", None),
-            "ip": getattr(chat, "ip", None),
-            "country": getattr(chat, "country", None),
-            "messages": [
-                {
-                    "message_id": getattr(msg, "message_id", None),
-                    "chat_id": str(getattr(msg, "chat_id", chat_id)),
-                    "role": getattr(msg, "role", None),
-                    "content": getattr(msg, "content", None),
-                    "created_at": getattr(msg, "created_at", None),
-                    "sources": getattr(msg, "sources", None),
-                }
-                for msg in messages
-            ],
-        }
-
-    def save_message(
-        self,
-        chat_id: UUID,
-        content: str,
-        role: str,
-        sources: Optional[List[str]] = None,
-        ip: Optional[str] = None,
-        country: Optional[str] = None,
-    ) -> None:
-        chat = self.db.query(Chat).filter(getattr(Chat, "chat_id", None) == chat_id).first()
+        chat = result.scalars().first()
         if not chat:
-            chat = Chat()
-            if hasattr(chat, "chat_id"):
-                chat.chat_id = chat_id
-            if hasattr(chat, "ip"):
-                chat.ip = ip
-            if hasattr(chat, "country"):
-                chat.country = country
+            chat = Chat(
+                chat_id=message.chat_id,
+                ip=ip,
+                country=country,
+            )
             self.db.add(chat)
-            self.db.flush()
-        chat_msg = ChatMessage()
-        if hasattr(chat_msg, "chat_id"):
-            chat_msg.chat_id = chat_id
-        if hasattr(chat_msg, "content"):
-            chat_msg.content = content
-        if hasattr(chat_msg, "role"):
-            chat_msg.role = role
-        if hasattr(chat_msg, "sources"):
-            chat_msg.sources = sources
+            await self.db.flush()
+
+        chat_msg = ChatMessage(
+            chat_id=message.chat_id,
+            content=message.content,
+            role=message.role,
+            sources=message.sources,
+        )
         self.db.add(chat_msg)
-        self.db.commit()
+        await self.db.commit()
+        await self.db.refresh(chat_msg)
 
-    def get_chats(
+        return chat_msg
+
+    @override
+    async def get_chats(
         self,
-        page: int = 1,
-        page_size: int = 10,
-        sort_by: str = "created_at",
-        sort_order: str = "desc",
-    ) -> Dict[str, Any]:
-        query = self.db.query(Chat)
-        sort_column = getattr(Chat, sort_by, getattr(Chat, "created_at", None))
-        if sort_order == "desc" and hasattr(sort_column, "desc"):
-            query = query.order_by(sort_column.desc())
-        elif hasattr(sort_column, "asc"):
-            query = query.order_by(sort_column.asc())
-        total_count = query.count()
-        offset = (page - 1) * page_size
-        chats = query.offset(offset).limit(page_size).all()
-        return {
-            "items": [
-                {
-                    "ip": getattr(chat, "ip", None),
-                    "country": getattr(chat, "country", None),
-                    "chat_id": str(getattr(chat, "chat_id", None)),
-                    "created_at": getattr(chat, "created_at", None),
-                }
-                for chat in chats
-            ],
-            "total": total_count,
-            "page": page,
-            "page_size": page_size,
-            "total_pages": (total_count + page_size - 1) // page_size,
-        }
+        pagination: PageParameters,
+    ) -> Page[Chat]:
+        sort_column = getattr(
+            Chat,
+            pagination.sort_by,
+            Chat.created_at,
+        )
+        sort = sort_column.desc() if pagination.sort_order == "desc" else sort_column.asc()
 
+        total_count = await self.db.scalar(select(func.count()).select_from(Chat))
 
-def get_chat_repository(db: Session = Depends(get_db)) -> ChatRepository:
-    return ChatRepository(db)
+        result = await self.db.execute(
+            select(Chat).order_by(sort).offset(pagination.offset).limit(pagination.page_size)
+        )
+        chats = result.scalars().all()
+
+        return Page(
+            items=chats,
+            total=total_count,
+            page=pagination.page,
+            page_size=pagination.page_size,
+        )
