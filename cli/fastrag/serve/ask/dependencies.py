@@ -1,11 +1,11 @@
 from fastapi import Request
-from langchain_core.embeddings import Embeddings
 
+from fastrag.embeddings import IEmbeddings
 from fastrag.llms import ILLM
 from fastrag.stores import IVectorStore
 
 
-def get_embedding_model(request: Request) -> Embeddings:
+def get_embedding_model(request: Request) -> IEmbeddings:
     return request.app.state.embedding_model
 
 

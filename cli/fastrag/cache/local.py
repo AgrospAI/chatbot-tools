@@ -5,7 +5,7 @@ import json
 import shutil
 from dataclasses import InitVar, dataclass, field
 from pathlib import Path
-from typing import ClassVar, Iterable, override
+from typing import ClassVar, Iterable, cast, override
 
 import aiofiles
 
@@ -107,11 +107,12 @@ class LocalCache(ICache):
 
             return True, entry
 
-        result = contents()
-        if inspect.isawaitable(result):
-            data = await result
-        else:
-            data = result
+        data: bytes = b""
+        if inspect.isawaitable(contents):
+            data = cast(bytes, await contents)
+        elif callable(contents):
+            result = contents()
+            data = cast(bytes, await result if inspect.isawaitable(result) else result)
 
         return False, await self.create(uri, data, metadata)
 

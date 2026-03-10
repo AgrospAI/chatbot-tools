@@ -17,6 +17,11 @@ class IStep(IStepCommon, ABC):
     tasks: list[ITask] = field(repr=False)
 
     @property
+    def experiment_hash(self) -> str:
+        assert self._experiment
+        return self._experiment.hash
+
+    @property
     def experiment(self) -> Experiment | None:
         return self._experiment
 

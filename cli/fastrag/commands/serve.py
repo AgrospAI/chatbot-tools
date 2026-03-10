@@ -1,14 +1,12 @@
 from typing import Annotated
 
 import typer
-from langchain_core.embeddings import Embeddings
 from rich.panel import Panel
 
-from fastrag import (
-    version,
-)
+from fastrag import version
 from fastrag.console import console
 from fastrag.context import AppContext
+from fastrag.embeddings import IEmbeddings
 from fastrag.llms.llm import ILLM
 from fastrag.plugins import inject
 from fastrag.serve.main import start_server
@@ -60,14 +58,25 @@ def serve(
         raise ValueError("Embedding configuration is required for vector store")
 
     embedding_config = config.experiments.steps["embedding"][0]
-    embedding_model = inject(Embeddings, embedding_config.strategy, **embedding_config.params)
+
+    embedding_model = inject(
+        IEmbeddings,
+        embedding_config.strategy,
+        **embedding_config.params,
+    )
+
     vector_store = inject(
         IVectorStore,
         config.resources.store.strategy,
         embedding_model=embedding_model,
         **config.resources.store.params,
     )
-    llm = inject(ILLM, config.resources.llm.strategy, **config.resources.llm.params)
+
+    llm = inject(
+        ILLM,
+        config.resources.llm.strategy,
+        **config.resources.llm.params,
+    )
 
     start_server(
         host=host,

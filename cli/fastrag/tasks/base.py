@@ -53,6 +53,11 @@ class Task[T](ITask, ABC):
     results: T | None = field(default=None, init=False, repr=False)
 
     @property
+    def experiment_hash(self) -> str:
+        assert self.experiment, "Experiment not present"
+        return self.experiment.hash
+
+    @property
     def cache(self) -> ICache:
         return self.resources.cache
 

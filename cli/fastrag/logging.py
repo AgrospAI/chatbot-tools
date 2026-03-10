@@ -11,3 +11,6 @@ def configure_logging(level: str | int = logging.INFO) -> None:
 configure_logging()
 
 logger = logging.getLogger(__name__)
+
+
+logging.getLogger("httpx").setLevel("WARN")

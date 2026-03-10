@@ -19,5 +19,5 @@ class BenchmarkingStep(IStep):
         score = round(sum(task.results for task in self.tasks) / len(self.tasks), 3)
         self.experiment.score = score
         self.logger.log(
-            Event(Event.Type.COMPLETED, f"Experiment {self.experiment.hash} score: {score}")
+            Event(Event.Type.COMPLETED, f"Experiment {self.experiment_hash} score: {score}")
         )

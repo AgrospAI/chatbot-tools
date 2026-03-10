@@ -2,12 +2,11 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from langchain_core.embeddings import Embeddings
-
 from fastrag.cache.cache import ICache
 from fastrag.config.loaders.loader import IConfigLoader
 from fastrag.config.models import Config
 from fastrag.config.settings import get_settings
+from fastrag.embeddings import IEmbeddings
 from fastrag.helpers.resources import RuntimeResources
 from fastrag.llms.llm import ILLM
 from fastrag.plugins import inject
@@ -28,7 +27,7 @@ def get_resources(config: Config) -> RuntimeResources:
     embedding_config = config.experiments.steps["embedding"][0]
 
     embedding_model = inject(
-        Embeddings,
+        IEmbeddings,
         embedding_config.strategy,
         **embedding_config.params,
     )

@@ -1,12 +1,12 @@
 import os
 from dataclasses import dataclass, field
-from typing import ClassVar, List, override
+from typing import ClassVar, Sequence, override
 
 os.environ["GRPC_VERBOSITY"] = "ERROR"
 os.environ["GRPC_DNS_RESOLVER"] = "native"
-from langchain_core.embeddings import Embeddings
 from pymilvus import AsyncMilvusClient, DataType
 
+from fastrag.embeddings import IEmbeddings
 from fastrag.stores.store import Document, IVectorStore
 
 
@@ -19,17 +19,16 @@ class MilvusVectorStore(IVectorStore):
     host: str
     port: int
     collection_name: str
+    embedding_model: IEmbeddings
     user: str | None = None
     password: str | None = None
-    embedding_model: Embeddings | None = None
-    dimension: int = 768
 
     # Internal state
-    _client: AsyncMilvusClient = field(default=None, repr=False, init=False)
+    _client: AsyncMilvusClient = field(repr=False, init=False)
 
     async def _get_client(self, collection_name: str | None = None) -> AsyncMilvusClient:
         """Initialize the true Async Milvus Client"""
-        if self._client is None:
+        if getattr(self, "_client", None) is None:
             # MilvusClientAsync expects a uri string
             uri = f"http://{self.host}:{self.port}"
             token = f"{self.user}:{self.password}" if self.user else ""
@@ -57,18 +56,44 @@ class MilvusVectorStore(IVectorStore):
 
             # 2. Add Fields exactly as defined in your JSON
             # Field 101: pk (Primary Key)
-            schema.add_field(field_name="pk", datatype=DataType.INT64, is_primary=True)
+            schema.add_field(
+                field_name="pk",
+                datatype=DataType.INT64,
+                is_primary=True,
+            )
+
+            schema.add_field(
+                field_name="chunk_id",
+                datatype=DataType.VARCHAR,
+                max_length=256,
+            )
+
+            schema.add_field(
+                field_name="parent_id",
+                datatype=DataType.VARCHAR,
+                max_length=256,
+                nullable=True,
+            )
 
             # Field 100: text
-            schema.add_field(field_name="text", datatype=DataType.VARCHAR, max_length=65535)
+            schema.add_field(
+                field_name="page_content",
+                datatype=DataType.VARCHAR,
+                max_length=65535,
+            )
 
             # Field 102: vector
             schema.add_field(
-                field_name="vector", datatype=DataType.FLOAT_VECTOR, dim=self.dimension
+                field_name="vector",
+                datatype=DataType.FLOAT_VECTOR,
+                dim=await self.embedding_model.get_dimension(),
             )
 
             # Field 103: source
-            schema.add_field(field_name="metadata", datatype=DataType.JSON)
+            schema.add_field(
+                field_name="metadata",
+                datatype=DataType.JSON,
+            )
 
             # 3. Setup Index Parameters using AUTOINDEX and L2 metric
             index_params = client.prepare_index_params()
@@ -90,30 +115,42 @@ class MilvusVectorStore(IVectorStore):
     @override
     async def add_documents(
         self,
-        documents: List[Document],
-        embeddings: List[List[float]],
+        documents: Sequence[Document],
+        embeddings: list[list[float]],
         collection_name: str | None = None,
-    ) -> List[str]:
+    ) -> list[str]:
+        assert documents
+        assert isinstance(documents[0], Document)
+
         collection_name = self._get_collection(collection_name)
         client = await self._get_client(collection_name)
 
         # Data mapping for Milvus
         data = [
-            {"vector": embeddings[i], "text": doc.page_content, "metadata": doc.metadata}
+            {
+                "vector": embeddings[i],
+                "page_content": doc.page_content,
+                "metadata": doc.metadata,
+                "chunk_id": doc.chunk_id,
+                "parent_id": doc.parent_id,
+            }
             for i, doc in enumerate(documents)
         ]
 
-        res = await client.insert(collection_name=collection_name, data=data)
+        res = await client.insert(
+            collection_name=collection_name,
+            data=data,
+        )
         return [str(i) for i in res.get("ids", [])]
 
     @override
     async def similarity_search(
         self,
         query: str,
-        query_embedding: List[float],
+        query_embedding: list[float],
         k: int = 5,
         collection_name: str | None = None,
-    ) -> List[Document]:
+    ) -> list[Document]:
         collection_name = self._get_collection(collection_name)
 
         client = await self._get_client(collection_name)
@@ -124,18 +161,19 @@ class MilvusVectorStore(IVectorStore):
             data=[query_embedding],
             search_params={"metric_type": "L2", "params": {}},
             limit=k,
-            output_fields=["text", "metadata"],
+            output_fields=[
+                "chunk_id",
+                "parent_id",
+                "page_content",
+                "metadata",
+            ],
         )
 
         docs = []
         if res and len(res) > 0:
             for hit in res[0]:
                 entity = hit.get("entity", {})
-                docs.append(
-                    Document(
-                        page_content=entity.get("text", ""), metadata=entity.get("metadata", {})
-                    )
-                )
+                docs.append(Document(**entity))
         return docs
 
     @override
@@ -155,9 +193,9 @@ class MilvusVectorStore(IVectorStore):
             await client.drop_collection(collection_name)
 
     @override
-    async def embed_query(self, text: str) -> List[float]:
+    async def embed_query(self, text: str) -> list[float]:
         """Required implementation: Delegates to the assigned embedding model"""
-        return await self.embedding_model.aembed_query(text)
+        return await self.embedding_model.embed_query(text)
 
     def _get_collection(self, collection_name: str | None) -> str:
         return collection_name if collection_name else self.collection_name

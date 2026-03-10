@@ -4,12 +4,12 @@ import uvicorn
 from fastapi import FastAPI
 from fastapi.concurrency import asynccontextmanager
 from fastapi.middleware.cors import CORSMiddleware
-from langchain_core.embeddings import Embeddings
 from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
 from prometheus_client import make_asgi_app
 from slowapi.errors import RateLimitExceeded
 
 from fastrag import ILLM
+from fastrag.embeddings import IEmbeddings
 from fastrag.logging import logger
 from fastrag.serve.ask.route import router as ask_router
 from fastrag.serve.chats.route import router as chat_router
@@ -44,7 +44,7 @@ async def lifespan(_: FastAPI):
 
 
 def create_app(
-    embedding_model: Embeddings | None,
+    embedding_model: IEmbeddings | None,
     vector_store: IVectorStore | None,
     llm: ILLM | None,
 ) -> FastAPI:
@@ -87,7 +87,7 @@ def start_server(
     host: str = "0.0.0.0",
     port: int = 8000,
     reload: bool = False,
-    embedding_model: Embeddings | None = None,
+    embedding_model: IEmbeddings | None = None,
     vector_store: IVectorStore | None = None,
     llm: ILLM | None = None,
 ):

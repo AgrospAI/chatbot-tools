@@ -6,7 +6,7 @@ from fastrag.cache.entry import CacheEntry
 from fastrag.cache.filters import Filter
 from fastrag.plugins import PluginBase
 
-ContentsCallable = Callable[[], bytes | Awaitable[bytes]]
+type ContentsCallable = Callable[[], bytes | Awaitable[bytes]] | Awaitable[bytes]
 
 
 @dataclass

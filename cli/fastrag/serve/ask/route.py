@@ -1,6 +1,6 @@
 import time
 import uuid
-from typing import Annotated, AsyncIterable
+from typing import Annotated
 
 from fastapi import APIRouter, BackgroundTasks, Depends, Request
 from fastapi.responses import StreamingResponse
@@ -57,7 +57,7 @@ async def ask_question(
         answer_chunks: list[str] = []
         context = await response_builder.get_context(req.question)
 
-        logger.debug("Context", context)
+        logger.info("Context %s", context)
 
         yield QuestionResponse(type="sources", data=context.sources)
 

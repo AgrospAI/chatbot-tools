@@ -1,15 +1,14 @@
 from dataclasses import dataclass
 from typing import override
 
-from langchain_core.embeddings import Embeddings
-
+from fastrag.embeddings import IEmbeddings
 from fastrag.serve.prompt_builder.interfaces import Context, IPromptBuilder
 from fastrag.stores import IVectorStore
 
 
 @dataclass
 class PromptBuilder(IPromptBuilder):
-    embedding_model: Embeddings
+    embedding_model: IEmbeddings
     vector_store: IVectorStore
 
     @override
@@ -41,7 +40,7 @@ class PromptBuilder(IPromptBuilder):
         self,
         question: str,
     ) -> Context:
-        query_embedding = await self.embedding_model.aembed_query(
+        query_embedding = await self.embedding_model.embed_query(
             question,
         )
 
@@ -55,6 +54,10 @@ class PromptBuilder(IPromptBuilder):
         context = "\n\n".join(
             f"Document[{i}]: {doc.page_content}" for i, doc in enumerate(results)
         )
+        print(f"Found {len(sources)} sources")
+        print(results)
+        print(sources)
+        print(context)
 
         return Context(
             sources=sources,
