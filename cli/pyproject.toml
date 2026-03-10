@@ -45,6 +45,7 @@ dependencies = [
     "prometheus-client>=0.24.1",
     "asyncpg>=0.31.0",
     "sqlalchemy[asyncio]>=2.0.45",
+    "uuid6>=2025.0.1",
 ]
 
 [project.scripts]
@@ -56,6 +57,9 @@ build-backend = "hatchling.build"
 
 [dependency-groups]
 dev = ["ruff>=0.14.7"]
+
+[tool.mypy]
+plugins = ["pydantic.mypy"]
 
 [tool.ruff]
 line-length = 96

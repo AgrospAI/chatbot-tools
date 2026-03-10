@@ -1,6 +1,6 @@
 resources:
   store:
-    strategy: milvus
+    strategy: parent-child-milvus
     params:
       host: milvus.agrospai.udl.cat
       port: 19530
@@ -12,7 +12,7 @@ resources:
     params:
       api_key: ${CHAT_API_KEY}
       base_url: https://chat.agrospai.udl.cat/api
-      model_name: gpt-oss:latest
+      model_name: vllm.Qwen/Qwen3-VL-32B-Instruct
       temperature: 0.0
   sources:
     steps:
@@ -55,7 +55,7 @@ experiments:
     chunking:
       - strategy: ParentChild
         params:
-          model_name: paraphrase-multilingual:latest
+          model_name: qwen3-embedding:8b
           url: https://chat.agrospai.udl.cat/ollama/api/embed
           api_key: ${CHAT_API_KEY}
       # - strategy: SlidingWindow
@@ -83,4 +83,12 @@ experiments:
                 "Smart Contracts",
                 "Blockchain",
               ]
+            - [
+                "What credentials should we prepared for the incorporation in agrospai?",
+                "Credentials",
+            ]
+            - [
+                "How can we automatize the signature?",
+                "Wallet",
+            ]
       - strategy: ChunkQuality

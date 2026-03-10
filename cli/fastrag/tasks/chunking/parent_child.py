@@ -1,5 +1,6 @@
+# type: ignore
+
 import asyncio
-import uuid
 from dataclasses import InitVar, dataclass, field
 from typing import ClassVar, Literal, override
 
@@ -13,6 +14,8 @@ from fastrag.cache.filters import Filter, MetadataFilter
 from fastrag.embeddings import IEmbeddings
 from fastrag.events import Event
 from fastrag.plugins import inject
+from fastrag.serve.database import SessionLocal, initialize_database
+from fastrag.stores.parent_chunk_db import ParentStore
 from fastrag.tasks.base import Run, Task
 from fastrag.tasks.chunking.markdown_utils import clean_markdown, normalize_metadata
 
@@ -31,6 +34,7 @@ class ParentChildChunker(Task):
     _semaphore: asyncio.Semaphore = field(init=False, repr=False, hash=False)
 
     def __post_init__(self, url: str, model_name: str, api_key: str, max_concurrent: int):
+        initialize_database()
         self.model = inject(
             IEmbeddings,
             "openai-simple",
@@ -81,28 +85,28 @@ class ParentChildChunker(Task):
             headers_to_split_on=[("#", "header_1"), ("##", "header_2")]
         )
 
-        all_chunks = []
+        parent_chunks = []
+        child_chunks = []
         parent_docs = parent_splitter.split_text(text)
 
         for p_doc in parent_docs:
-            headers = [p_doc.metadata.get(k, "") for k in ["header_1", "header_2", "header_3"]]
+            headers = [p_doc.metadata.get(k, "") for k in ["header_1", "header_2"]]
             title_path = " > ".join(filter(None, headers))
 
-            context_header = f"Context: {title_path}"
+            context_header = title_path
             if metadata["description"]:
                 context_header += f"\nSummary: {metadata['description']}"
 
             parent_content = f"{context_header}\n\n{p_doc.page_content}"
-            parent_id = str(uuid.uuid4())
+            parent_id = str(uuid6.uuid6())
 
             final_metadata = {
                 **metadata,
                 **p_doc.metadata,
-                "chunk_type": "parent",
                 "title_path": title_path,
             }
 
-            all_chunks.append(
+            parent_chunks.append(
                 {
                     "chunk_id": parent_id,
                     "page_content": parent_content,
@@ -112,23 +116,25 @@ class ParentChildChunker(Task):
             )
 
             if "| ---" in p_doc.page_content or "```" in p_doc.page_content:
-                all_chunks.append(
+                child_chunks.append(
                     {
-                        "chunk_id": str(uuid.uuid4()),
+                        "chunk_id": str(uuid6.uuid6()),
                         "page_content": parent_content,
                         "metadata": {
                             **final_metadata,
-                            "chunk_type": "child",
+                            "parent_id": parent_id,
                         },
                         "parent_id": parent_id,
                     }
                 )
+
                 continue
 
             try:
                 child_splitter = SemanticChunker(
                     embeddings=self.model,
-                    breakpoint_threshold_type="percentile",
+                    breakpoint_threshold_type="standard_deviation",
+                    breakpoint_threshold_amount=1.2,
                 )
 
                 async with self._semaphore:
@@ -144,20 +150,34 @@ class ParentChildChunker(Task):
 
             for i, c_doc in enumerate(child_docs):
                 child_content = c_doc.page_content
-                if title_path and not child_content.startswith("Context:"):
-                    child_content = f"Context: {title_path}\n{child_content}"
+                if title_path:
+                    child_content = f"{title_path}\n{child_content}"
 
-                all_chunks.append(
+                child_chunks.append(
                     {
-                        "chunk_id": str(uuid.uuid4()),
+                        "chunk_id": str(uuid6.uuid6()),
                         "page_content": child_content,
                         "metadata": {
                             **final_metadata,
-                            "chunk_type": "child",
                             "child_index": i,
+                            "parent_id": parent_id,
                         },
                         "parent_id": parent_id,
                     }
                 )
 
-        return orjson.dumps(all_chunks)
+        self._save_parents_to_db(parent_chunks)
+        return orjson.dumps(child_chunks)
+
+    def _save_parents_to_db(self, parents: list[dict]):
+        if not parents:
+            return
+
+        with SessionLocal() as session:
+            parent_store = ParentStore(session)
+            for parent in parents:
+                parent_store.save_parents(
+                    parent_id=uuid6.UUID(parent["chunk_id"]),
+                    content=parent["page_content"],
+                    doc_metadata=parent["metadata"],
+                )

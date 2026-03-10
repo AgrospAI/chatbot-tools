@@ -68,7 +68,7 @@ def score_answer(question: Question) -> float:
 
 def build_prompt(context: str, question: str) -> str:
     """
-    Construye el prompt RAG para el LLM.
+    Build prompt for LLM.
     """
     return f"""
     You are a helpful assistant and expert in data spaces.
@@ -107,7 +107,7 @@ class QuerySetBenchmarking(Task):
         async def process_question(question: Question) -> Question:
             query_embedding = await self.store.embed_query(question.question)
 
-            # Search for similar documents
+            # returns parent docs automatically if strategy is "parent-chunk-db"
             results = await self.store.similarity_search(
                 query=question.question,
                 query_embedding=query_embedding,
