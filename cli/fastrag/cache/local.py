@@ -78,7 +78,7 @@ class LocalCache(ICache):
         digest = hashlib.sha256(uri.encode()).hexdigest()
         entry = CacheEntry(
             path=self._paths.data / digest,
-            metadata=metadata,
+            metadata=metadata or {},
         )
 
         async with self._lock:
@@ -96,11 +96,20 @@ class LocalCache(ICache):
         metadata: dict | None = None,
     ) -> tuple[bool, CacheEntry]:
         entry = await self.get(uri)
-        if entry:
-            # If metadata.experiment is present, update it !
+        if entry and metadata:
+            # If metadata.experiment is present, update it!
             experiment = metadata.get("experiment", None)
-            if experiment and experiment is not entry.metadata["experiment"]:
+
+            if not experiment:
+                return True, entry
+
+            current_metadata = entry.metadata or {}
+            if experiment != current_metadata.get("experiment"):
                 cached = self.metadata[uri]
+
+                if cached.metadata is None:
+                    cached.metadata = {}
+
                 cached.metadata["experiment"] = experiment
                 self.metadata[uri] = cached
                 self._dirty = True
