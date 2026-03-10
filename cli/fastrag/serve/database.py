@@ -1,5 +1,6 @@
 from typing import AsyncIterator
 
+from fastapi.concurrency import asynccontextmanager
 from sqlalchemy.ext.asyncio import (
     AsyncSession,
     async_sessionmaker,
@@ -29,6 +30,7 @@ session_factory = async_sessionmaker(
 )
 
 
+@asynccontextmanager
 async def get_session() -> AsyncIterator[AsyncSession]:
     async with session_factory() as session:
         try:
@@ -39,3 +41,8 @@ async def get_session() -> AsyncIterator[AsyncSession]:
 
 
 class Base(DeclarativeBase): ...
+
+
+async def initialize_database() -> None:
+    async with engine.begin() as connection:
+        await connection.run_sync(Base.metadata.create_all)

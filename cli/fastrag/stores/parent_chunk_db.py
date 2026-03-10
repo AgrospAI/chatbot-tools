@@ -2,11 +2,12 @@ from dataclasses import dataclass, field
 from typing import ClassVar, List, override
 
 import uuid6
-from sqlalchemy import Text
+from sqlalchemy import Text, select
 from sqlalchemy.dialects.postgresql import JSONB, UUID
-from sqlalchemy.orm import Mapped, Session, mapped_column
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import Mapped, mapped_column
 
-from fastrag.serve.database import Base, SessionLocal
+from fastrag.serve.database import Base, get_session
 from fastrag.stores.milvus import MilvusVectorStore
 from fastrag.stores.store import Document
 
@@ -25,7 +26,7 @@ class ParentDocuments(Base):
 class ParentVectorStore(MilvusVectorStore):
     supported: ClassVar[str] = "parent-child-milvus"
 
-    db: Session | None = field(default=None, repr=False)
+    db: AsyncSession | None = field(default=None, repr=False)
 
     @override
     async def similarity_search(
@@ -42,10 +43,10 @@ class ParentVectorStore(MilvusVectorStore):
             collection_name=collection_name,
         )
 
-        with SessionLocal() as session:
-            return self._resolve_parent_documents(child_docs, ParentStore(session))
+        async with get_session() as session:
+            return await self._resolve_parent_documents(child_docs, ParentStore(session))
 
-    def _resolve_parent_documents(
+    async def _resolve_parent_documents(
         self,
         child_docs: List[Document],
         parent_store: "ParentStore",
@@ -66,13 +67,15 @@ class ParentVectorStore(MilvusVectorStore):
             seen_parent_ids.add(parent_id_str)
 
             parent_id = uuid6.UUID(parent_id_str)
-            parent_data = parent_store.get_parents(parent_id)
+            parent_data = await parent_store.get_parents(parent_id)
 
             if parent_data:
                 result_docs.append(
                     Document(
+                        chunk_id=child_doc.chunk_id,
                         page_content=parent_data["content"],
                         metadata=parent_data["doc_metadata"] or {},
+                        parent_id=str(parent_id),
                     )
                 )
             else:
@@ -82,12 +85,17 @@ class ParentVectorStore(MilvusVectorStore):
         return result_docs
 
 
+@dataclass(frozen=True)
 class ParentStore:
-    def __init__(self, db: Session) -> None:
-        self.db = db
+    db: AsyncSession
 
-    def save_parents(self, parent_id: uuid6.UUID, content: str, doc_metadata: dict) -> None:
-        chunk = self.db.get(ParentDocuments, parent_id)
+    async def save_parents(
+        self,
+        parent_id: uuid6.UUID,
+        content: str,
+        doc_metadata: dict,
+    ) -> None:
+        chunk: ParentDocuments | None = await self.db.get(ParentDocuments, parent_id)
 
         if not chunk:
             chunk = ParentDocuments(
@@ -98,16 +106,16 @@ class ParentStore:
             chunk.content = content
             chunk.doc_metadata = doc_metadata
 
-        self.db.commit()
+        await self.db.commit()
 
-    def get_parents(self, parent_id: uuid6.UUID):
-        chunk = (
-            self.db.query(ParentDocuments)
-            .filter(ParentDocuments.parent_id == parent_id)
-            .first()
-        )
+    async def get_parents(self, parent_id: uuid6.UUID):
+        query = select(ParentDocuments).filter(ParentDocuments.parent_id == parent_id)
+        result = await self.db.execute(query)
+        chunk = result.scalars().first()
+
         if not chunk:
             return None
+
         return {
             "parent_id": str(chunk.parent_id),
             "content": chunk.content,

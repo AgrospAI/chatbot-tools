@@ -13,7 +13,7 @@ from fastrag.embeddings import IEmbeddings
 from fastrag.logging import logger
 from fastrag.serve.ask.route import router as ask_router
 from fastrag.serve.chats.route import router as chat_router
-from fastrag.serve.database import Base, engine
+from fastrag.serve.database import Base, engine, initialize_database
 from fastrag.serve.geolocalization.middleware import GeoIPMiddleware
 from fastrag.serve.healthz.route import router as health_router
 from fastrag.serve.rate_limiting import custom_rate_limit_handler, limiter
@@ -36,9 +36,7 @@ async def lifespan(_: FastAPI):
             logger.info("Database not reachable, waiting %d seconds...", 5)
             await asyncio.sleep(5)
 
-    # Initialize the database
-    async with engine.begin() as connection:
-        await connection.run_sync(Base.metadata.create_all)
+    initialize_database()
 
     yield
 

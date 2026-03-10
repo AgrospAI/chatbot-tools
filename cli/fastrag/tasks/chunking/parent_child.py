@@ -1,11 +1,10 @@
-# type: ignore
-
 import asyncio
 from dataclasses import InitVar, dataclass, field
 from typing import ClassVar, Literal, override
 
 import aiofiles
 import orjson
+import uuid6
 from langchain_experimental.text_splitter import SemanticChunker
 from langchain_text_splitters import MarkdownHeaderTextSplitter
 
@@ -14,7 +13,7 @@ from fastrag.cache.filters import Filter, MetadataFilter
 from fastrag.embeddings import IEmbeddings
 from fastrag.events import Event
 from fastrag.plugins import inject
-from fastrag.serve.database import SessionLocal, initialize_database
+from fastrag.serve.database import get_session, initialize_database
 from fastrag.stores.parent_chunk_db import ParentStore
 from fastrag.tasks.base import Run, Task
 from fastrag.tasks.chunking.markdown_utils import clean_markdown, normalize_metadata
@@ -169,12 +168,13 @@ class ParentChildChunker(Task):
         self._save_parents_to_db(parent_chunks)
         return orjson.dumps(child_chunks)
 
-    def _save_parents_to_db(self, parents: list[dict]):
+    async def _save_parents_to_db(self, parents: list[dict]):
         if not parents:
             return
 
-        with SessionLocal() as session:
+        async with get_session() as session:
             parent_store = ParentStore(session)
+
             for parent in parents:
                 parent_store.save_parents(
                     parent_id=uuid6.UUID(parent["chunk_id"]),
