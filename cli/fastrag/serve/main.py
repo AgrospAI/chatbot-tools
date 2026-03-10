@@ -4,12 +4,12 @@ import uvicorn
 from fastapi import FastAPI
 from fastapi.concurrency import asynccontextmanager
 from fastapi.middleware.cors import CORSMiddleware
-from langchain_core.embeddings import Embeddings
 from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
 from prometheus_client import make_asgi_app
 from slowapi.errors import RateLimitExceeded
 
 from fastrag import ILLM
+from fastrag.embeddings import IEmbeddings
 from fastrag.logging import logger
 from fastrag.serve.ask.route import router as ask_router
 from fastrag.serve.chats.route import router as chat_router
@@ -44,9 +44,9 @@ async def lifespan(_: FastAPI):
 
 
 def create_app(
-    embedding_model: Embeddings,
-    vector_store: IVectorStore,
-    llm: ILLM,
+    embedding_model: IEmbeddings | None,
+    vector_store: IVectorStore | None,
+    llm: ILLM | None,
 ) -> FastAPI:
     app = FastAPI(lifespan=lifespan)
 
@@ -57,10 +57,14 @@ def create_app(
 
     app.add_exception_handler(RateLimitExceeded, custom_rate_limit_handler)
 
-    app.add_middleware(MetricsMiddleware)
-    app.add_middleware(GeoIPMiddleware)
     app.add_middleware(
-        CORSMiddleware,
+        MetricsMiddleware,  # type: ignore
+    )
+    app.add_middleware(
+        GeoIPMiddleware,  # type: ignore
+    )
+    app.add_middleware(
+        CORSMiddleware,  # type: ignore
         allow_origins=["*"],
         allow_credentials=True,
         allow_methods=["*"],
@@ -83,21 +87,17 @@ def start_server(
     host: str = "0.0.0.0",
     port: int = 8000,
     reload: bool = False,
-    embedding_model: Embeddings = None,
-    vector_store: IVectorStore = None,
-    llm: ILLM = None,
+    embedding_model: IEmbeddings | None = None,
+    vector_store: IVectorStore | None = None,
+    llm: ILLM | None = None,
 ):
-    if reload:
-        uvicorn.run(
-            "fastrag.serve.main:create_app", host=host, port=port, reload=True, factory=True
-        )
-    else:
-        app = create_app(
-            embedding_model=embedding_model,
-            vector_store=vector_store,
-            llm=llm,
-        )
-        uvicorn.run(app, host=host, port=port)
+    app = create_app(
+        embedding_model=embedding_model,
+        vector_store=vector_store,
+        llm=llm,
+    )
+
+    uvicorn.run(app, host=host, port=port, reload=reload)
 
 
 if __name__ == "__main__":

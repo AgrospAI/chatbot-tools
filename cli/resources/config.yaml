@@ -4,19 +4,9 @@ resources:
     params:
       host: milvus.agrospai.udl.cat
       port: 19530
-      collection_name: TW9d9O3pDqgh4qLBs0iEAud
+      collection_name: AvMo7ynSplh8uirEIb_fZ1M
       user: ${MILVUS_USER}
       password: ${MILVUS_PASSWORD}
-      dimension: 4096
-
-    # strategy: sliding-window-milvus
-    # params:
-    #   host: milvus.agrospai.udl.cat
-    #   port: 19530
-    #   collection_name: MsbvtveMU1dlK5fldrttmdi
-    #   user: ${MILVUS_USER}
-    #   password: ${MILVUS_PASSWORD}
-    #   dimension: 4096
   llm:
     strategy: openai
     params:
@@ -30,23 +20,29 @@ resources:
         # - strategy: Path
         #   params:
         #     path: ./resources/test/
+
         # - strategy: SitemapXML
         #   params:
         #     url: https://agrospai.udl.cat/sitemap.xml
         #     regex:
         #       - https?://[^/]+/docs/
-        - strategy: Crawling
+        - strategy: URL
           params:
-            url: https://agrospai.udl.cat
-            workers: 5
-            depth: 5
-            delay: 0
+            url: https://agrospai.udl.cat/en/contact-us/
+
+        # - strategy: Crawling
+        #   params:
+        #     url: https://agrospai.udl.cat
+        #     workers: 5
+        #     depth: 5
+        #     delay: 0
       parsing:
         - strategy: HtmlParser
           params:
             use:
               - SitemapXML
               - Crawling
+              - URL
         # - strategy: FileParser
         #   params:
         #     use:
@@ -70,8 +66,10 @@ experiments:
       - strategy: OpenAI-Simple
         params:
           model: qwen3-embedding:8b
+          #model: nomic-embed-text:latest
           api_key: ${CHAT_API_KEY}
           url: https://chat.agrospai.udl.cat/ollama/api/embed
+          batch_size: 4
     benchmarking:
       - strategy: QuerySet
         params:

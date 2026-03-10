@@ -13,7 +13,7 @@ class EmbeddingStep(IStep):
 
     @property
     def filter(self):
-        return MetadataFilter(experiment=self.experiment.hash)
+        return MetadataFilter(experiment=self.experiment_hash)
 
     @override
     async def get_tasks(self) -> Tasks:

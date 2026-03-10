@@ -1,15 +1,18 @@
 from abc import ABC, abstractmethod
-from typing import Any, List
+from dataclasses import dataclass
+from typing import Sequence
 
 from fastrag.plugins import PluginBase
 
 
+@dataclass(frozen=True)
 class Document:
     """Simple document representation"""
 
-    def __init__(self, page_content: str, metadata: dict[str, Any] | None = None):
-        self.page_content = page_content
-        self.metadata = metadata or {}
+    chunk_id: str
+    page_content: str
+    metadata: dict  # doc_metadata
+    parent_id: str | None = None
 
 
 class IVectorStore(PluginBase, ABC):
@@ -18,10 +21,10 @@ class IVectorStore(PluginBase, ABC):
     @abstractmethod
     async def add_documents(
         self,
-        documents: List[Document],
-        embeddings: List[List[float]],
+        documents: Sequence[Document],
+        embeddings: list[list[float]],
         collection_name: str | None = None,
-    ) -> List[str]:
+    ) -> list[str]:
         """Add documents with their embeddings to the store.
 
         Args:
@@ -38,10 +41,10 @@ class IVectorStore(PluginBase, ABC):
     async def similarity_search(
         self,
         query: str,
-        query_embedding: List[float],
+        query_embedding: list[float],
         k: int = 5,
         collection_name: str | None = None,
-    ) -> List[Document]:
+    ) -> list[Document]:
         """Search for similar documents.
 
         Args:

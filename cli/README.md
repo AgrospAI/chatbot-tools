@@ -349,7 +349,7 @@ existed, entries = await self.cache.get_or_create(
     metadata={
         "step": "chunking",
         "strategy": ParentChildChunker.supported,
-        "experiment": self.experiment.hash, # THIS
+        "experiment": self.experiment_hash, # THIS
     },
 )
 ```

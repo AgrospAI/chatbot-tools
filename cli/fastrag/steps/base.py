@@ -52,7 +52,7 @@ class IStepCommon(PluginBase, ABC):
         raise NotImplementedError
 
     @abstractmethod
-    async def get_tasks(self) -> Tasks:
+    def get_tasks(self) -> Tasks:
         """Generate a dict with the tasks to perform
 
         Returns:

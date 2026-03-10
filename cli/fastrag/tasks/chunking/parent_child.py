@@ -2,17 +2,16 @@
 
 import asyncio
 from dataclasses import InitVar, dataclass, field
-from typing import ClassVar, override
+from typing import ClassVar, Literal, override
 
 import aiofiles
 import orjson
-import uuid6
-from langchain_core.embeddings import Embeddings
 from langchain_experimental.text_splitter import SemanticChunker
 from langchain_text_splitters import MarkdownHeaderTextSplitter
 
 from fastrag.cache.entry import CacheEntry
 from fastrag.cache.filters import Filter, MetadataFilter
+from fastrag.embeddings import IEmbeddings
 from fastrag.events import Event
 from fastrag.plugins import inject
 from fastrag.serve.database import SessionLocal, initialize_database
@@ -31,13 +30,13 @@ class ParentChildChunker(Task):
     api_key: InitVar[str]
     max_concurrent: InitVar[int] = 5
 
-    model: Embeddings = field(init=False, repr=False, hash=False)
+    model: IEmbeddings = field(init=False, repr=False, hash=False)
     _semaphore: asyncio.Semaphore = field(init=False, repr=False, hash=False)
 
     def __post_init__(self, url: str, model_name: str, api_key: str, max_concurrent: int):
         initialize_database()
         self.model = inject(
-            Embeddings,
+            IEmbeddings,
             "openai-simple",
             url=url,
             model=model_name,
@@ -53,7 +52,7 @@ class ParentChildChunker(Task):
             metadata={
                 "step": "chunking",
                 "strategy": ParentChildChunker.supported,
-                "experiment": self.experiment.hash,
+                "experiment": self.experiment_hash,
             },
         )
 
@@ -65,7 +64,7 @@ class ParentChildChunker(Task):
 
         self.results.extend(entries_list)
 
-        status = "Cached" if existed else "Generated"
+        status: Literal["Cached", "Generated"] = "Cached" if existed else "Generated"
         yield Event(
             Event.Type.PROGRESS,
             f"{self.__class__.__name__} {status} {len(entries_list)} chunks for {entry.path}",
@@ -112,6 +111,7 @@ class ParentChildChunker(Task):
                     "chunk_id": parent_id,
                     "page_content": parent_content,
                     "metadata": final_metadata,
+                    "parent_id": None,
                 }
             )
 
@@ -124,6 +124,7 @@ class ParentChildChunker(Task):
                             **final_metadata,
                             "parent_id": parent_id,
                         },
+                        "parent_id": parent_id,
                     }
                 )
 
@@ -144,7 +145,7 @@ class ParentChildChunker(Task):
                         [p_doc.page_content],
                     )
 
-            except Exception:
+            except Exception as e:
                 child_docs = [p_doc]
 
             for i, c_doc in enumerate(child_docs):
@@ -161,6 +162,7 @@ class ParentChildChunker(Task):
                             "child_index": i,
                             "parent_id": parent_id,
                         },
+                        "parent_id": parent_id,
                     }
                 )
 

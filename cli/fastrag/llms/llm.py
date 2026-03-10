@@ -8,7 +8,7 @@ class ILLM(PluginBase, ABC):
     """Abstract interface for Large Language Models"""
 
     @abstractmethod
-    async def stream(self, prompt: str) -> AsyncGenerator[str, None]:
+    def stream(self, prompt: str) -> AsyncGenerator[str, None]:
         """Stream LLM responses token by token.
 
         Args:
@@ -17,10 +17,9 @@ class ILLM(PluginBase, ABC):
         Yields:
             Token strings from the LLM response
         """
-        pass
 
     @abstractmethod
-    async def generate(self, prompt: str) -> str:
+    async def generate(self, prompt: str) -> str | list[str | dict]:
         """Generate a complete response from the LLM.
 
         Args:
@@ -29,4 +28,3 @@ class ILLM(PluginBase, ABC):
         Returns:
             The complete response string
         """
-        pass

@@ -1,9 +1,6 @@
-import importlib
+import importlib.util
 from abc import ABC
 from pathlib import Path
-from typing import TypeVar
-
-T = TypeVar("T")
 
 
 def import_plugins(base: Path) -> None:
@@ -24,11 +21,16 @@ def import_plugins(base: Path) -> None:
         spec.loader.exec_module(module)
 
 
-class PluginRegistry:
-    _registry: dict[type, dict[str, list[type]]] = {}
+class PluginRegistry[T]:
+    _registry: dict[type[T], dict[str, list[type[T]]]] = {}
 
     @classmethod
-    def register(cls, plugin: type, interface: type, supported: list[str] | str):
+    def register(
+        cls,
+        plugin: type[T],
+        interface: type[T],
+        supported: list[str] | str,
+    ) -> type[T]:
         if not issubclass(plugin, interface):
             raise TypeError(f"{plugin.__name__} does not implement {interface.__name__}")
 
@@ -42,15 +44,15 @@ class PluginRegistry:
         return plugin
 
     @classmethod
-    def get(cls, interface: type, sup: str = "") -> type | None:
+    def get(cls, interface: type[T], sup: str = "") -> type[T]:
         plugins = cls._registry.get(interface, {}).get(sup, [])
-        if not plugins:
-            raise ValueError(f"Could not find '{interface}' '{sup}' pair")
+        assert plugins, f"Class {interface} has no plugin supporting {sup}"
         return plugins[-1]
 
     @classmethod
-    def get_instance(cls, interface: type, sup: str = "", *args, **kwargs) -> any:
-        return cls.get(interface, sup)(*args, **kwargs)
+    def get_instance(cls, interface: type[T], sup: str = "", *args, **kwargs) -> T:
+        instance_class = cls.get(interface, sup)
+        return instance_class(*args, **kwargs)
 
     @classmethod
     def representation(cls) -> dict:
@@ -81,5 +83,5 @@ class PluginBase(ABC):
         return str(supported)
 
 
-def inject(interface: T, supported: list[str] | str, *args, **kwargs) -> T:
+def inject[T](interface: type[T], supported: str, *args, **kwargs) -> T:
     return PluginRegistry.get_instance(interface, supported, *args, **kwargs)
