@@ -1,3 +1,4 @@
+import asyncio
 from typing import AsyncIterator
 
 from fastapi.concurrency import asynccontextmanager
@@ -43,6 +44,21 @@ async def get_session() -> AsyncIterator[AsyncSession]:
 class Base(DeclarativeBase): ...
 
 
+is_initialized = False
+_init_lock = asyncio.Lock()
+
+
 async def initialize_database() -> None:
-    async with engine.begin() as connection:
-        await connection.run_sync(Base.metadata.create_all)
+    global is_initialized
+
+    if is_initialized:
+        return
+
+    async with _init_lock:
+        if is_initialized:
+            return
+
+        async with engine.begin() as connection:
+            await connection.run_sync(Base.metadata.create_all)
+
+        is_initialized = True

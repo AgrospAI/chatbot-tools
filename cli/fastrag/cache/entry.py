@@ -11,7 +11,7 @@ from fastrag.cache.utils import PosixTimestamp, timestamp
 class CacheEntry:
     path: Path
     timestamp: PosixTimestamp = field(default_factory=timestamp)
-    metadata: dict | None = field(default=None)
+    metadata: dict = field(default_factory=dict)
 
     _content: bytes | None = field(default=None, init=False, repr=False, compare=False)
 
@@ -32,7 +32,9 @@ class CacheEntry:
         return self.path.read_bytes()
 
     async def get_content(self) -> bytes:
-        if self._content is None:
+        content = self._content
+        if content is None:
             async with aiofiles.open(self.path, "rb") as f:
-                object.__setattr__(self, "_content", await f.read())
-        return self._content
+                content: bytes = await f.read()
+            object.__setattr__(self, "_content", content)
+        return content

@@ -4,10 +4,10 @@ from typing import ClassVar, List, override
 import uuid6
 from sqlalchemy import Text, select
 from sqlalchemy.dialects.postgresql import JSONB, UUID
-from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.sql.selectable import Select
 
-from fastrag.serve.database import Base, get_session
+from fastrag.serve.database import Base, get_session, initialize_database
 from fastrag.stores.milvus import MilvusVectorStore
 from fastrag.stores.store import Document
 
@@ -26,7 +26,10 @@ class ParentDocuments(Base):
 class ParentVectorStore(MilvusVectorStore):
     supported: ClassVar[str] = "parent-child-milvus"
 
-    db: AsyncSession | None = field(default=None, repr=False)
+    store: "ParentStore" = field(init=False)
+
+    def __post_init__(self) -> None:
+        self.store = ParentStore()
 
     @override
     async def similarity_search(
@@ -43,13 +46,11 @@ class ParentVectorStore(MilvusVectorStore):
             collection_name=collection_name,
         )
 
-        async with get_session() as session:
-            return await self._resolve_parent_documents(child_docs, ParentStore(session))
+        return await self._resolve_parent_documents(child_docs)
 
     async def _resolve_parent_documents(
         self,
         child_docs: List[Document],
-        parent_store: "ParentStore",
     ) -> List[Document]:
         result_docs = []
         seen_parent_ids = set()
@@ -67,7 +68,7 @@ class ParentVectorStore(MilvusVectorStore):
             seen_parent_ids.add(parent_id_str)
 
             parent_id = uuid6.UUID(parent_id_str)
-            parent_data = await parent_store.get_parents(parent_id)
+            parent_data = await self.store.get_parents(parent_id)
 
             if parent_data:
                 result_docs.append(
@@ -85,39 +86,46 @@ class ParentVectorStore(MilvusVectorStore):
         return result_docs
 
 
-@dataclass(frozen=True)
+@dataclass
 class ParentStore:
-    db: AsyncSession
-
     async def save_parents(
         self,
         parent_id: uuid6.UUID,
         content: str,
         doc_metadata: dict,
     ) -> None:
-        chunk: ParentDocuments | None = await self.db.get(ParentDocuments, parent_id)
+        await initialize_database()
+        async with get_session() as db:
+            chunk = await db.get(ParentDocuments, parent_id)
 
-        if not chunk:
-            chunk = ParentDocuments(
-                parent_id=parent_id, content=content, doc_metadata=doc_metadata
+            if not chunk:
+                chunk = ParentDocuments(
+                    parent_id=parent_id, content=content, doc_metadata=doc_metadata
+                )
+                db.add(chunk)
+            else:
+                chunk.content = content
+                chunk.doc_metadata = doc_metadata
+
+            await db.commit()
+
+    async def get_parents(
+        self,
+        parent_id: uuid6.UUID,
+    ):
+        await initialize_database()
+        async with get_session() as db:
+            query: Select[tuple[ParentDocuments]] = select(ParentDocuments).filter(
+                ParentDocuments.parent_id == parent_id
             )
-            self.db.add(chunk)
-        else:
-            chunk.content = content
-            chunk.doc_metadata = doc_metadata
+            result = await db.execute(query)
+            chunk = result.scalars().first()
 
-        await self.db.commit()
+            if not chunk:
+                return None
 
-    async def get_parents(self, parent_id: uuid6.UUID):
-        query = select(ParentDocuments).filter(ParentDocuments.parent_id == parent_id)
-        result = await self.db.execute(query)
-        chunk = result.scalars().first()
-
-        if not chunk:
-            return None
-
-        return {
-            "parent_id": str(chunk.parent_id),
-            "content": chunk.content,
-            "doc_metadata": chunk.doc_metadata,
-        }
+            return {
+                "parent_id": str(chunk.parent_id),
+                "content": chunk.content,
+                "doc_metadata": chunk.doc_metadata,
+            }

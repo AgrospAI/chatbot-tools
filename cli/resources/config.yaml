@@ -12,7 +12,7 @@ resources:
     params:
       api_key: ${CHAT_API_KEY}
       base_url: https://chat.agrospai.udl.cat/api
-      model_name: vllm.Qwen/Qwen3-VL-32B-Instruct
+      model_name: gpt-oss:latest
       temperature: 0.0
   sources:
     steps:
@@ -26,16 +26,16 @@ resources:
         #     url: https://agrospai.udl.cat/sitemap.xml
         #     regex:
         #       - https?://[^/]+/docs/
-        - strategy: URL
-          params:
-            url: https://agrospai.udl.cat/en/contact-us/
-
-        # - strategy: Crawling
+        # - strategy: URL
         #   params:
-        #     url: https://agrospai.udl.cat
-        #     workers: 5
-        #     depth: 5
-        #     delay: 0
+        #     url: https://agrospai.udl.cat/en/contact-us/
+
+        - strategy: Crawling
+          params:
+            url: https://agrospai.udl.cat
+            workers: 5
+            depth: 2
+            delay: 0
       parsing:
         - strategy: HtmlParser
           params:
@@ -86,9 +86,6 @@ experiments:
             - [
                 "What credentials should we prepared for the incorporation in agrospai?",
                 "Credentials",
-            ]
-            - [
-                "How can we automatize the signature?",
-                "Wallet",
-            ]
+              ]
+            - ["How can we automatize the signature?", "Wallet"]
       - strategy: ChunkQuality

@@ -33,7 +33,6 @@ class ParentChildChunker(Task):
     _semaphore: asyncio.Semaphore = field(init=False, repr=False, hash=False)
 
     def __post_init__(self, url: str, model_name: str, api_key: str, max_concurrent: int):
-        initialize_database()
         self.model = inject(
             IEmbeddings,
             "openai-simple",
