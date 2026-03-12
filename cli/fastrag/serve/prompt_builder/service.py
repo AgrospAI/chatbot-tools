@@ -40,7 +40,7 @@ class PromptBuilder(IPromptBuilder):
         self,
         question: str,
     ) -> Context:
-        query_embedding = await self.embedding_model.embed_query(
+        query_embedding = await self.embedding_model.aembed_query(
             question,
         )
 

@@ -55,6 +55,9 @@ def clean_markdown(content: str) -> tuple[str, dict]:
         r"^(.+?)\n-{3,}\s*$", r"## \1", cleaned_content, flags=re.MULTILINE
     )
 
+    # Delete debri
+    cleaned_content = re.sub(r"(?<!\S)\[+(?!\S)", "", cleaned_content)
+
     # Delete newlines
     cleaned_content = re.sub(r"\n{3,}", "\n\n", cleaned_content)
 

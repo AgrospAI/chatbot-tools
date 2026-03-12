@@ -7,6 +7,15 @@ import httpx
 from fastrag.embeddings import IEmbeddings
 
 
+def _run(coro):
+    try:
+        loop = asyncio.get_running_loop()
+    except RuntimeError:
+        return asyncio.run(coro)
+    else:
+        return loop.run_until_complete(coro)
+
+
 @dataclass(frozen=True)
 class OpenAIEmbeddings(IEmbeddings):
     """Self-hosted OpenAI-compatible embedding model (synchronous)"""
@@ -43,7 +52,7 @@ class OpenAIEmbeddings(IEmbeddings):
                     )
         return OpenAIEmbeddings._client
 
-    async def query(self, payload: dict) -> list[list[float]]:
+    async def aquery(self, payload: dict) -> list[list[float]]:
         client = await self.get_client(self.api_key)
 
         data = {
@@ -61,20 +70,28 @@ class OpenAIEmbeddings(IEmbeddings):
 
         return response.json()["embeddings"]
 
-    async def embed(self, input_text: list[str]) -> list[list[float]]:
-        return await self.query({"input": input_text})
+    async def embed(self, input_text: Sequence[str]) -> list[list[float]]:
+        return await self.aquery({"input": input_text})
 
-    async def embed_single(self, input_text: str) -> list[float]:
-        result = await self.query({"input": [input_text]})
+    async def aembed_single(self, input_text: str) -> list[float]:
+        result = await self.aquery({"input": [input_text]})
         return result[0]
 
     @override
     async def get_dimension(self) -> int:
-        embedding = await self.embed_single("test")
+        embedding = await self.aembed_single("test")
         return len(embedding)
 
     @override
-    async def embed_documents(self, documents: Sequence[str]) -> list[list[float]]:
+    def embed_documents(self, documents: Sequence[str]) -> list[list[float]]:
+        return _run(self.aembed_documents(documents))
+
+    @override
+    def embed_query(self, text: str) -> list[float]:
+        return _run(self.aembed_query(text))
+
+    @override
+    async def aembed_documents(self, documents: Sequence[str]) -> list[list[float]]:
         if not documents:
             return []
 
@@ -100,7 +117,7 @@ class OpenAIEmbeddings(IEmbeddings):
                         for doc in batch:
                             # Truncate if too long
                             truncated = doc[:8000]
-                            batch_results.append(await self.embed_single(truncated))
+                            batch_results.append(await self.aembed_single(truncated))
                         break
                     else:
                         raise
@@ -110,5 +127,5 @@ class OpenAIEmbeddings(IEmbeddings):
         return all_embeddings
 
     @override
-    async def embed_query(self, query: str) -> list[float]:
-        return await self.embed_single(query)
+    async def aembed_query(self, query: str) -> list[float]:
+        return await self.aembed_single(query)

@@ -34,7 +34,7 @@ resources:
           params:
             url: https://agrospai.udl.cat
             workers: 5
-            depth: 2
+            depth: 3
             delay: 0
       parsing:
         - strategy: HtmlParser
