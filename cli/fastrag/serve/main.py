@@ -36,7 +36,7 @@ async def lifespan(_: FastAPI):
             logger.info("Database not reachable, waiting %d seconds...", 5)
             await asyncio.sleep(5)
 
-    initialize_database()
+    await initialize_database()
 
     yield
 

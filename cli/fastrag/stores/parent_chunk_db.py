@@ -7,7 +7,7 @@ from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.sql.selectable import Select
 
-from fastrag.serve.database import Base, get_session, initialize_database
+from fastrag.serve.database import Base, initialize_database, session_context
 from fastrag.stores.milvus import MilvusVectorStore
 from fastrag.stores.store import Document
 
@@ -95,7 +95,7 @@ class ParentStore:
         doc_metadata: dict,
     ) -> None:
         await initialize_database()
-        async with get_session() as db:
+        async with session_context() as db:
             chunk = await db.get(ParentDocuments, parent_id)
 
             if not chunk:
@@ -114,7 +114,7 @@ class ParentStore:
         parent_id: uuid6.UUID,
     ):
         await initialize_database()
-        async with get_session() as db:
+        async with session_context() as db:
             query: Select[tuple[ParentDocuments]] = select(ParentDocuments).filter(
                 ParentDocuments.parent_id == parent_id
             )

@@ -13,7 +13,7 @@ from fastrag.cache.filters import Filter, MetadataFilter
 from fastrag.embeddings import IEmbeddings
 from fastrag.events import Event
 from fastrag.plugins import inject
-from fastrag.serve.database import get_session, initialize_database
+from fastrag.serve.database import session_context
 from fastrag.stores.parent_chunk_db import ParentStore
 from fastrag.tasks.base import Run, Task
 from fastrag.tasks.chunking.markdown_utils import clean_markdown, normalize_metadata
@@ -171,7 +171,7 @@ class ParentChildChunker(Task):
         if not parents:
             return
 
-        async with get_session() as session:
+        async with session_context() as session:
             parent_store = ParentStore(session)
 
             for parent in parents:
