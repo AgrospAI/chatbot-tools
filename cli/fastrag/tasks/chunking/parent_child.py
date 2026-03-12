@@ -92,10 +92,6 @@ class ParentChildChunker(Task):
 
         text, raw_metadata = clean_markdown(raw_text)
 
-        print("Clean markdown", text)
-
-        exit(-1)
-
         metadata = normalize_metadata(raw_metadata, uri)
 
         parent_splitter = MarkdownHeaderTextSplitter(

@@ -26,16 +26,16 @@ resources:
         #     url: https://agrospai.udl.cat/sitemap.xml
         #     regex:
         #       - https?://[^/]+/docs/
-        - strategy: URL
-          params:
-            url: https://agrospai.udl.cat/en/contact-us/
-
-        # - strategy: Crawling
+        # - strategy: URL
         #   params:
-        #     url: https://agrospai.udl.cat
-        #     workers: 5
-        #     depth: 2
-        #     delay: 0
+        #     url: https://agrospai.udl.cat/en/contact-us/
+
+        - strategy: Crawling
+          params:
+            url: https://agrospai.udl.cat
+            workers: 5
+            depth: 3
+            delay: 0
       parsing:
         - strategy: HtmlParser
           params:
