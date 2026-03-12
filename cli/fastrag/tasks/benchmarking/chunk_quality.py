@@ -154,7 +154,15 @@ class ChunkQualityBenchmarking(Task):
         total = len(chunking_tasks)
 
         for task in chunking_tasks:
-            documents = [Document(**doc) for doc in task.results if doc["page_content"]]
+            documents = [
+                Document(
+                    chunk_id=doc["chunk_id"],
+                    page_content=doc["page_content"],
+                    metadata=doc["metadata"],
+                )
+                for doc in task.results
+                if doc["page_content"]
+            ]
 
             quality = calculate_corpus_quality(documents)
             qualities.append(quality)

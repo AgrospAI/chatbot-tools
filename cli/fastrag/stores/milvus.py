@@ -50,46 +50,29 @@ class MilvusVectorStore(IVectorStore):
         exists = await client.has_collection(collection_name)
         if not exists:
             schema = client.create_schema(
-                auto_id=True,  # Matches autoID: true in your schema
                 enable_dynamic_field=False,  # Your schema shows dynamicFields: []
-            )
-
-            # 2. Add Fields exactly as defined in your JSON
-            # Field 101: pk (Primary Key)
-            schema.add_field(
-                field_name="pk",
-                datatype=DataType.INT64,
-                is_primary=True,
             )
 
             schema.add_field(
                 field_name="chunk_id",
                 datatype=DataType.VARCHAR,
                 max_length=256,
+                is_primary=True,
+                auto_id=False,
             )
 
-            schema.add_field(
-                field_name="parent_id",
-                datatype=DataType.VARCHAR,
-                max_length=256,
-                nullable=True,
-            )
-
-            # Field 100: text
             schema.add_field(
                 field_name="page_content",
                 datatype=DataType.VARCHAR,
                 max_length=65535,
             )
 
-            # Field 102: vector
             schema.add_field(
                 field_name="vector",
                 datatype=DataType.FLOAT_VECTOR,
                 dim=await self.embedding_model.get_dimension(),
             )
 
-            # Field 103: source
             schema.add_field(
                 field_name="metadata",
                 datatype=DataType.JSON,
@@ -128,11 +111,10 @@ class MilvusVectorStore(IVectorStore):
         # Data mapping for Milvus
         data = [
             {
+                "chunk_id": doc.chunk_id,
                 "vector": embeddings[i],
                 "page_content": doc.page_content,
                 "metadata": doc.metadata,
-                "chunk_id": doc.chunk_id,
-                "parent_id": doc.parent_id,
             }
             for i, doc in enumerate(documents)
         ]
@@ -160,12 +142,7 @@ class MilvusVectorStore(IVectorStore):
             data=[query_embedding],
             search_params={"metric_type": "L2", "params": {}},
             limit=k,
-            output_fields=[
-                "chunk_id",
-                "parent_id",
-                "page_content",
-                "metadata",
-            ],
+            output_fields=["chunk_id", "page_content", "metadata"],
         )
 
         docs = []
@@ -194,7 +171,7 @@ class MilvusVectorStore(IVectorStore):
     @override
     async def embed_query(self, text: str) -> list[float]:
         """Required implementation: Delegates to the assigned embedding model"""
-        return await self.embedding_model.embed_query(text)
+        return await self.embedding_model.aembed_query(text)
 
     def _get_collection(self, collection_name: str | None) -> str:
         return collection_name if collection_name else self.collection_name

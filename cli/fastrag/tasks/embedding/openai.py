@@ -24,7 +24,12 @@ class OpenAISimple(Task):
     model: str
     embedder: IEmbeddings = field(init=False)
 
-    def __post_init__(self, api_key: str, url: str, batch_size: int):
+    def __post_init__(
+        self,
+        api_key: str,
+        url: str,
+        batch_size: int,
+    ):
         self.embedder = inject(
             IEmbeddings,
             "OpenAI-Simple",
@@ -35,7 +40,11 @@ class OpenAISimple(Task):
         )
 
     @override
-    async def run(self, uri: str, entry: CacheEntry) -> Run:
+    async def run(
+        self,
+        uri: str,
+        entry: CacheEntry,
+    ) -> Run:
         existed, cached = await self.cache.get_or_create(
             uri=f"{entry.path.resolve().as_uri()}.{self.__class__.__name__}.{self.model}.embedding.json",
             contents=lambda: self.embedding_logic(entry),
@@ -48,7 +57,13 @@ class OpenAISimple(Task):
             documents = []
             for chunk in (chunk for chunk in data if chunk["page_content"]):
                 vectors.append(chunk.pop("vector"))
-                documents.append(Document(**chunk))
+                documents.append(
+                    Document(
+                        chunk_id=chunk["chunk_id"],
+                        page_content=chunk["page_content"],
+                        metadata=chunk["metadata"],
+                    )
+                )
 
             await self.upload_embeddings(documents, vectors)
             yield Event(
@@ -75,9 +90,16 @@ class OpenAISimple(Task):
         if not chunks:
             return orjson.dumps([])
 
-        documents = [Document(**chunk) for chunk in chunks]
+        documents = [
+            Document(
+                chunk_id=chunk["chunk_id"],
+                page_content=chunk["page_content"],
+                metadata=chunk["metadata"],
+            )
+            for chunk in chunks
+        ]
 
-        total_vectors = await self.embedder.embed_documents(
+        total_vectors: list[list[int | float]] = await self.embedder.aembed_documents(
             [chunk["page_content"] for chunk in chunks]
         )
 

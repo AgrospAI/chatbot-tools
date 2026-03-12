@@ -11,8 +11,7 @@ class Document:
 
     chunk_id: str
     page_content: str
-    metadata: dict  # doc_metadata
-    parent_id: str | None = None
+    metadata: dict
 
 
 class IVectorStore(PluginBase, ABC):

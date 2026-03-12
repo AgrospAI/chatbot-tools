@@ -76,7 +76,6 @@ class ParentVectorStore(MilvusVectorStore):
                         chunk_id=child_doc.chunk_id,
                         page_content=parent_data["content"],
                         metadata=parent_data["doc_metadata"] or {},
-                        parent_id=str(parent_id),
                     )
                 )
             else:
